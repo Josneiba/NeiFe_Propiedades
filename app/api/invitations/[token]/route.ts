@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { logActivity } from '@/lib/activity'

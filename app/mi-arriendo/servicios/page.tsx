@@ -1,26 +1,16 @@
-import { auth } from "@/lib/auth"
+import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Droplets, 
-  Zap, 
-  FileText,
+import {
+  Droplets,
+  Zap,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
 } from "lucide-react"
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Legend
-} from "recharts"
+import { ConsumoServiciosChart } from "@/components/mi-arriendo/ConsumoServiciosChart"
 
 interface MonthlyService {
   month: number
@@ -70,7 +60,7 @@ export default async function ServiciosPage() {
       electricity: true,
       gas: true,
       waterBillUrl: true,
-      electricityBillUrl: true,
+      lightBillUrl: true,
       gasBillUrl: true,
     },
     orderBy: [{ year: "asc" }, { month: "asc" }],
@@ -203,45 +193,7 @@ export default async function ServiciosPage() {
             <CardTitle className="text-foreground">Consumo Mensual</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d5c3b6" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="#9c8578"
-                    tick={{ fill: '#9c8578' }}
-                  />
-                  <YAxis 
-                    stroke="#9c8578"
-                    tick={{ fill: '#9c8578' }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#faf6f2', 
-                      border: '1px solid #d5c3b6',
-                      borderRadius: '8px'
-                    }}
-                    labelStyle={{ color: '#1c1917' }}
-                    formatter={(value: number) => `$${value.toLocaleString("es-CL")}`}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="water" 
-                    name="Agua" 
-                    fill="#60a5fa" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar 
-                    dataKey="electricity" 
-                    name="Luz" 
-                    fill="#facc15" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ConsumoServiciosChart data={chartData} />
           </CardContent>
         </Card>
       )}

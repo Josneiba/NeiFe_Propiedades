@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
@@ -14,7 +14,7 @@ export default auth((req) => {
   if (isPublic) return NextResponse.next()
 
   // Sin sesión → login
-  if (!session) {
+  if (!session?.user) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 

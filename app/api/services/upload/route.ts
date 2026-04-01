@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { uploadFile } from '@/lib/cloudinary'
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-}
+export const maxDuration = 60 // Allow longer execution for uploads
 
 // POST multipart/form-data — upload de boletas
 export async function POST(req: NextRequest) {

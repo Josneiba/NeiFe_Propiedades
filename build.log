@@ -1,0 +1,29 @@
+
+> my-project@0.1.0 build C:\Users\josva\Documents\JVNB\NeiFe_Propiedades
+> next build
+
+Ôû▓ Next.js 16.2.0 (Turbopack)
+- Environments: .env.local
+
+ÔÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 32.4s
+  Skipping validation of types
+  Finished TypeScript config validation in 199ms ...
+  Collecting page data using 3 workers ...
+Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at module evaluation (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[root-of-the-server]__0v-uv46._.js:11:55847)
+    at instantiateModule (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at module evaluation (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[root-of-the-server]__0z9pf1e._.js:1:1209)
+    at instantiateModule (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at instantiateRuntimeModule (C:\Users\josva\Documents\JVNB\NeiFe_Propiedades\.next\server\chunks\[turbopack]_runtime.js:882:12)
+
+> Build error occurred
+Error: Failed to collect page data for /api/auth/registro
+    at ignore-listed frames {
+  type: 'Error'
+}
+ÔÇëELIFECYCLEÔÇë Command failed with exit code 1.
