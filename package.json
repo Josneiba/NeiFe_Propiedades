@@ -67,13 +67,12 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "react-hook-form": "^7.54.1",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@tailwindcss/postcss": "^4.2.0",
-    "@types/bcryptjs": "^3.0.0",
-    "@types/jspdf": "^2.0.0",
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
