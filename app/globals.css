@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* NeiFe Design System — Mediterráneo Cálido Premium */
+:root {
+  /* Brand Colors */
+  --neife-brown: #75524C;
+  --neife-beige: #D5C3B6;
+  --neife-teal: #5E8B8C;
+  --neife-rose: #C27F79;
+  --neife-yellow: #F2C94C;
+  --neife-green: #2D3C3C;
+  --neife-sand: #E8D5C4;
+  --neife-stone: #9C8578;
+  --neife-cream: #FAF6F2;
+  --neife-ink: #1C1917;
+  --neife-gold: #B8965A;
+  
+  /* Dark Mode (default) */
+  --background: #1C1917;
+  --foreground: #FAF6F2;
+  --card: #2D3C3C;
+  --card-foreground: #FAF6F2;
+  --popover: #2D3C3C;
+  --popover-foreground: #FAF6F2;
+  --primary: #75524C;
+  --primary-foreground: #FAF6F2;
+  --secondary: #D5C3B6;
+  --secondary-foreground: #1C1917;
+  --muted: #2D3C3C;
+  --muted-foreground: #9C8578;
+  --accent: #5E8B8C;
+  --accent-foreground: #FAF6F2;
+  --destructive: #C27F79;
+  --destructive-foreground: #FAF6F2;
+  --border: rgba(213, 195, 182, 0.2);
+  --input: rgba(213, 195, 182, 0.2);
+  --ring: #5E8B8C;
+  --chart-1: #5E8B8C;
+  --chart-2: #75524C;
+  --chart-3: #D5C3B6;
+  --chart-4: #C27F79;
+  --chart-5: #F2C94C;
+  --radius: 0.5rem;
+  --sidebar: #2D3C3C;
+  --sidebar-foreground: #FAF6F2;
+  --sidebar-primary: #5E8B8C;
+  --sidebar-primary-foreground: #FAF6F2;
+  --sidebar-accent: rgba(213, 195, 182, 0.1);
+  --sidebar-accent-foreground: #FAF6F2;
+  --sidebar-border: rgba(213, 195, 182, 0.15);
+  --sidebar-ring: #5E8B8C;
+}
+
+.light {
+  --background: #FAF6F2;
+  --foreground: #1C1917;
+  --card: #FFFFFF;
+  --card-foreground: #1C1917;
+  --popover: #FFFFFF;
+  --popover-foreground: #1C1917;
+  --primary: #75524C;
+  --primary-foreground: #FAF6F2;
+  --secondary: #D5C3B6;
+  --secondary-foreground: #1C1917;
+  --muted: #E8D5C4;
+  --muted-foreground: #9C8578;
+  --accent: #5E8B8C;
+  --accent-foreground: #FAF6F2;
+  --destructive: #C27F79;
+  --destructive-foreground: #FAF6F2;
+  --border: rgba(156, 133, 120, 0.3);
+  --input: rgba(156, 133, 120, 0.3);
+  --ring: #5E8B8C;
+  --sidebar: #2D3C3C;
+  --sidebar-foreground: #FAF6F2;
+}
+
+@theme inline {
+  --font-sans: var(--font-body), 'Outfit', system-ui, sans-serif;
+  --font-serif: var(--font-heading), 'Cormorant Garamond', Georgia, serif;
+  --font-mono: var(--font-mono), 'DM Mono', ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  role              Role
+  password          String
+  avatar            String?
+  phone             String?
+  rut               String?
+  isActive          Boolean   @default(true)
+  emailVerified     DateTime?
+  onboardingDone    Boolean   @default(false)
+  privacyAccepted   Boolean   @default(false)
+  privacyAcceptedAt DateTime?
+  bankName          String?
+  bankAccountType   String?
+  bankAccountNumber String?
+  bankEmail         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  ownedProperties    Property[]           @relation("LandlordProperties")
+  rentedProperty     Property?            @relation("TenantProperty")
+  maintenanceReports MaintenanceRequest[] @relation("MaintenanceRequester")
+  invitationsSent    Invitation[]         @relation("InvitationSender")
+  invitationsReceived Invitation[]        @relation("InvitationReceiver")
+  notifications      Notification[]
+  activityLogs       ActivityLog[]
+  accounts           Account[]
+  sessions           Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Property {
+  id             String    @id @default(cuid())
+  name           String
+  address        String
+  commune        String
+  region         String    @default("Metropolitana")
+  description    String?
+  bedrooms       Int?
+  bathrooms      Int?
+  squareMeters   Float?
+  lat            Float?
+  lng            Float?
+  landlordId     String
+  tenantId       String?   @unique
+  isActive       Boolean   @default(true)
+  contractStart  DateTime?
+  contractEnd    DateTime?
+  monthlyRentUF  Float?
+  monthlyRentCLP Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  landlord       User      @relation("LandlordProperties", fields: [landlordId], references: [id])
+  tenant         User?     @relation("TenantProperty", fields: [tenantId], references: [id])
+
+  payments       Payment[]
+  services       MonthlyService[]
+  maintenance    MaintenanceRequest[]
+  contracts      Contract[]
+  photos         PropertyPhoto[]
+  invitations    Invitation[]
+  providers      PropertyProvider[]
+  activityLogs   ActivityLog[]
+}
+
+model Invitation {
+  id         String           @id @default(cuid())
+  type       InvitationType
+  email      String?
+  token      String           @unique @default(cuid())
+  propertyId String
+  senderId   String
+  receiverId String?
+  status     InvitationStatus @default(PENDING)
+  expiresAt  DateTime
+  createdAt  DateTime         @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id])
+  sender     User     @relation("InvitationSender", fields: [senderId], references: [id])
+  receiver   User?    @relation("InvitationReceiver", fields: [receiverId], references: [id])
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  propertyId String
+  month      Int
+  year       Int
+  amountUF   Float
+  amountCLP  Int
+  status     PaymentStatus @default(PENDING)
+  method     String?
+  paidAt     DateTime?
+  receipt    String?
+  notes      String?
+  createdAt  DateTime      @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, month, year])
+}
+
+model MonthlyService {
+  id            String   @id @default(cuid())
+  propertyId    String
+  month         Int
+  year          Int
+  water         Int      @default(0)
+  electricity   Int      @default(0)
+  gas           Int      @default(0)
+  other         Int      @default(0)
+  otherLabel    String?
+  waterBillUrl  String?
+  lightBillUrl  String?
+  gasBillUrl    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  property      Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, month, year])
+}
+
+model MaintenanceRequest {
+  id              String              @id @default(cuid())
+  propertyId      String
+  requesterId     String
+  category        MaintenanceCategory
+  description     String
+  photos          String[]
+  isLandlordResp  Boolean             @default(true)
+  legalReference  String?
+  status          MaintenanceStatus   @default(REQUESTED)
+  providerId      String?
+  invoiceUrl      String?
+  invoiceAmount   Int?
+  rejectionReason String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  property        Property            @relation(fields: [propertyId], references: [id])
+  requester       User                @relation("MaintenanceRequester", fields: [requesterId], references: [id])
+  provider        Provider?           @relation(fields: [providerId], references: [id])
+  timeline        MaintenanceTimeline[]
+}
+
+model MaintenanceTimeline {
+  id        String            @id @default(cuid())
+  requestId String
+  status    MaintenanceStatus
+  note      String?
+  createdAt DateTime          @default(now())
+
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+}
+
+model Contract {
+  id            String         @id @default(cuid())
+  propertyId    String
+  pdfUrl        String?
+  landlordSign  String?
+  tenantSign    String?
+  hash          String?
+  status        ContractStatus @default(DRAFT)
+  signedAt      DateTime?
+  startDate     DateTime?
+  endDate       DateTime?
+  rentUF        Float?
+  createdAt     DateTime       @default(now())
+
+  property      Property       @relation(fields: [propertyId], references: [id])
+}
+
+model PropertyPhoto {
+  id         String    @id @default(cuid())
+  propertyId String
+  url        String
+  type       PhotoType
+  room       String
+  caption    String?
+  order      Int       @default(0)
+  takenAt    DateTime  @default(now())
+
+  property   Property  @relation(fields: [propertyId], references: [id])
+}
+
+model Provider {
+  id          String            @id @default(cuid())
+  name        String
+  specialty   ProviderSpecialty
+  phone       String
+  email       String?
+  photoUrl    String?
+  description String?
+  rating      Float?
+  isActive    Boolean           @default(true)
+  landlordId  String
+  createdAt   DateTime          @default(now())
+
+  properties  PropertyProvider[]
+  maintenance MaintenanceRequest[]
+}
+
+model PropertyProvider {
+  propertyId String
+  providerId String
+  assignedAt DateTime @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id])
+  provider   Provider @relation(fields: [providerId], references: [id])
+
+  @@id([propertyId, providerId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id          String    @id @default(cuid())
+  userId      String
+  propertyId  String?
+  action      String
+  description String
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+  property    Property? @relation(fields: [propertyId], references: [id])
+}
+
+enum Role {
+  OWNER
+  LANDLORD
+  TENANT
+  PROVIDER
+}
+
+enum InvitationType {
+  EMAIL
+  LINK
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PROCESSING
+  CANCELLED
+}
+
+enum MaintenanceStatus {
+  REQUESTED
+  REVIEWING
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  STRUCTURAL
+  APPLIANCES
+  CLEANING
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURES
+  ACTIVE
+  EXPIRING_SOON
+  EXPIRED
+  TERMINATED
+}
+
+enum PhotoType {
+  CHECKIN
+  CHECKOUT
+  CURRENT
+  MAINTENANCE
+}
+
+enum ProviderSpecialty {
+  PLUMBER
+  ELECTRICIAN
+  PAINTER
+  CARPENTER
+  LOCKSMITH
+  GENERAL
+  OTHER
+}
+
+enum NotificationType {
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  PAYMENT_OVERDUE
+  MAINTENANCE_NEW
+  MAINTENANCE_UPDATE
+  CONTRACT_EXPIRING
+  CONTRACT_SIGNED
+  SERVICE_UPLOADED
+  INVITATION_RECEIVED
+  SYSTEM
+}
