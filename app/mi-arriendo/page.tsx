@@ -55,7 +55,7 @@ export default async function MiArriendoPage() {
       select: {
         id: true,
         address: true,
-        monthlyRent: true,
+        monthlyRentCLP: true,
         contractStart: true,
         contractEnd: true,
         landlord: {
@@ -149,7 +149,7 @@ export default async function MiArriendoPage() {
   const water = currentPayment?.water ?? 0
   const electricity = currentPayment?.electricity ?? 0
   const gas = currentPayment?.gas ?? 0
-  const currentTotal = property.monthlyRent + water + electricity + gas
+  const currentTotal = (property.monthlyRentCLP || 0) + water + electricity + gas
 
   // Build activity items
   const activityItems = [
@@ -235,7 +235,7 @@ export default async function MiArriendoPage() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">Arriendo</p>
                   <p className="text-lg font-bold text-foreground">
-                    ${property.monthlyRent.toLocaleString("es-CL")}
+                    ${(property.monthlyRentCLP || 0).toLocaleString("es-CL")}
                   </p>
                 </div>
                 {water > 0 && (
@@ -394,7 +394,7 @@ export default async function MiArriendoPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Arriendo mensual</p>
                 <p className="text-lg font-bold text-[#5E8B8C]">
-                  ${property.monthlyRent.toLocaleString("es-CL")}
+                  ${(property.monthlyRentCLP || 0).toLocaleString("es-CL")}
                 </p>
               </div>
             </CardContent>
