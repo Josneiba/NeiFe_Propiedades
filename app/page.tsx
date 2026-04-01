@@ -138,8 +138,8 @@ export default function LandingPage() {
               Cumple con la legislación chilena
             </div>
             <h1 className="text-5xl md:text-7xl font-serif font-semibold text-[#FAF6F2] mb-8 leading-tight tracking-tight text-balance">
-              La gestión de tus arriendos,{" "}
-              <span className="text-[#5E8B8C]">finalmente sin intermediarios.</span>
+              La herramienta más completa para{" "}
+              <span className="text-[#5E8B8C]">monitorear y gestionar tus arriendos.</span>
             </h1>
             <p className="text-lg md:text-xl text-[#9C8578] mb-12 max-w-2xl mx-auto leading-relaxed text-pretty">
               Plataforma digital que conecta arrendadores y arrendatarios: 

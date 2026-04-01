@@ -141,7 +141,7 @@ export default function LoginPage() {
                   className="flex items-center justify-center gap-2 p-3 rounded-lg bg-[#75524C]/20 border border-[#75524C]/30 hover:bg-[#75524C]/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Building2 className="h-4 w-4 text-[#75524C]" />
-                  <span className="text-sm text-[#D5C3B6]">Demo Arrendador</span>
+                  <span className="text-sm text-[#D5C3B6]">Arrendador</span>
                 </button>
                 <button
                   type="button"
@@ -150,7 +150,7 @@ export default function LoginPage() {
                   className="flex items-center justify-center gap-2 p-3 rounded-lg bg-[#5E8B8C]/20 border border-[#5E8B8C]/30 hover:bg-[#5E8B8C]/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Home className="h-4 w-4 text-[#5E8B8C]" />
-                  <span className="text-sm text-[#D5C3B6]">Demo Arrendatario</span>
+                  <span className="text-sm text-[#D5C3B6]">Arrendatario</span>
                 </button>
               </div>
 
