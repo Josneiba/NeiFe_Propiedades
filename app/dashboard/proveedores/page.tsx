@@ -24,7 +24,6 @@ interface Provider {
   phone?: string | null
   email?: string | null
   rating?: number | null
-  jobsCompleted: number
   description?: string | null
 }
 
@@ -64,7 +63,6 @@ export default async function ProveedoresPage() {
     orderBy: {
       createdAt: "desc",
     },
-  })) as Array<Provider & { _count: { maintenanceRequests: number } }>
   })) as Array<Provider & { _count: { maintenance: number } }>
 
   return (
