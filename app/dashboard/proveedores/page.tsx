@@ -77,7 +77,7 @@ export default async function ProveedoresPage() {
           className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
           asChild
         >
-          <Link href="/dashboard/proveedores/nuevo">
+          <Link href="/dashboard/proveedores/agregar">
             <Plus className="h-4 w-4 mr-2" />
             Agregar proveedor
           </Link>

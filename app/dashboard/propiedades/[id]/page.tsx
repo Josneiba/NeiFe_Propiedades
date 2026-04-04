@@ -160,19 +160,27 @@ export default function PropertyDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/propiedades">
-          <Button variant="ghost" size="icon" className="text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{property.address}</h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            {property.commune}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/propiedades">
+            <Button variant="ghost" size="icon" className="text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{property.address}</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              {property.commune}
+            </div>
           </div>
         </div>
+        <Link href={`/dashboard/propiedades/${propertyId}/editar`}>
+          <Button variant="outline" className="gap-2 text-foreground">
+            <Edit className="h-4 w-4" />
+            Editar
+          </Button>
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -209,7 +217,7 @@ export default function PropertyDetailPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Arriendo mensual (CLP)</p>
                           <p className="text-2xl font-bold text-foreground">
-                            ${property.monthlyRentCLP.toLocaleString("es-CL")}
+                            {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "No especificado"}
                           </p>
                         </div>
                         {property.monthlyRentUF && (
