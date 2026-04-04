@@ -99,6 +99,25 @@ model Property {
   landlord       User      @relation("LandlordProperties", fields: [landlordId], references: [id])
   tenant         User?     @relation("TenantProperty", fields: [tenantId], references: [id])
 
+  // Datos del corredor/agente
+  agentId         String?
+  agentName       String?
+  agentRut        String?
+  agentEmail      String?
+  agentPhone      String?
+  agentCompany    String?
+  commissionRate  Float?
+  commissionType  CommissionType?
+  commissionPaidUntil DateTime?
+  commissionNotes String?
+
+  // Inspecciones e IPC
+  inspectionFrequencyMonths Int?
+  nextInspectionDate        DateTime?
+  ipcAdjustmentMonths       Int?
+  nextIpcDate               DateTime?
+  lastIpcRate               Float?
+
   payments       Payment[]
   services       MonthlyService[]
   maintenance    MaintenanceRequest[]
@@ -107,6 +126,8 @@ model Property {
   invitations    Invitation[]
   providers      PropertyProvider[]
   activityLogs   ActivityLog[]
+  inspections    PropertyInspection[]
+  ipcAdjustments IpcAdjustment[]
 }
 
 model Invitation {
@@ -146,22 +167,42 @@ model Payment {
 }
 
 model MonthlyService {
-  id            String   @id @default(cuid())
-  propertyId    String
-  month         Int
-  year          Int
-  water         Int      @default(0)
-  electricity   Int      @default(0)
-  gas           Int      @default(0)
-  other         Int      @default(0)
-  otherLabel    String?
-  waterBillUrl  String?
-  lightBillUrl  String?
-  gasBillUrl    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  propertyId      String
+  month           Int
+  year            Int
 
-  property      Property @relation(fields: [propertyId], references: [id])
+  // Servicios básicos
+  water           Int      @default(0)
+  waterBillUrl    String?
+
+  electricity     Int      @default(0)
+  lightBillUrl    String?
+
+  gas             Int      @default(0)
+  gasBillUrl      String?
+
+  // Nuevos servicios
+  garbage         Int      @default(0)
+  garbageBillUrl  String?
+
+  commonExpenses  Int      @default(0)
+  commonBillUrl   String?
+
+  // Ítems adicionales personalizados (JSON)
+  extraItems      Json?    // Array de { label, amount, billUrl }
+
+  // Campos legacy (mantener compatibilidad)
+  other           Int      @default(0)
+  otherLabel      String?
+
+  // Notas del período
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  property        Property @relation(fields: [propertyId], references: [id])
 
   @@unique([propertyId, month, year])
 }
@@ -197,6 +238,37 @@ model MaintenanceTimeline {
   createdAt DateTime          @default(now())
 
   request   MaintenanceRequest @relation(fields: [requestId], references: [id])
+}
+
+model PropertyInspection {
+  id            String           @id @default(cuid())
+  propertyId    String
+  scheduledAt   DateTime
+  type          InspectionType
+  status        InspectionStatus @default(SCHEDULED)
+  notes         String?
+  completedAt   DateTime?
+  reportUrl     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  property      Property         @relation(fields: [propertyId], references: [id])
+}
+
+model IpcAdjustment {
+  id              String    @id @default(cuid())
+  propertyId      String
+  scheduledDate   DateTime
+  ipcRate         Float?
+  previousRentCLP Int
+  newRentCLP      Int?
+  status          IpcStatus @default(PENDING)
+  appliedAt       DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  property        Property  @relation(fields: [propertyId], references: [id])
 }
 
 model Contract {
@@ -334,6 +406,37 @@ enum ContractStatus {
   ACTIVE
   EXPIRING_SOON
   EXPIRED
+  INSPECTION_SCHEDULED
+  INSPECTION_CONFIRMED
+  IPC_ADJUSTMENT_APPLIED
+}
+
+enum CommissionType {
+  MONTHLY
+  ONE_TIME
+  ANNUAL
+}
+
+enum InspectionType {
+  ROUTINE
+  CHECKIN
+  CHECKOUT
+  MAINTENANCE
+  IPC_REVIEW
+}
+
+enum InspectionStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum IpcStatus {
+  PENDING
+  APPLIED
+  SKIPPED
   TERMINATED
 }
 

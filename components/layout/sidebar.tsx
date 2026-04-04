@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   MapPin,
-  Bell
+  Bell,
+  Calendar
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ const landlordNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home, id: undefined },
   { href: "/dashboard/propiedades", label: "Propiedades", icon: Building2, id: undefined },
   { href: "/dashboard/mapa", label: "Mapa", icon: MapPin, id: undefined },
+  { href: "/dashboard/calendario", label: "Calendario", icon: Calendar, id: undefined },
   { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard, id: "sidebar-pagos" },
   { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
   { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },

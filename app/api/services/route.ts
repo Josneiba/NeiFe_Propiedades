@@ -5,16 +5,29 @@ import { z } from 'zod'
 
 const createSchema = z.object({
   propertyId: z.string(),
-  month: z.number().min(1).max(12),
-  year: z.number().min(2000),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2000),
   water: z.number().default(0),
+  waterBillUrl: z.string().url().optional(),
   electricity: z.number().default(0),
+  lightBillUrl: z.string().url().optional(),
   gas: z.number().default(0),
+  gasBillUrl: z.string().url().optional(),
+  garbage: z.number().default(0),
+  garbageBillUrl: z.string().url().optional(),
+  commonExpenses: z.number().default(0),
+  commonBillUrl: z.string().url().optional(),
+  extraItems: z.array(
+    z.object({
+      label: z.string().max(50),
+      amount: z.number().min(0),
+      billUrl: z.string().url().optional(),
+    })
+  ).max(5).optional(),
+  notes: z.string().max(500).optional(),
+  // Legacy fields para compatibilidad
   other: z.number().default(0),
   otherLabel: z.string().optional(),
-  waterBillUrl: z.string().optional(),
-  lightBillUrl: z.string().optional(),
-  gasBillUrl: z.string().optional(),
 })
 
 // GET — listar servicios con filtros

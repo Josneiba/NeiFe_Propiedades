@@ -18,6 +18,19 @@ const updateSchema = z.object({
   contractEnd: z.string().optional(),
   monthlyRentUF: z.number().optional(),
   monthlyRentCLP: z.number().optional(),
+  // Campos del agente/corredor
+  agentName: z.string().max(100).optional(),
+  agentRut: z.string().max(20).optional(),
+  agentEmail: z.string().email().optional(),
+  agentPhone: z.string().max(20).optional(),
+  agentCompany: z.string().max(100).optional(),
+  commissionRate: z.number().min(0).max(100).optional(),
+  commissionType: z.enum(['MONTHLY', 'ONE_TIME', 'ANNUAL']).optional(),
+  commissionPaidUntil: z.string().optional(),
+  commissionNotes: z.string().max(500).optional(),
+  // Inspecciones e IPC
+  inspectionFrequencyMonths: z.number().int().min(1).optional(),
+  ipcAdjustmentMonths: z.number().int().min(1).optional(),
 })
 
 // GET — detalle de propiedad
@@ -106,6 +119,9 @@ export async function PUT(
           ? new Date(data.contractStart)
           : undefined,
         contractEnd: data.contractEnd ? new Date(data.contractEnd) : undefined,
+        commissionPaidUntil: data.commissionPaidUntil
+          ? new Date(data.commissionPaidUntil)
+          : undefined,
       },
     })
 
