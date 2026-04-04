@@ -94,7 +94,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#1C1917]">
       {/* Header */}
-      <header className="border-b border-[#D5C3B6]/10 bg-[#1C1917]/95 backdrop-blur supports-[backdrop-filter]:bg-[#1C1917]/60 sticky top-0 z-50">
+      <header className="border-b border-[#D5C3B6]/10 bg-[#1C1917]/95 backdrop-blur supports-backdrop-filter:bg-[#1C1917]/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
           <nav className="hidden md:flex items-center gap-8">
@@ -152,7 +152,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/demo/landlord">
+              <Link href="#roles">
                 <Button size="lg" variant="outline" className="border-[#D5C3B6]/30 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 px-10 h-14 text-base transition-all duration-300">
                   Ver demo
                 </Button>
@@ -238,8 +238,8 @@ export default function LandingPage() {
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-[4/3] rounded-2xl bg-[#2D3C3C] border border-[#D5C3B6]/10 overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2D3C3C] to-[#1C1917]">
+              <div className="aspect-4/3 rounded-2xl bg-[#2D3C3C] border border-[#D5C3B6]/10 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 bg-linear-to-br from-[#2D3C3C] to-[#1C1917]">
                   <div className="absolute inset-4 rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/50">
                     <div className="absolute top-[20%] left-[30%] w-4 h-4 rounded-full bg-[#5E8B8C] animate-pulse shadow-lg shadow-[#5E8B8C]/50" />
                     <div className="absolute top-[40%] left-[50%] w-4 h-4 rounded-full bg-[#75524C] animate-pulse shadow-lg shadow-[#75524C]/50" />
@@ -295,7 +295,7 @@ export default function LandingPage() {
                   <ul className="space-y-4 mb-10">
                     {role.benefits.map((benefit, i) => (
                       <li key={i} className="flex items-center gap-3 text-[#D5C3B6]">
-                        <Check className="h-5 w-5 text-[#5E8B8C] flex-shrink-0" />
+                        <Check className="h-5 w-5 text-[#5E8B8C] shrink-0" />
                         {benefit}
                       </li>
                     ))}

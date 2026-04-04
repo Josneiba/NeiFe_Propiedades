@@ -335,7 +335,7 @@ export default function CalendarioPage() {
               Nuevo evento
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <DialogContent className="sm:max-w-125 bg-[#2D3C3C] border-[#D5C3B6]/10">
             <DialogHeader>
               <DialogTitle className="text-[#FAF6F2]">Crear nuevo evento</DialogTitle>
             </DialogHeader>

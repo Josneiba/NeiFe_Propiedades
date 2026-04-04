@@ -301,9 +301,9 @@ export default function DemoTenantPage() {
                   className="flex items-start gap-3 p-3 rounded-lg bg-[#1C1917]/50"
                 >
                   {item.status === "success" ? (
-                    <CheckCircle2 className="h-5 w-5 text-[#5E8B8C] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-5 w-5 text-[#5E8B8C] shrink-0 mt-0.5" />
                   ) : (
-                    <Clock className="h-5 w-5 text-[#C27F79] flex-shrink-0 mt-0.5" />
+                    <Clock className="h-5 w-5 text-[#C27F79] shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1">
                     <p className="text-sm text-[#FAF6F2]">{item.description}</p>

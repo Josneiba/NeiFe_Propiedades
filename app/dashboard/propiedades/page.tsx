@@ -119,7 +119,7 @@ export default async function PropiedadesPage() {
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                     {/* Property Icon */}
-                    <div className="w-full lg:w-40 h-32 bg-[#2D3C3C] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-full lg:w-40 h-32 bg-[#2D3C3C] rounded-lg flex items-center justify-center shrink-0">
                       <Building2 className="h-12 w-12 text-[#D5C3B6]/50" />
                     </div>
 

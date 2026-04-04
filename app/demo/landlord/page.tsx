@@ -152,14 +152,14 @@ export default function DemoLandlordPage() {
             <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div
-                  className={`w-10 sm:w-12 h-10 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center flex-shrink-0`}
+                  className={`w-10 sm:w-12 h-10 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center shrink-0`}
                 >
                   <stat.icon
                     className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`}
                   />
                 </div>
                 {stat.change && (
-                  <TrendingUp className="h-4 w-4 text-[#5E8B8C] flex-shrink-0" />
+                  <TrendingUp className="h-4 w-4 text-[#5E8B8C] shrink-0" />
                 )}
               </div>
               <p className="text-xl sm:text-2xl font-serif font-semibold text-[#FAF6F2] truncate">

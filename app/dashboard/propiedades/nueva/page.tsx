@@ -9,48 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-
-const REGIONES = [
-  'Metropolitana',
-  'Arica y Parinacota',
-  'Tarapacá',
-  'Antofagasta',
-  'Atacama',
-  'Coquimbo',
-  "Valparaíso",
-  'Libertador General Bernardo O\'Higgins',
-  'Maule',
-  'Ñuble',
-  'Biobío',
-  'La Araucanía',
-  'Los Ríos',
-  'Los Lagos',
-  'Aysén',
-  'Magallanes',
-]
-
-const COMUNAS = [
-  'Providencia',
-  'Santiago',
-  'La Florida',
-  'Puente Alto',
-  'San Bernardo',
-  'La Reina',
-  'Maipú',
-  'Ñuñoa',
-  'Vitacura',
-  'Las Condes',
-  'Lo Barnechea',
-  'Peñalolén',
-  'San Isidro',
-  'El Bosque',
-  'Huechuraba',
-  'Renca',
-  'Conchalí',
-  'Quilicura',
-  'Macul',
-  'La Pintana',
-]
+import { getRegions, getCommunesByRegion } from '@/lib/chile-regions'
 
 interface FormData {
   name: string
@@ -71,11 +30,12 @@ export default function NuevaPropiedad() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const regions = getRegions()
   const [formData, setFormData] = useState<FormData>({
     name: '',
     address: '',
     commune: '',
-    region: 'Metropolitana',
+    region: regions[0] || 'Región Metropolitana de Santiago (XIII)',
     description: '',
     bedrooms: '',
     bathrooms: '',
@@ -85,6 +45,8 @@ export default function NuevaPropiedad() {
     contractStart: '',
     contractEnd: '',
   })
+
+  const currentCommunas = getCommunesByRegion(formData.region)
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -224,7 +186,7 @@ export default function NuevaPropiedad() {
                   className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-[#5E8B8C]"
                   required
                 >
-                  {REGIONES.map(region => (
+                  {regions.map(region => (
                     <option key={region} value={region}>
                       {region}
                     </option>
@@ -244,7 +206,7 @@ export default function NuevaPropiedad() {
                   required
                 >
                   <option value="">Selecciona una comuna</option>
-                  {COMUNAS.map(comuna => (
+                  {currentCommunas.map(comuna => (
                     <option key={comuna} value={comuna}>
                       {comuna}
                     </option>
