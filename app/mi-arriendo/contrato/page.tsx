@@ -91,6 +91,8 @@ export default async function ContratoPage() {
   const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
   const daysLeft = contractEnd ? Math.floor((contractEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0
   const isActive = daysLeft > 0
+
+  return (
     <div className="space-y-6">
       {/* Header */}
       <div>
