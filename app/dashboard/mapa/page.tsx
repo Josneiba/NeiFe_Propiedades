@@ -52,7 +52,7 @@ export default async function MapaPage() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">Mapa de Propiedades</h1>
-          <p className="text-muted-foreground">Visualiza la ubicación de todas tus propiedades en Santiago</p>
+          <p className="text-muted-foreground">Visualiza la ubicación de todas tus propiedades en Chile</p>
         </div>
 
         <PropertyMap properties={properties} />

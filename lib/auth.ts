@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { authConfig } from './auth.config'
 
-export const { handlers, signIn, signOut } = NextAuth({
+export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [

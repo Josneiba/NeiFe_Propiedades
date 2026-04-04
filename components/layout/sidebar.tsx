@@ -18,15 +18,16 @@ import {
   Menu,
   X,
   MapPin,
-  Bell,
   Calendar
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { NotificationBell } from "@/components/layout/notification-bell"
 
 interface SidebarProps {
   role: "landlord" | "tenant"
   userName?: string
+  userId?: string
 }
 
 const landlordNavItems = [
@@ -50,7 +51,7 @@ const tenantNavItems = [
   { href: "/mi-arriendo/contactos", label: "Contactos", icon: Phone, id: undefined },
 ]
 
-export function Sidebar({ role, userName = "Usuario Demo" }: SidebarProps) {
+export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const navItems = role === "landlord" ? landlordNavItems : tenantNavItems
@@ -85,17 +86,7 @@ export function Sidebar({ role, userName = "Usuario Demo" }: SidebarProps) {
         {/* Logo */}
         <div id="sidebar-logo" className="flex items-center justify-between px-6 py-6 border-b border-[#D5C3B6]/10">
           <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
-          <button
-            id="notification-bell"
-            type="button"
-            className="relative p-2 rounded-xl text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/10 transition-all duration-300"
-            aria-label="Notificaciones"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C27F79] text-[#FAF6F2] text-[10px] font-bold flex items-center justify-center leading-none">
-              3
-            </span>
-          </button>
+          <NotificationBell />
         </div>
 
         {/* Navigation */}

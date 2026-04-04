@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth-session'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { NextRequest } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -9,42 +9,27 @@ export async function GET(req: NextRequest) {
   }
 
   const encoder = new TextEncoder()
-  let isConnected = true
+  const userId = session.user.id
 
   const stream = new ReadableStream({
     async start(controller) {
       const send = async () => {
-        if (!isConnected) return
-
         try {
           const notifications = await prisma.notification.findMany({
-            where: { userId: session.user.id, isRead: false },
+            where: { userId },
             orderBy: { createdAt: 'desc' },
-            take: 20,
+            take: 30,
           })
-
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(notifications)}\n\n`)
-          )
-        } catch (error) {
-          console.error('Error sending notifications:', error)
-          isConnected = false
-          controller.close()
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(notifications)}\n\n`))
+        } catch (err) {
+          // keep silent but do not close
+          console.error('notifications stream error', err)
         }
       }
 
-      // Enviar la primera vez
       await send()
-
-      // Poll cada 8 segundos
       const interval = setInterval(send, 8000)
-
-      // Limpiar al desconectar
-      req.signal.addEventListener('abort', () => {
-        isConnected = false
-        clearInterval(interval)
-        controller.close()
-      })
+      req.signal.addEventListener('abort', () => clearInterval(interval))
     },
   })
 
@@ -52,7 +37,7 @@ export async function GET(req: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   })
 }
