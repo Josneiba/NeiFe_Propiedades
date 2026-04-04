@@ -26,13 +26,12 @@ export default async function ServiciosPage() {
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "TENANT") redirect("/mi-arriendo")
 
-  // Get tenant's property
-  const tenant = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { propertyId: true },
+  const property = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: { id: true },
   })
 
-  if (!tenant?.propertyId) {
+  if (!property?.id) {
     return (
       <div className="space-y-6">
         <div>
@@ -51,7 +50,7 @@ export default async function ServiciosPage() {
   const currentDate = new Date()
   const services = (await prisma.monthlyService.findMany({
     where: {
-      propertyId: tenant.propertyId,
+      propertyId: property.id,
     },
     select: {
       month: true,
@@ -69,7 +68,7 @@ export default async function ServiciosPage() {
   // Get payments to show status
   const payments = await prisma.payment.findMany({
     where: {
-      propertyId: tenant.propertyId,
+      propertyId: property.id,
     },
     select: {
       month: true,

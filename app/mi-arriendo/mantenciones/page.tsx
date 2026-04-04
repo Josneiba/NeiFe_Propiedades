@@ -74,13 +74,12 @@ export default async function TenantMantencionesPage() {
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "TENANT") redirect("/mi-arriendo")
 
-  // Get tenant's property
-  const tenant = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { propertyId: true },
+  const property = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: { id: true },
   })
 
-  if (!tenant?.propertyId) {
+  if (!property?.id) {
     return (
       <div className="space-y-6">
         <div>
@@ -98,7 +97,7 @@ export default async function TenantMantencionesPage() {
   // Get maintenance requests for tenant's property
   const requests = (await prisma.maintenanceRequest.findMany({
     where: {
-      propertyId: tenant.propertyId,
+      propertyId: property.id,
       requesterId: session.user.id,
     },
     include: {

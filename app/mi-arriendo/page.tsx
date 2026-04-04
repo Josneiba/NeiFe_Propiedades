@@ -22,13 +22,24 @@ export default async function MiArriendoPage() {
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "TENANT") redirect("/mi-arriendo")
 
-  // Get the property assigned to this tenant and current month payment
-  const tenant = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { propertyId: true },
+  // Get the property assigned to this tenant
+  const property = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: {
+      id: true,
+      address: true,
+      monthlyRentCLP: true,
+      contractStart: true,
+      contractEnd: true,
+      landlord: {
+        select: {
+          name: true,
+        },
+      },
+    },
   })
 
-  if (!tenant?.propertyId) {
+  if (!property) {
     return (
       <div className="space-y-6">
         <div>
@@ -49,25 +60,10 @@ export default async function MiArriendoPage() {
   const currentYear = currentDate.getFullYear()
 
   // Get property details, current month payment, and recent activity
-  const [property, currentPayment, currentServices, recentPayments, recentMaintenance] = await Promise.all([
-    prisma.property.findUnique({
-      where: { id: tenant.propertyId },
-      select: {
-        id: true,
-        address: true,
-        monthlyRentCLP: true,
-        contractStart: true,
-        contractEnd: true,
-        landlord: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    }),
+  const [currentPayment, currentServices, recentPayments, recentMaintenance] = await Promise.all([
     prisma.payment.findFirst({
       where: {
-        propertyId: tenant.propertyId,
+        propertyId: property.id,
         month: currentMonth,
         year: currentYear,
       },
@@ -80,7 +76,7 @@ export default async function MiArriendoPage() {
     }),
     prisma.monthlyService.findFirst({
       where: {
-        propertyId: tenant.propertyId,
+        propertyId: property.id,
         month: currentMonth,
         year: currentYear,
       },
@@ -92,7 +88,7 @@ export default async function MiArriendoPage() {
     }),
     prisma.payment.findMany({
       where: {
-        propertyId: tenant.propertyId,
+        propertyId: property.id,
         status: "PAID",
       },
       select: {
@@ -106,7 +102,7 @@ export default async function MiArriendoPage() {
     }),
     prisma.maintenanceRequest.findMany({
       where: {
-        propertyId: tenant.propertyId,
+        propertyId: property.id,
       },
       select: {
         id: true,
