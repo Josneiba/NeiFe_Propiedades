@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
   Calendar,
@@ -13,6 +17,8 @@ import {
   Wrench,
   TrendingUp,
   Loader2,
+  Plus,
+  Bell,
 } from "lucide-react"
 
 interface CalendarEvent {
@@ -32,6 +38,17 @@ export default function CalendarioPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"ALL" | "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT">("ALL")
+  const [showNewEventDialog, setShowNewEventDialog] = useState(false)
+  const [creatingEvent, setCreatingEvent] = useState(false)
+  const [newEvent, setNewEvent] = useState({
+    propertyId: "",
+    title: "",
+    description: "",
+    type: "INSPECTION" as const,
+    date: "",
+    reminder: 1, // days before
+    notifyTenant: true,
+  })
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -175,6 +192,126 @@ export default function CalendarioPage() {
     return types[type] || type
   }
 
+  const handleCreateEvent = async () => {
+    if (!newEvent.propertyId || !newEvent.title || !newEvent.date) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos requeridos",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setCreatingEvent(true)
+    try {
+      const response = await fetch("/api/calendar/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId: newEvent.propertyId,
+          title: newEvent.title,
+          description: newEvent.description,
+          type: newEvent.type,
+          date: newEvent.date,
+          reminder: newEvent.reminder,
+          notifyTenant: newEvent.notifyTenant,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Error creating event")
+
+      toast({
+        title: "Éxito",
+        description: "Evento creado correctamente",
+      })
+
+      // Reset form and close dialog
+      setNewEvent({
+        propertyId: "",
+        title: "",
+        description: "",
+        type: "INSPECTION",
+        date: "",
+        reminder: 1,
+        notifyTenant: true,
+      })
+      setShowNewEventDialog(false)
+
+      // Reload events
+      const loadEvents = async () => {
+        try {
+          const propertiesRes = await fetch("/api/properties")
+          if (!propertiesRes.ok) throw new Error("Failed to load properties")
+          const properties = await propertiesRes.json()
+
+          const calendarEvents: CalendarEvent[] = []
+
+          for (const property of properties) {
+            try {
+              const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
+              if (inspectionsRes.ok) {
+                const inspections = await inspectionsRes.json()
+                inspections.forEach((inspection: any) => {
+                  if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
+                    calendarEvents.push({
+                      id: `inspection-${inspection.id}`,
+                      type: "INSPECTION",
+                      date: inspection.scheduledAt,
+                      title: `Inspección: ${getInspectionType(inspection.type)}`,
+                      description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
+                      propertyAddress: property.address || "Propiedad",
+                      icon: Calendar,
+                      color: "bg-blue-50 border-blue-200",
+                      badgeColor: "bg-blue-100 text-blue-800"
+                    })
+                  }
+                })
+              }
+            } catch (error) {
+              console.error("Error loading inspections:", error)
+            }
+
+            if (property.contractEnd) {
+              const contractEndDate = new Date(property.contractEnd)
+              const today = new Date()
+              const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+              if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
+                calendarEvents.push({
+                  id: `contract-${property.id}`,
+                  type: "CONTRACT",
+                  date: property.contractEnd,
+                  title: "Contrato próximo a vencer",
+                  description: `Vence en ${daysUntilEnd} días`,
+                  propertyAddress: property.address || "Propiedad",
+                  icon: FileText,
+                  color: "bg-orange-50 border-orange-200",
+                  badgeColor: "bg-orange-100 text-orange-800"
+                })
+              }
+            }
+          }
+
+          calendarEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          setEvents(calendarEvents)
+        } catch (error) {
+          console.error("Error loading calendar events:", error)
+        }
+      }
+
+      await loadEvents()
+    } catch (error) {
+      console.error("Error creating event:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo crear el evento",
+        variant: "destructive"
+      })
+    } finally {
+      setCreatingEvent(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -185,10 +322,109 @@ export default function CalendarioPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Calendario</h1>
-        <p className="text-muted-foreground">Vista consolidada de eventos próximos</p>
+      {/* Header with Create Event Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Calendario</h1>
+          <p className="text-muted-foreground">Vista consolidada de eventos próximos</p>
+        </div>
+        <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
+          <DialogTrigger asChild>
+            <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo evento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px] bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <DialogHeader>
+              <DialogTitle className="text-[#FAF6F2]">Crear nuevo evento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title" className="text-[#D5C3B6]">Título *</Label>
+                <Input
+                  id="title"
+                  placeholder="Ej: Inspección de propiedad"
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="type" className="text-[#D5C3B6]">Tipo de evento *</Label>
+                <select
+                  id="type"
+                  value={newEvent.type}
+                  onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
+                  className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                >
+                  <option value="INSPECTION">Inspección</option>
+                  <option value="IPC">Reajuste IPC</option>
+                  <option value="CONTRACT">Contrato</option>
+                  <option value="PAYMENT">Pago</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="date" className="text-[#D5C3B6]">Fecha *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={newEvent.date}
+                  onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description" className="text-[#D5C3B6]">Descripción</Label>
+                <textarea
+                  id="description"
+                  placeholder="Detalles del evento"
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="reminder" className="text-[#D5C3B6]">Recordatorio (días antes)</Label>
+                <Input
+                  id="reminder"
+                  type="number"
+                  min="0"
+                  value={newEvent.reminder}
+                  onChange={(e) => setNewEvent({ ...newEvent, reminder: parseInt(e.target.value) })}
+                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#1C1917]/50 border border-[#D5C3B6]/10">
+                <input
+                  type="checkbox"
+                  id="notifyTenant"
+                  checked={newEvent.notifyTenant}
+                  onChange={(e) => setNewEvent({ ...newEvent, notifyTenant: e.target.checked })}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <Label htmlFor="notifyTenant" className="text-[#D5C3B6] cursor-pointer flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Notificar al arrendatario
+                </Label>
+              </div>
+
+              <Button
+                onClick={handleCreateEvent}
+                disabled={creatingEvent}
+                className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+              >
+                {creatingEvent ? "Creando..." : "Crear evento"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}

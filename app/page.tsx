@@ -73,7 +73,7 @@ const roles = [
       "Contratos con firma digital"
     ],
     color: "bg-[#75524C]",
-    href: "/dashboard"
+    href: "/demo/landlord"
   },
   {
     icon: Home,
@@ -86,7 +86,7 @@ const roles = [
       "Historial completo de pagos"
     ],
     color: "bg-[#5E8B8C]",
-    href: "/mi-arriendo"
+    href: "/demo/tenant"
   }
 ]
 
@@ -152,7 +152,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/login">
+              <Link href="/demo/landlord">
                 <Button size="lg" variant="outline" className="border-[#D5C3B6]/30 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 px-10 h-14 text-base transition-all duration-300">
                   Ver demo
                 </Button>

@@ -1,5 +1,3 @@
-"use client"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,41 +9,88 @@ import {
   CheckCircle2,
   Camera,
   Image as ImageIcon,
-  Calendar
+  Calendar,
+  AlertCircle
 } from "lucide-react"
+import { auth } from "@/lib/auth-session"
+import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 
-const contract = {
-  id: "1",
-  property: "Av. Providencia 1234, Depto 501",
-  landlord: "Carlos Arrendador",
-  landlordRut: "11.111.111-1",
-  tenant: "María González",
-  tenantRut: "12.345.678-9",
-  startDate: new Date("2024-01-15"),
-  endDate: new Date("2025-01-15"),
-  monthlyRent: 450000,
-  deposit: 450000,
-  landlordSigned: true,
-  tenantSigned: true,
-  signedAt: "2024-01-10",
-  pdfUrl: "/contratos/contrato-1.pdf"
-}
+export default async function ContratoPage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect("/login")
+  if (session.user.role !== "TENANT") redirect("/mi-arriendo")
 
-const propertyPhotos = {
-  checkin: [
-    { room: "Living", date: "2024-01-15" },
-    { room: "Dormitorio 1", date: "2024-01-15" },
-    { room: "Dormitorio 2", date: "2024-01-15" },
-    { room: "Cocina", date: "2024-01-15" },
-    { room: "Baño", date: "2024-01-15" },
-    { room: "Terraza", date: "2024-01-15" }
-  ],
-  checkout: []
-}
+  // Get the property assigned to this tenant
+  const property = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: {
+      id: true,
+      address: true,
+      monthlyRentCLP: true,
+      contractStart: true,
+      contractEnd: true,
+      landlord: {
+        select: {
+          name: true,
+          rut: true,
+        },
+      },
+    },
+  })
 
-export default function ContratoPage() {
-  return (
+  if (!property) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Mi Contrato</h1>
+          <p className="text-muted-foreground">Información de tu contrato de arriendo</p>
+        </div>
+        <Card className="bg-card border-border">
+          <CardContent className="p-12 text-center">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+            <p className="text-muted-foreground">No tienes un contrato asignado</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const contract = {
+    id: property.id,
+    property: property.address,
+    landlord: property.landlord.name,
+    landlordRut: property.landlord.rut || "No especificado",
+    tenant: session.user.name || "Usuario",
+    tenantRut: session.user.rut || "No especificado",
+    startDate: property.contractStart,
+    endDate: property.contractEnd,
+    monthlyRent: property.monthlyRentCLP || 0,
+    deposit: property.monthlyRentCLP || 0,
+    landlordSigned: true,
+    tenantSigned: true,
+    signedAt: property.contractStart?.toLocaleDateString("es-CL") || "No disponible",
+    pdfUrl: "/contratos/contrato-1.pdf"
+  }
+
+  const propertyPhotos = {
+    checkin: [
+      { room: "Living", date: property.contractStart?.toLocaleDateString("es-CL") },
+      { room: "Dormitorio 1", date: property.contractStart?.toLocaleDateString("es-CL") },
+      { room: "Dormitorio 2", date: property.contractStart?.toLocaleDateString("es-CL") },
+      { room: "Cocina", date: property.contractStart?.toLocaleDateString("es-CL") },
+      { room: "Baño", date: property.contractStart?.toLocaleDateString("es-CL") },
+      { room: "Terraza", date: property.contractStart?.toLocaleDateString("es-CL") }
+    ],
+    checkout: []
+  }
+
+  // Calculate contract status
+  const today = new Date()
+  const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
+  const daysLeft = contractEnd ? Math.floor((contractEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0
+  const isActive = daysLeft > 0
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -74,9 +119,9 @@ export default function ContratoPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-foreground">Contrato de Arriendo</CardTitle>
-                    <Badge className="bg-[#5E8B8C] text-white">
+                    <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-red-600 text-white"}>
                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Vigente
+                      {isActive ? "Vigente" : "Vencido"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -233,21 +278,23 @@ export default function ContratoPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Contract Progress */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-[#5E8B8C]" />
-                Duración del Contrato
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ContractProgressChart 
-                startDate={contract.startDate}
-                endDate={contract.endDate}
-                size="large"
-              />
-            </CardContent>
-          </Card>
+          {contract.endDate && (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-[#5E8B8C]" />
+                  Duración del Contrato
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ContractProgressChart 
+                  startDate={contract.startDate}
+                  endDate={contract.endDate}
+                  size="large"
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Info */}
           <Card className="bg-card border-border">
@@ -269,12 +316,24 @@ export default function ContratoPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Duración</span>
-                <span className="font-medium text-foreground">12 meses</span>
+                <span className="font-medium text-foreground">
+                  {contract.startDate && contract.endDate
+                    ? `${Math.round((contract.endDate.getTime() - contract.startDate.getTime()) / (1000 * 60 * 60 * 24 * 30))} meses`
+                    : "No disponible"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estado</span>
-                <Badge className="bg-[#5E8B8C] text-white">Vigente</Badge>
+                <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-red-600 text-white"}>
+                  {isActive ? "Vigente" : "Vencido"}
+                </Badge>
               </div>
+              {!isActive && daysLeft < 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm">Contrato vencido hace {Math.abs(daysLeft)} días</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
