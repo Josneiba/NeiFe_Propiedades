@@ -281,11 +281,15 @@ export default function PropertyDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ContractProgressChart 
-                    startDate={new Date(property.contractStart)}
-                    endDate={new Date(property.contractEnd)}
-                    size="large"
-                  />
+                  {property.contractStart && property.contractEnd ? (
+                    <ContractProgressChart 
+                      startDate={new Date(property.contractStart)}
+                      endDate={new Date(property.contractEnd)}
+                      size="large"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground">Sin fechas de contrato definidas</p>
+                  )}
                 </CardContent>
               </Card>
 

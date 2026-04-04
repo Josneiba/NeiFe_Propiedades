@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { MapPin } from 'lucide-react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 
 interface PropertyMarker {
   id: string
@@ -52,48 +51,48 @@ const communeCoordinates: Record<string, [number, number]> = {
   'La Pintana': [-33.6395, -70.6445],
 }
 
-const MapComponent = dynamic(() => import('leaflet'), { ssr: false })
-
 export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -71.5203] }: MapPropertyProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
+  const [mapLoaded, setMapLoaded] = useState(false)
 
   useEffect(() => {
-    // Only load Leaflet on client side
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !mapContainer.current) return
     
-    const loadMap = async () => {
+    const initMap = async () => {
       try {
         const L = (await import('leaflet')).default
         
-        // Ensure proper styles load
-        if (document.querySelector('link[href*="leaflet.css"]') === null) {
+        // Load Leaflet CSS if not already loaded
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
           const link = document.createElement('link')
           link.rel = 'stylesheet'
           link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
           document.head.appendChild(link)
         }
 
-        if (!mapContainer.current) return
-        
+        if (map.current) {
+          map.current.remove()
+        }
+
         // Initialize map
         map.current = L.map(mapContainer.current).setView(
           center as [number, number],
           zoom
         )
 
-        // Add tile layer
+        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors',
           maxZoom: 19,
         }).addTo(map.current)
 
-        // Add markers for properties
-        properties.forEach(property => {
+        // Add markers for each property
+        const markers = properties.map(property => {
           let lat = property.lat
           let lng = property.lng
 
-          // Use commune coordinates if no specific coordinates provided
+          // Use commune coordinates if specific ones not provided
           if (!lat || !lng) {
             const coords = communeCoordinates[property.commune]
             if (coords) {
@@ -105,64 +104,52 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
             }
           }
 
-          // Get payment status for color coding
           const status = property.payments?.[0]?.status || 'PENDING'
-          const statusColors = {
+          const statusColors: Record<string, string> = {
             PAID: '#22c55e',
             PENDING: '#eab308',
             OVERDUE: '#ef4444',
           }
 
+          const color = (statusColors as Record<string, string>)[status] || '#6b7280'
+
           const marker = L.circleMarker([lat, lng], {
-            radius: 8,
-            fillColor: (statusColors as Record<string, string>)[status] || '#6b7280',
+            radius: 10,
+            fillColor: color,
             color: '#fff',
             weight: 2,
             opacity: 1,
-            fillOpacity: 0.8,
+            fillOpacity: 0.85,
           }).addTo(map.current)
 
-          // Add popup with property info
-          const popupContent = `
-            <div class="p-3 max-w-xs">
-              <h3 class="font-semibold text-sm mb-1">${property.address}</h3>
-              <p class="text-xs text-gray-500 flex items-center gap-1 mb-2">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                ${property.commune}
+          const popupHTML = `
+            <div class="p-2 max-w-xs text-sm">
+              <p class="font-semibold text-gray-800">${property.address}</p>
+              <p class="text-xs text-gray-600 flex items-center gap-1 mt-1">
+                <span>📍</span> ${property.commune}
               </p>
-              ${property.monthlyRentCLP ? `<p class="text-xs font-medium mb-2">$${(property.monthlyRentCLP / 1000).toFixed(0)}K</p>` : ''}
-              ${property.tenant ? `<p class="text-xs text-gray-600">Arrendatario: ${property.tenant.name || 'Sin asignar'}</p>` : ''}
+              ${property.monthlyRentCLP ? `<p class="text-xs font-medium text-gray-700 mt-1">$${(property.monthlyRentCLP / 1000).toFixed(0)}K/mes</p>` : ''}
+              ${property.tenant ? `<p class="text-xs text-gray-600 mt-1">👤 ${property.tenant.name || 'Sin arrendatario'}</p>` : ''}
             </div>
           `
           
-          marker.bindPopup(popupContent)
+          marker.bindPopup(popupHTML, { maxWidth: 250 })
+          return { marker, lat, lng }
         })
 
-        // Adjust map to fit all markers
-        if (properties.length > 0) {
-          const group = new L.featureGroup(
-            properties.map(prop => {
-              let lat = prop.lat || (center as [number, number])[0]
-              let lng = prop.lng || (center as [number, number])[1]
-              const coords = communeCoordinates[prop.commune]
-              if (coords && (!prop.lat || !prop.lng)) {
-                lat = coords[0]
-                lng = coords[1]
-              }
-              return L.marker([lat, lng])
-            })
-          )
-          map.current.fitBounds(group.getBounds().pad(0.1))
+        // Fit bounds to all markers
+        if (markers.length > 0) {
+          const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lng]))
+          map.current.fitBounds(bounds, { padding: [50, 50] })
         }
+
+        setMapLoaded(true)
       } catch (error) {
         console.error('Error loading map:', error)
       }
     }
 
-    loadMap()
+    initMap()
 
     return () => {
       if (map.current) {
@@ -173,26 +160,26 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
   }, [properties, zoom, center])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Mapa de Propiedades</h2>
-        <p className="text-muted-foreground">Visualiza la ubicación de todas tus propiedades</p>
+        <p className="text-muted-foreground">Visualiza la ubicación de todas tus propiedades en tiempo real</p>
       </div>
 
-      <Card className="bg-card border-border overflow-hidden">
+      {/* Map Container */}
+      <Card className="bg-card border-border overflow-hidden shadow-lg">
         <CardContent className="p-0">
           {properties.length === 0 ? (
-            <div className="w-full h-96 flex items-center justify-center bg-muted/30">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                <p className="text-muted-foreground">No hay propiedades para mostrar en el mapa</p>
-              </div>
+            <div className="w-full h-96 flex flex-col items-center justify-center bg-gradient-to-br from-muted/50 to-muted/30">
+              <MapPin className="h-16 w-16 text-muted-foreground/40 mb-4" />
+              <p className="text-muted-foreground text-lg font-medium">No hay propiedades para mostrar</p>
+              <p className="text-muted-foreground text-sm mt-1">Crea una propiedad para verla en el mapa</p>
             </div>
           ) : (
             <div 
               ref={mapContainer} 
-              className="w-full h-96"
-              style={{ backgroundColor: '#f3f4f6' }}
+              className="w-full h-96 rounded-lg"
+              style={{ backgroundColor: '#f0f0f0' }}
             />
           )}
         </CardContent>
@@ -201,20 +188,22 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
       {/* Legend */}
       {properties.length > 0 && (
         <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Estados de Pago</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-xs text-muted-foreground">Pagado</span>
+          <CardContent className="p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <span className="text-lg">🗺️</span> Estados de Pago
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border">
+                <div className="w-4 h-4 rounded-full bg-green-500 shadow"></div>
+                <span className="text-sm text-foreground font-medium">Pagado</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <span className="text-xs text-muted-foreground">Pendiente</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border">
+                <div className="w-4 h-4 rounded-full bg-yellow-400 shadow"></div>
+                <span className="text-sm text-foreground font-medium">Pendiente</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="text-xs text-muted-foreground">Atrasado</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border">
+                <div className="w-4 h-4 rounded-full bg-red-500 shadow"></div>
+                <span className="text-sm text-foreground font-medium">Atrasado</span>
               </div>
             </div>
           </CardContent>
@@ -223,49 +212,55 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
 
       {/* Properties List */}
       <div>
-        <h3 className="text-lg font-semibold text-foreground mb-3">Propiedades</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <span className="text-lg">📋</span> Listado de Propiedades
+        </h3>
         {properties.length === 0 ? (
           <Card className="bg-card border-border">
             <CardContent className="p-8 text-center">
-              <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">No hay propiedades para mostrar</p>
+              <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+              <p className="text-muted-foreground font-medium">No hay propiedades registradas</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {properties.map(property => {
               const status = property.payments?.[0]?.status || 'PENDING'
               const statusConfig: Record<string, { label: string; bgColor: string }> = {
-                PAID: { label: 'Pagado', bgColor: 'bg-green-100' },
-                PENDING: { label: 'Pendiente', bgColor: 'bg-amber-100' },
-                OVERDUE: { label: 'Atrasado', bgColor: 'bg-red-100' },
+                PAID: { label: '✓ Pagado', bgColor: 'bg-green-100' },
+                PENDING: { label: '⏳ Pendiente', bgColor: 'bg-amber-100' },
+                OVERDUE: { label: '⚠ Atrasado', bgColor: 'bg-red-100' },
               }
-              const config = statusConfig[status] || { label: 'Desconocido', bgColor: 'bg-gray-100' }
+              const config = statusConfig[status] || { label: '? Desconocido', bgColor: 'bg-gray-100' }
 
               return (
                 <Link key={property.id} href={`/dashboard/propiedades/${property.id}`}>
-                  <Card className="bg-card border-border hover:border-foreground/50 transition-colors">
+                  <Card className="bg-card border-border hover:border-foreground/50 transition-all hover:shadow-md">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-foreground truncate">{property.address}</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-semibold text-foreground truncate text-base">{property.address}</h4>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <MapPin className="h-3 w-3 shrink-0" />
+                            <MapPin className="h-3 w-3 shrink-0 flex-none" />
                             <span className="truncate">{property.commune}</span>
                           </div>
-                          {property.tenant && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Arrendatario: {property.tenant.name || 'Sin asignar'}
-                            </p>
-                          )}
                         </div>
-                        <div className="text-right shrink-0">
-                          {property.monthlyRentCLP && (
-                            <p className="font-semibold text-foreground">
+                        
+                        {property.tenant && (
+                          <p className="text-xs text-muted-foreground border-t border-border pt-2">
+                            👤 {property.tenant.name || 'Sin arrendatario'}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          {property.monthlyRentCLP ? (
+                            <p className="font-semibold text-foreground text-base">
                               ${(property.monthlyRentCLP / 1000).toFixed(0)}K
                             </p>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Sin arriendo definido</span>
                           )}
-                          <Badge className={config.bgColor} style={{ fontSize: '0.75rem' }}>
+                          <Badge className={config.bgColor} style={{ fontSize: '0.7rem' }}>
                             {config.label}
                           </Badge>
                         </div>

@@ -91,8 +91,8 @@ export default function EditarPropiedad() {
           squareMeters: data.squareMeters?.toString() || '',
           monthlyRentCLP: data.monthlyRentCLP?.toString() || '',
           monthlyRentUF: data.monthlyRentUF?.toString() || '',
-          contractStart: data.contractStart?.split('T')[0] || '',
-          contractEnd: data.contractEnd?.split('T')[0] || '',
+          contractStart: data.contractStart ? new Date(data.contractStart).toISOString().split('T')[0] : '',
+          contractEnd: data.contractEnd ? new Date(data.contractEnd).toISOString().split('T')[0] : '',
         })
       } catch (err) {
         setError('No se pudo cargar la propiedad')

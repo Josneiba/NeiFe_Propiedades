@@ -159,11 +159,15 @@ export default async function PropiedadesPage() {
                           )}
                         </div>
                         <div className="col-span-2">
-                          <ContractProgressChart 
-                            startDate={property.contractStart}
-                            endDate={property.contractEnd}
-                            size="small"
-                          />
+                          {property.contractStart && property.contractEnd ? (
+                            <ContractProgressChart 
+                              startDate={new Date(property.contractStart)}
+                              endDate={new Date(property.contractEnd)}
+                              size="small"
+                            />
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Sin fechas de contrato</p>
+                          )}
                         </div>
                       </div>
                     </div>

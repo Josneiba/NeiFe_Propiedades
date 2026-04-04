@@ -36,6 +36,7 @@ interface CalendarEvent {
 export default function CalendarioPage() {
   const { toast } = useToast()
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"ALL" | "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT">("ALL")
   const [showNewEventDialog, setShowNewEventDialog] = useState(false)
@@ -46,22 +47,23 @@ export default function CalendarioPage() {
     description: "",
     type: "INSPECTION" as const,
     date: "",
-    reminder: 1, // days before
-    notifyTenant: true,
+    reminder: 1,
+    notifyType: "ME" as "ME" | "TENANT" | "BOTH",
   })
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        // Fetch properties with related data
+        // Fetch properties first
         const propertiesRes = await fetch("/api/properties")
         if (!propertiesRes.ok) throw new Error("Failed to load properties")
-        const properties = await propertiesRes.json()
+        const propertiesData = await propertiesRes.json()
+        setProperties(propertiesData)
 
         const calendarEvents: CalendarEvent[] = []
 
         // Process each property
-        for (const property of properties) {
+        for (const property of propertiesData) {
           // Fetch inspections
           try {
             const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
@@ -214,7 +216,7 @@ export default function CalendarioPage() {
           type: newEvent.type,
           date: newEvent.date,
           reminder: newEvent.reminder,
-          notifyTenant: newEvent.notifyTenant,
+          notifyType: newEvent.notifyType,
         }),
       })
 
@@ -233,7 +235,7 @@ export default function CalendarioPage() {
         type: "INSPECTION",
         date: "",
         reminder: 1,
-        notifyTenant: true,
+        notifyType: "ME",
       })
       setShowNewEventDialog(false)
 
@@ -335,53 +337,86 @@ export default function CalendarioPage() {
               Nuevo evento
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-125 bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <DialogContent className="sm:max-w-2xl bg-[#2D3C3C] border-[#D5C3B6]/10">
             <DialogHeader>
               <DialogTitle className="text-[#FAF6F2]">Crear nuevo evento</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-5">
+              
               <div>
-                <Label htmlFor="title" className="text-[#D5C3B6]">Título *</Label>
-                <Input
-                  id="title"
-                  placeholder="Ej: Inspección de propiedad"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="type" className="text-[#D5C3B6]">Tipo de evento *</Label>
+                <Label htmlFor="propertyId" className="text-[#D5C3B6]">Propiedad *</Label>
                 <select
-                  id="type"
-                  value={newEvent.type}
-                  onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
+                  id="propertyId"
+                  value={newEvent.propertyId}
+                  onChange={(e) => setNewEvent({ ...newEvent, propertyId: e.target.value })}
                   className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  required
                 >
-                  <option value="INSPECTION">Inspección</option>
-                  <option value="IPC">Reajuste IPC</option>
-                  <option value="CONTRACT">Contrato</option>
-                  <option value="PAYMENT">Pago</option>
+                  <option value="">Selecciona una propiedad</option>
+                  {properties.map(prop => (
+                    <option key={prop.id} value={prop.id}>
+                      {prop.address} - {prop.commune}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div>
-                <Label htmlFor="date" className="text-[#D5C3B6]">Fecha *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title" className="text-[#D5C3B6]">Título *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Ej: Inspección de propiedad"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type" className="text-[#D5C3B6]">Tipo *</Label>
+                  <select
+                    id="type"
+                    value={newEvent.type}
+                    onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  >
+                    <option value="INSPECTION">Inspección</option>
+                    <option value="IPC">Reajuste IPC</option>
+                    <option value="CONTRACT">Contrato</option>
+                    <option value="PAYMENT">Pago</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date" className="text-[#D5C3B6]">Fecha *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reminder" className="text-[#D5C3B6]">Recordatorio (días)</Label>
+                  <Input
+                    id="reminder"
+                    type="number"
+                    min="0"
+                    value={newEvent.reminder}
+                    onChange={(e) => setNewEvent({ ...newEvent, reminder: parseInt(e.target.value) || 0 })}
+                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  />
+                </div>
               </div>
 
               <div>
                 <Label htmlFor="description" className="text-[#D5C3B6]">Descripción</Label>
                 <textarea
                   id="description"
-                  placeholder="Detalles del evento"
+                  placeholder="Detalles del evento..."
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                   className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
@@ -390,34 +425,47 @@ export default function CalendarioPage() {
               </div>
 
               <div>
-                <Label htmlFor="reminder" className="text-[#D5C3B6]">Recordatorio (días antes)</Label>
-                <Input
-                  id="reminder"
-                  type="number"
-                  min="0"
-                  value={newEvent.reminder}
-                  onChange={(e) => setNewEvent({ ...newEvent, reminder: parseInt(e.target.value) })}
-                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#1C1917]/50 border border-[#D5C3B6]/10">
-                <input
-                  type="checkbox"
-                  id="notifyTenant"
-                  checked={newEvent.notifyTenant}
-                  onChange={(e) => setNewEvent({ ...newEvent, notifyTenant: e.target.checked })}
-                  className="w-4 h-4 rounded cursor-pointer"
-                />
-                <Label htmlFor="notifyTenant" className="text-[#D5C3B6] cursor-pointer flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Notificar al arrendatario
-                </Label>
+                <Label className="text-[#D5C3B6] mb-3 block">Notificación *</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1C1917]/50 border border-[#D5C3B6]/20 cursor-pointer hover:border-[#D5C3B6]/40 transition">
+                    <input
+                      type="radio"
+                      name="notifyType"
+                      value="ME"
+                      checked={newEvent.notifyType === "ME"}
+                      onChange={(e) => setNewEvent({ ...newEvent, notifyType: e.target.value as any })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[#FAF6F2]">Solo para mí</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1C1917]/50 border border-[#D5C3B6]/20 cursor-pointer hover:border-[#D5C3B6]/40 transition">
+                    <input
+                      type="radio"
+                      name="notifyType"
+                      value="TENANT"
+                      checked={newEvent.notifyType === "TENANT"}
+                      onChange={(e) => setNewEvent({ ...newEvent, notifyType: e.target.value as any })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[#FAF6F2]">Notificar al arrendatario</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1C1917]/50 border border-[#D5C3B6]/20 cursor-pointer hover:border-[#D5C3B6]/40 transition">
+                    <input
+                      type="radio"
+                      name="notifyType"
+                      value="BOTH"
+                      checked={newEvent.notifyType === "BOTH"}
+                      onChange={(e) => setNewEvent({ ...newEvent, notifyType: e.target.value as any })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[#FAF6F2]">Notificar a ambos</span>
+                  </label>
+                </div>
               </div>
 
               <Button
                 onClick={handleCreateEvent}
-                disabled={creatingEvent}
+                disabled={creatingEvent || !newEvent.propertyId}
                 className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
               >
                 {creatingEvent ? "Creando..." : "Crear evento"}
