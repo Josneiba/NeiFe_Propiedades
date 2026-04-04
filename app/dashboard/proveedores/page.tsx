@@ -39,7 +39,9 @@ const specialtyColors: Record<string, string> = {
 export default async function ProveedoresPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "LANDLORD") redirect("/dashboard")
+  if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
+    redirect("/mi-arriendo")
+  }
 
   // Get all providers for this landlord
   const providers = (await prisma.provider.findMany({
@@ -55,7 +57,7 @@ export default async function ProveedoresPage() {
       description: true,
       _count: {
         select: {
-          maintenanceRequests: true,
+          maintenance: true,
         },
       },
     },
@@ -63,6 +65,7 @@ export default async function ProveedoresPage() {
       createdAt: "desc",
     },
   })) as Array<Provider & { _count: { maintenanceRequests: number } }>
+  })) as Array<Provider & { _count: { maintenance: number } }>
 
   return (
     <div className="space-y-6">
@@ -142,7 +145,7 @@ export default async function ProveedoresPage() {
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Wrench className="h-4 w-4" />
-                        {provider._count.maintenanceRequests} trabajos
+                        {provider._count.maintenance} trabajos
                       </div>
                       <div className="flex gap-2">
                         <Button 

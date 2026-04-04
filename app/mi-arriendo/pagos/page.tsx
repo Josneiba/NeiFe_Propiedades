@@ -18,6 +18,7 @@ interface Payment {
   month: number
   year: number
   amountCLP: number
+  totalCLP?: number
   water: number
   electricity: number
   gas?: number
@@ -85,6 +86,11 @@ export default function TenantPagosPage() {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
     return months[month - 1]
+  }
+
+  const getTotal = (payment: Payment) => {
+    const charges = (payment.water || 0) + (payment.electricity || 0) + (payment.gas ?? 0)
+    return payment.totalCLP ?? payment.amountCLP + charges
   }
 
   const pendingPayment = payments.find(p => p.status === 'PENDING' || p.status === 'OVERDUE')
@@ -161,7 +167,7 @@ export default function TenantPagosPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-[#5E8B8C]">
-                  ${pendingPayment.amountCLP.toLocaleString('es-CL')}
+                  ${getTotal(pendingPayment).toLocaleString('es-CL')}
                 </p>
               </div>
             </div>
@@ -222,7 +228,7 @@ export default function TenantPagosPage() {
                           )}
                         </td>
                         <td className="py-4 px-4 text-right font-semibold text-foreground">
-                          ${payment.amountCLP.toLocaleString('es-CL')}
+                          ${getTotal(payment).toLocaleString('es-CL')}
                         </td>
                         <td className="py-4 px-4 text-center">
                           <Badge className={status.className}>

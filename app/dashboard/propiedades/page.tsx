@@ -11,11 +11,11 @@ import { ContractProgressChart } from "@/components/charts/contract-progress"
 interface PropertyWithPaymentStatus {
   id: string
   address: string
+  monthlyRentCLP: number | null
   tenant: {
     name: string | null
     email: string
   } | null
-  monthlyRent: number
   contractStart: Date
   contractEnd: Date
   payments: Array<{
@@ -28,7 +28,9 @@ interface PropertyWithPaymentStatus {
 export default async function PropiedadesPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "LANDLORD") redirect("/dashboard")
+  if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
+    redirect("/mi-arriendo")
+  }
 
   // Get all properties of the current landlord with tenant info and current month payment
   const currentDate = new Date()
@@ -150,9 +152,11 @@ export default async function PropiedadesPage() {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Arriendo mensual</p>
-                          <p className="font-bold text-foreground">
-                            ${property.monthlyRent.toLocaleString("es-CL")}
-                          </p>
+                          {property.monthlyRentCLP && (
+                            <p className="font-bold text-foreground">
+                              ${property.monthlyRentCLP.toLocaleString("es-CL")}
+                            </p>
+                          )}
                         </div>
                         <div className="col-span-2">
                           <ContractProgressChart 

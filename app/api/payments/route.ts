@@ -24,10 +24,54 @@ export async function GET(req: NextRequest) {
 
   try {
     const searchParams = req.nextUrl.searchParams
+    const isTenantRequest =
+      searchParams.get('tenant') === 'true' || session.user.role === 'TENANT'
     const propertyId = searchParams.get('propertyId')
     const status = searchParams.get('status')
     const month = searchParams.get('month')
     const year = searchParams.get('year')
+
+    // Tenant: devolver pagos de su propiedad con cargos de servicios
+    if (isTenantRequest) {
+      const property = await prisma.property.findFirst({
+        where: { tenantId: session.user.id },
+        select: { id: true, monthlyRentCLP: true },
+      })
+
+      if (!property) {
+        return NextResponse.json([])
+      }
+
+      const [payments, services] = await Promise.all([
+        prisma.payment.findMany({
+          where: { propertyId: property.id },
+          orderBy: [{ year: 'desc' }, { month: 'desc' }],
+        }),
+        prisma.monthlyService.findMany({
+          where: { propertyId: property.id },
+        }),
+      ])
+
+      const enriched = payments.map((payment) => {
+        const svc = services.find(
+          (s) => s.month === payment.month && s.year === payment.year
+        )
+        const water = svc?.water ?? 0
+        const electricity = svc?.electricity ?? 0
+        const gas = svc?.gas ?? 0
+
+        return {
+          ...payment,
+          amountCLP: payment.amountCLP,
+          totalCLP: payment.amountCLP + water + electricity + gas,
+          water,
+          electricity,
+          gas,
+        }
+      })
+
+      return NextResponse.json(enriched)
+    }
 
     const where: any = {
       property: {

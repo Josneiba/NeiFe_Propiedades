@@ -8,7 +8,9 @@ import { MapPin, TrendingUp, TrendingDown } from "lucide-react"
 export default async function MapaPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "LANDLORD") redirect("/dashboard")
+  if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
+    redirect("/mi-arriendo")
+  }
 
   try {
     // Get all properties with relevant data for the map

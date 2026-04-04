@@ -33,7 +33,9 @@ interface PaymentWithProperty {
 export default async function PagosPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "LANDLORD") redirect("/dashboard")
+  if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
+    redirect("/mi-arriendo")
+  }
 
   // Get all payments for this landlord's properties
   const payments = (await prisma.payment.findMany({

@@ -49,7 +49,7 @@ export default async function MiArriendoPage() {
   const currentYear = currentDate.getFullYear()
 
   // Get property details, current month payment, and recent activity
-  const [property, currentPayment, recentPayments, recentMaintenance] = await Promise.all([
+  const [property, currentPayment, currentServices, recentPayments, recentMaintenance] = await Promise.all([
     prisma.property.findUnique({
       where: { id: tenant.propertyId },
       select: {
@@ -75,6 +75,16 @@ export default async function MiArriendoPage() {
         id: true,
         status: true,
         amountCLP: true,
+        createdAt: true,
+      },
+    }),
+    prisma.monthlyService.findFirst({
+      where: {
+        propertyId: tenant.propertyId,
+        month: currentMonth,
+        year: currentYear,
+      },
+      select: {
         water: true,
         electricity: true,
         gas: true,
@@ -146,9 +156,9 @@ export default async function MiArriendoPage() {
     return months[month - 1]
   }
 
-  const water = currentPayment?.water ?? 0
-  const electricity = currentPayment?.electricity ?? 0
-  const gas = currentPayment?.gas ?? 0
+  const water = currentServices?.water ?? 0
+  const electricity = currentServices?.electricity ?? 0
+  const gas = currentServices?.gas ?? 0
   const currentTotal = (property.monthlyRentCLP || 0) + water + electricity + gas
 
   // Build activity items

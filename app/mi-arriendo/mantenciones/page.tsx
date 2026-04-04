@@ -20,10 +20,10 @@ interface MaintenanceRequest {
   category: string
   description: string
   status: string
-  legalResponsibility: string
   createdAt: Date
-  completedAt?: Date | null
   photos: string[]
+  isLandlordResp: boolean
+  updatedAt: Date
   provider?: {
     name: string
   } | null
@@ -99,7 +99,7 @@ export default async function TenantMantencionesPage() {
   const requests = (await prisma.maintenanceRequest.findMany({
     where: {
       propertyId: tenant.propertyId,
-      requestedByTenant: true,
+      requesterId: session.user.id,
     },
     include: {
       provider: {
@@ -187,12 +187,12 @@ export default async function TenantMantencionesPage() {
                     </div>
                     <Badge 
                       variant="outline" 
-                      className={request.legalResponsibility === "LANDLORD" 
+                        className={request.isLandlordResp 
                         ? "border-[#75524C] text-[#75524C]" 
                         : "border-[#5E8B8C] text-[#5E8B8C]"
                       }
                     >
-                      {request.legalResponsibility === "LANDLORD" 
+                      {request.isLandlordResp 
                         ? "Resp. Arrendador" 
                         : "Resp. Arrendatario"}
                     </Badge>
@@ -248,8 +248,8 @@ export default async function TenantMantencionesPage() {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {request.status === "COMPLETED" 
-                          ? `Completado: ${request.completedAt?.toLocaleDateString("es-CL")}`
-                          : `Rechazado: ${request.completedAt?.toLocaleDateString("es-CL")}`
+                          ? `Completado: ${request.updatedAt?.toLocaleDateString("es-CL")}`
+                          : `Rechazado: ${request.updatedAt?.toLocaleDateString("es-CL")}`
                         }
                       </p>
                     </div>

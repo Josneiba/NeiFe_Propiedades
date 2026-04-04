@@ -20,7 +20,7 @@ interface MaintenanceWithProperty {
   category: string
   description: string
   status: string
-  legalResponsibility: string
+  isLandlordResp: boolean
   createdAt: Date
   photos: string[]
   property: {
@@ -81,7 +81,9 @@ export default async function MantencionesPage({
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "LANDLORD") redirect("/dashboard")
+  if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
+    redirect("/mi-arriendo")
+  }
 
   const statusFilter = searchParams.status || "all"
 
@@ -194,12 +196,12 @@ export default async function MantencionesPage({
                       </Badge>
                       <Badge 
                         variant="outline" 
-                        className={request.legalResponsibility === "LANDLORD" 
+                        className={request.isLandlordResp 
                           ? "border-[#75524C] text-[#75524C]" 
                           : "border-[#5E8B8C] text-[#5E8B8C]"
                         }
                       >
-                        {request.legalResponsibility === "LANDLORD" ? "Arrendador" : "Arrendatario"}
+                        {request.isLandlordResp ? "Arrendador" : "Arrendatario"}
                       </Badge>
                     </div>
                   </div>
