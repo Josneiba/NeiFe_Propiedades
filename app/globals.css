@@ -1,3 +1,5 @@
+/* Leaflet CSS — must load before Tailwind to avoid overrides */
+@import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
