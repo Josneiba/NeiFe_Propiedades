@@ -51,7 +51,7 @@ export async function GET(
       },
       include: {
         tenant: {
-          select: { id: true, name: true, email: true, phone: true },
+          select: { id: true, name: true, email: true, phone: true, rut: true },
         },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -62,6 +62,23 @@ export async function GET(
           take: 12,
         },
         maintenance: true,
+        contracts: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+        providers: {
+          include: {
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                phone: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     })
 
@@ -137,6 +154,8 @@ export async function PUT(
     )
   }
 }
+
+export const PATCH = PUT
 
 // DELETE — desactivar propiedad (soft delete)
 export async function DELETE(

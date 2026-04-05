@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,16 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   FileText, 
   Building2,
-  Download,
-  Eye,
   Camera,
-  PenTool,
   CheckCircle2,
-  Clock,
-  Image as ImageIcon,
   AlertCircle
 } from "lucide-react"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
+import { ContractPdfActions } from '@/components/dashboard/contract-pdf-actions'
 
 export default async function ContratosPage() {
   const session = await auth()
@@ -26,19 +23,33 @@ export default async function ContratosPage() {
     redirect('/mi-arriendo')
   }
 
-  // Fetch all properties with tenants (contracts) for this landlord
-  const contracts = await prisma.property.findMany({
+  const properties = await prisma.property.findMany({
     where: {
       landlordId: session.user.id,
-      tenant: { isNot: null },
+      isActive: true,
     },
     include: {
       tenant: {
         select: { id: true, name: true },
       },
+      contracts: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  const contractDocStatus = (p: (typeof properties)[0]) => {
+    const end = p.contractEnd
+    if (!end) return { label: 'Borrador', className: 'bg-muted text-foreground' }
+    const now = new Date()
+    if (end < now) return { label: 'Vencido', className: 'bg-red-600 text-white' }
+    const soon = new Date()
+    soon.setDate(soon.getDate() + 90)
+    if (end < soon) return { label: 'Por vencer', className: 'bg-[#F2C94C] text-[#2D3C3C]' }
+    return { label: 'Activo', className: 'bg-[#5E8B8C] text-white' }
+  }
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -60,16 +71,18 @@ export default async function ContratosPage() {
         </TabsList>
 
         <TabsContent value="contracts" className="space-y-4">
-          {contracts.length === 0 ? (
+          {properties.length === 0 ? (
             <Card className="bg-card border-border">
               <CardContent className="p-12 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                <p className="text-muted-foreground mb-4">No tienes contratos activos</p>
-                <p className="text-sm text-muted-foreground">Asigna un arrendatario a una propiedad para crear un contrato</p>
+                <p className="text-muted-foreground mb-4">No tienes propiedades registradas</p>
+                <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+                  <Link href="/dashboard/propiedades/nueva">Agregar propiedad</Link>
+                </Button>
               </CardContent>
             </Card>
           ) : (
-            contracts.map((property) => (
+            properties.map((property) => (
               <Card key={property.id} className="bg-card border-border">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row gap-6">
@@ -81,8 +94,10 @@ export default async function ContratosPage() {
                             <FileText className="h-6 w-6 text-[#75524C]" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-foreground">{property.address}</h3>
-                            <p className="text-sm text-muted-foreground">{property.tenant?.name ?? 'Sin asignar'}</p>
+                            <h3 className="font-semibold text-foreground">{property.name || property.address}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {property.tenant?.name ?? 'Sin arrendatario asignado'}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -107,26 +122,26 @@ export default async function ContratosPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Estado</p>
-                          <Badge className="bg-[#5E8B8C] text-white">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Activo
-                          </Badge>
+                          <p className="text-sm text-muted-foreground">Estado contrato</p>
+                          {(() => {
+                            const s = contractDocStatus(property)
+                            return (
+                              <Badge className={s.className}>
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> {s.label}
+                              </Badge>
+                            )
+                          })()}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" className="text-foreground border-border" disabled>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver contrato
-                        </Button>
-                        <Button variant="outline" className="text-foreground border-border" disabled>
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar PDF
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        <AlertCircle className="h-3 w-3 inline mr-1" />
-                        Los documentos de contrato estarán disponibles próximamente
+                      <ContractPdfActions
+                        key={`${property.id}-${property.contracts[0]?.pdfUrl ?? 'none'}`}
+                        propertyId={property.id}
+                        initialPdfUrl={property.contracts[0]?.pdfUrl ?? null}
+                      />
+                      <p className="text-xs text-muted-foreground flex items-start gap-1">
+                        <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                        El PDF queda asociado a esta propiedad. Puedes subir una nueva versión cuando quieras.
                       </p>
                     </div>
 
@@ -149,12 +164,12 @@ export default async function ContratosPage() {
           <Card className="bg-card border-border border-dashed">
             <CardContent className="p-8 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold text-foreground mb-2">Crear nuevo contrato</h3>
+              <h3 className="font-semibold text-foreground mb-2">Más propiedades</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Esta funcionalidad estará disponible próximamente
+                Cada propiedad tiene su propio PDF de contrato arriba. Puedes crear nuevas propiedades desde Propiedades.
               </p>
-              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" disabled>
-                Generar contrato
+              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+                <Link href="/dashboard/propiedades">Ir a propiedades</Link>
               </Button>
             </CardContent>
           </Card>

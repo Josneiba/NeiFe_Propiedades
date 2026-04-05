@@ -27,17 +27,30 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
+import { PropertyMiniMap } from "@/components/map/property-mini-map"
+import { InviteTenantButton } from "@/components/dashboard/invite-tenant-button"
+import { PropertyProvidersPanel } from "@/components/dashboard/property-providers-panel"
 
 interface Property {
   id: string
+  name?: string
   address: string
   commune: string
-  description: string
-  monthlyRentCLP: number
-  monthlyRentUF: number
+  lat?: number | null
+  lng?: number | null
+  description: string | null
+  monthlyRentCLP: number | null
+  monthlyRentUF: number | null
   contractStart: string
   contractEnd: string
   landlordId: string
+  tenant?: {
+    id: string
+    name: string
+    email: string
+    phone: string | null
+    rut: string | null
+  } | null
   agentName: string | null
   agentRut: string | null
   agentEmail: string | null
@@ -45,7 +58,6 @@ interface Property {
   agentCompany: string | null
   commissionRate: number | null
   commissionType: string | null
-  tenant: any
   payments: any[]
 }
 
@@ -76,7 +88,9 @@ export default function PropertyDetailPage() {
       try {
         const res = await fetch(`/api/properties/${propertyId}`)
         if (!res.ok) throw new Error("Failed to load property")
-        const data = await res.json()
+        const json = await res.json()
+        const data = json.property as Property
+        if (!data) throw new Error("Failed to load property")
         setProperty(data)
         setAgentData({
           agentName: data.agentName || "",
@@ -121,7 +135,7 @@ export default function PropertyDetailPage() {
       if (!res.ok) throw new Error("Failed to update agent info")
       
       const updated = await res.json()
-      setProperty(updated)
+      setProperty(updated.property ?? updated)
       setEditingAgent(false)
       
       toast({
@@ -168,19 +182,29 @@ export default function PropertyDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{property.address}</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {property.name || property.address}
+            </h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              {property.commune}
+              {property.address}, {property.commune}
             </div>
           </div>
         </div>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {!property.tenant && (
+            <InviteTenantButton
+              propertyId={propertyId}
+              propertyLabel={property.name || property.address}
+            />
+          )}
         <Link href={`/dashboard/propiedades/${propertyId}/editar`}>
           <Button variant="outline" className="gap-2 text-foreground">
             <Edit className="h-4 w-4" />
             Editar
           </Button>
         </Link>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -194,6 +218,7 @@ export default function PropertyDetailPage() {
           <TabsTrigger value="corredor">Corredor</TabsTrigger>
           <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
           <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
+          <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
         </TabsList>
 
         {/* Resumen Tab */}
@@ -235,7 +260,7 @@ export default function PropertyDetailPage() {
               </Card>
 
               {/* Tenant Info */}
-              {property.tenant && (
+              {property.tenant ? (
                 <Card className="bg-card border-border">
                   <CardHeader>
                     <CardTitle className="text-foreground flex items-center gap-2">
@@ -252,7 +277,9 @@ export default function PropertyDetailPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">{property.tenant.name}</p>
-                        <p className="text-sm text-muted-foreground">RUT: {property.tenant.rut}</p>
+                        {property.tenant.rut && (
+                          <p className="text-sm text-muted-foreground">RUT: {property.tenant.rut}</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -260,11 +287,50 @@ export default function PropertyDetailPage() {
                         <Mail className="h-4 w-4" />
                         <span className="text-sm">{property.tenant.email}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        <span className="text-sm">{property.tenant.phone}</span>
-                      </div>
+                      {property.tenant.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          <span className="text-sm">{property.tenant.phone}</span>
+                        </div>
+                      )}
                     </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-card border-border border-dashed">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                      <User className="h-5 w-5 text-[#5E8B8C]" />
+                      Arrendatario
+                    </CardTitle>
+                    <CardDescription>Sin arrendatario asignado</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center gap-3 py-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Invita por correo o comparte un enlace para que acepte la propiedad en NeiFe.
+                    </p>
+                    <InviteTenantButton
+                      propertyId={propertyId}
+                      propertyLabel={property.name || property.address}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {property.lat != null && property.lng != null && (
+                <Card className="bg-card border-border overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                      <MapPin className="h-4 w-4 text-[#5E8B8C]" />
+                      Ubicación
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PropertyMiniMap
+                      lat={property.lat}
+                      lng={property.lng}
+                      address={`${property.address}, ${property.commune}`}
+                    />
                   </CardContent>
                 </Card>
               )}
@@ -529,6 +595,10 @@ export default function PropertyDetailPage() {
               <p className="text-muted-foreground">Sección de contrato</p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="proveedores" className="space-y-6">
+          <PropertyProvidersPanel propertyId={propertyId} />
         </TabsContent>
       </Tabs>
     </div>

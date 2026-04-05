@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { MapPin } from 'lucide-react'
@@ -8,6 +8,7 @@ import Link from 'next/link'
 
 interface PropertyMarker {
   id: string
+  name?: string | null
   address: string
   commune: string
   lat: number | null
@@ -54,7 +55,7 @@ const communeCoordinates: Record<string, [number, number]> = {
 export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -71.5203] }: MapPropertyProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
-  const [mapLoaded, setMapLoaded] = useState(false)
+  const list = Array.isArray(properties) ? properties : []
 
   useEffect(() => {
     if (typeof window === 'undefined' || !mapContainer.current) return
@@ -76,10 +77,9 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
         }
 
         // Initialize map
-        map.current = L.map(mapContainer.current).setView(
-          center as [number, number],
-          zoom
-        )
+        map.current = L.map(mapContainer.current, {
+          zoomControl: true,
+        }).setView(center as [number, number], zoom)
 
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -88,7 +88,7 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
         }).addTo(map.current)
 
         // Add markers for each property
-        const markers = properties.map(property => {
+        const markers = list.map(property => {
           let lat = property.lat
           let lng = property.lng
 
@@ -122,9 +122,10 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
             fillOpacity: 0.85,
           }).addTo(map.current)
 
+          const title = property.name || property.address
           const popupHTML = `
             <div class="p-2 max-w-xs text-sm">
-              <p class="font-semibold text-gray-800">${property.address}</p>
+              <p class="font-semibold text-gray-800">${title}</p>
               <p class="text-xs text-gray-600 flex items-center gap-1 mt-1">
                 <span>📍</span> ${property.commune}
               </p>
@@ -143,7 +144,11 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
           map.current.fitBounds(bounds, { padding: [50, 50] })
         }
 
-        setMapLoaded(true)
+        requestAnimationFrame(() => {
+          map.current?.invalidateSize()
+          setTimeout(() => map.current?.invalidateSize(), 200)
+        })
+
       } catch (error) {
         console.error('Error loading map:', error)
       }
@@ -157,29 +162,24 @@ export function PropertyMap({ properties = [], zoom = 12, center = [-33.8688, -7
         map.current = null
       }
     }
-  }, [properties, zoom, center])
+  }, [list, zoom, center])
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Mapa de Propiedades</h2>
-        <p className="text-muted-foreground">Visualiza la ubicación de todas tus propiedades en tiempo real</p>
-      </div>
-
       {/* Map Container */}
       <Card className="bg-card border-border overflow-hidden shadow-lg">
         <CardContent className="p-0">
-          {properties.length === 0 ? (
-            <div className="w-full h-96 flex flex-col items-center justify-center bg-gradient-to-br from-muted/50 to-muted/30">
+          {list.length === 0 ? (
+            <div className="w-full min-h-[500px] h-[500px] flex flex-col items-center justify-center bg-gradient-to-br from-muted/50 to-muted/30">
               <MapPin className="h-16 w-16 text-muted-foreground/40 mb-4" />
               <p className="text-muted-foreground text-lg font-medium">No hay propiedades para mostrar</p>
               <p className="text-muted-foreground text-sm mt-1">Crea una propiedad para verla en el mapa</p>
             </div>
           ) : (
-            <div 
-              ref={mapContainer} 
-              className="w-full h-96 rounded-lg"
-              style={{ backgroundColor: '#f0f0f0' }}
+            <div
+              ref={mapContainer}
+              className="w-full min-h-[500px] h-[500px] rounded-lg z-0"
+              style={{ backgroundColor: '#e8e8e8' }}
             />
           )}
         </CardContent>

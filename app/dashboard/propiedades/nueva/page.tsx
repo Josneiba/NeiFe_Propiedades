@@ -97,13 +97,21 @@ export default function NuevaPropiedad() {
 
       if (!response.ok) {
         const data = await response.json()
-        setError(data.error || 'Error al crear la propiedad')
+        const msg = Array.isArray(data.error)
+          ? data.error.map((e: { message?: string }) => e.message).filter(Boolean).join(', ')
+          : data.error
+        setError(typeof msg === 'string' ? msg : 'Error al crear la propiedad')
         setLoading(false)
         return
       }
 
-      // Success
-      router.push('/dashboard/propiedades')
+      const created = await response.json()
+      const id = created.property?.id
+      if (id) {
+        router.push(`/dashboard/propiedades/${id}`)
+      } else {
+        router.push('/dashboard/propiedades')
+      }
       router.refresh()
     } catch (err) {
       setError('Error al crear la propiedad. Intenta nuevamente.')

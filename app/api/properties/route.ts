@@ -73,6 +73,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  if (session.user.role !== 'LANDLORD' && session.user.role !== 'OWNER') {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+  }
+
   try {
     const body = await req.json()
     const data = createSchema.parse(body)

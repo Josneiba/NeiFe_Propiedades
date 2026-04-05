@@ -73,8 +73,9 @@ export default function ConfiguracionPage() {
         const res = await fetch("/api/users/me")
         if (!res.ok) throw new Error("Failed to load profile")
         const data = await res.json()
-        setProfile(data)
-        setBankData(data)
+        const user = data.user ?? data
+        setProfile(user)
+        setBankData(user)
       } catch (error) {
         toast({
           title: "Error",

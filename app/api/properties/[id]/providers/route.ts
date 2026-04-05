@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 
 // GET — listar proveedores asignados a esta propiedad
@@ -59,7 +59,11 @@ export async function POST(
     return NextResponse.json({ error: 'Propiedad no encontrada' }, { status: 404 })
   }
 
-  const { providerId, notes } = await req.json()
+  const { providerId } = await req.json()
+
+  if (!providerId || typeof providerId !== 'string') {
+    return NextResponse.json({ error: 'providerId requerido' }, { status: 400 })
+  }
 
   // Verificar que el proveedor es del landlord
   const provider = await prisma.provider.findFirst({
@@ -78,8 +82,8 @@ export async function POST(
         providerId,
       }
     },
-    create: { propertyId: params.id, providerId, notes },
-    update: { notes },
+    create: { propertyId: params.id, providerId },
+    update: {},
   })
 
   return NextResponse.json({ assignment }, { status: 201 })

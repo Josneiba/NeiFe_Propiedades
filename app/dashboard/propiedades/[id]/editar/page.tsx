@@ -26,6 +26,8 @@ interface Property {
   monthlyRentUF?: number
   contractStart?: string
   contractEnd?: string
+  lat?: number | null
+  lng?: number | null
 }
 
 interface FormData {
@@ -41,6 +43,8 @@ interface FormData {
   monthlyRentUF: string
   contractStart: string
   contractEnd: string
+  lat: string
+  lng: string
 }
 
 export default function EditarPropiedad() {
@@ -67,6 +71,8 @@ export default function EditarPropiedad() {
     monthlyRentUF: '',
     contractStart: '',
     contractEnd: '',
+    lat: '',
+    lng: '',
   })
 
   const currentCommunas = getCommunesByRegion(formData.region)
@@ -77,7 +83,9 @@ export default function EditarPropiedad() {
       try {
         const res = await fetch(`/api/properties/${propertyId}`)
         if (!res.ok) throw new Error('Failed to load property')
-        const data = await res.json()
+        const json = await res.json()
+        const data = json.property
+        if (!data) throw new Error('Failed to load property')
         setProperty(data)
         
         setFormData({
@@ -93,6 +101,8 @@ export default function EditarPropiedad() {
           monthlyRentUF: data.monthlyRentUF?.toString() || '',
           contractStart: data.contractStart ? new Date(data.contractStart).toISOString().split('T')[0] : '',
           contractEnd: data.contractEnd ? new Date(data.contractEnd).toISOString().split('T')[0] : '',
+          lat: data.lat != null ? String(data.lat) : '',
+          lng: data.lng != null ? String(data.lng) : '',
         })
       } catch (err) {
         setError('No se pudo cargar la propiedad')
@@ -144,10 +154,12 @@ export default function EditarPropiedad() {
         monthlyRentUF: formData.monthlyRentUF ? parseFloat(formData.monthlyRentUF) : undefined,
         contractStart: formData.contractStart || undefined,
         contractEnd: formData.contractEnd || undefined,
+        lat: formData.lat ? parseFloat(formData.lat) : undefined,
+        lng: formData.lng ? parseFloat(formData.lng) : undefined,
       }
 
       const response = await fetch(`/api/properties/${propertyId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -383,6 +395,40 @@ export default function EditarPropiedad() {
                   className="bg-background border-border text-foreground"
                   min="0"
                   step="0.01"
+                />
+              </div>
+            </div>
+
+            {/* Ubicación mapa */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="lat" className="text-foreground text-sm font-medium">
+                  Latitud (mapa)
+                </Label>
+                <Input
+                  id="lat"
+                  name="lat"
+                  type="number"
+                  step="any"
+                  value={formData.lat}
+                  onChange={handleInputChange}
+                  placeholder="-33.45"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lng" className="text-foreground text-sm font-medium">
+                  Longitud (mapa)
+                </Label>
+                <Input
+                  id="lng"
+                  name="lng"
+                  type="number"
+                  step="any"
+                  value={formData.lng}
+                  onChange={handleInputChange}
+                  placeholder="-70.65"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
             </div>

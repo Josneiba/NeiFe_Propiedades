@@ -57,7 +57,12 @@ export default function CalendarioPage() {
         // Fetch properties first
         const propertiesRes = await fetch("/api/properties")
         if (!propertiesRes.ok) throw new Error("Failed to load properties")
-        const propertiesData = await propertiesRes.json()
+        const propertiesJson = await propertiesRes.json()
+        const propertiesData = Array.isArray(propertiesJson.properties)
+          ? propertiesJson.properties
+          : Array.isArray(propertiesJson)
+            ? propertiesJson
+            : []
         setProperties(propertiesData)
 
         const calendarEvents: CalendarEvent[] = []
@@ -68,7 +73,12 @@ export default function CalendarioPage() {
           try {
             const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
             if (inspectionsRes.ok) {
-              const inspections = await inspectionsRes.json()
+              const inspectionsPayload = await inspectionsRes.json()
+              const inspections = Array.isArray(inspectionsPayload.inspections)
+                ? inspectionsPayload.inspections
+                : Array.isArray(inspectionsPayload)
+                  ? inspectionsPayload
+                  : []
               inspections.forEach((inspection: any) => {
                 if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
                   calendarEvents.push({
@@ -93,7 +103,12 @@ export default function CalendarioPage() {
           try {
             const ipcRes = await fetch(`/api/properties/${property.id}/ipc-adjustments`)
             if (ipcRes.ok) {
-              const adjustments = await ipcRes.json()
+              const ipcPayload = await ipcRes.json()
+              const adjustments = Array.isArray(ipcPayload.adjustments)
+                ? ipcPayload.adjustments
+                : Array.isArray(ipcPayload)
+                  ? ipcPayload
+                  : []
               adjustments.forEach((adj: any) => {
                 if (adj.status === "PENDING") {
                   calendarEvents.push({
@@ -101,7 +116,9 @@ export default function CalendarioPage() {
                     type: "IPC",
                     date: adj.scheduledDate,
                     title: `Reajuste IPC ${adj.ipcRate}%`,
-                    description: `Nuevo arriendo: $${adj.newRentCLP.toLocaleString("es-CL")}`,
+                    description: adj.newRentCLP
+                      ? `Nuevo arriendo: $${adj.newRentCLP.toLocaleString("es-CL")}`
+                      : 'Reajuste IPC pendiente',
                     propertyAddress: property.address || "Propiedad",
                     icon: TrendingUp,
                     color: "bg-green-50 border-green-200",
@@ -135,29 +152,26 @@ export default function CalendarioPage() {
             }
           }
 
-          // Check overdue or upcoming payments (próximos 30 días)
-          if (property.payments && Array.isArray(property.payments)) {
-            property.payments
-              .filter((payment: any) => !payment.paidAt)
-              .forEach((payment: any) => {
-                const dueDate = new Date(payment.dueDate)
-                const today = new Date()
-                const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-                if (daysUntilDue <= 30 && daysUntilDue > -60) {
-                  calendarEvents.push({
-                    id: `payment-${payment.id}`,
-                    type: "PAYMENT",
-                    date: payment.dueDate,
-                    title: daysUntilDue < 0 ? "Pago vencido" : "Pago próximo",
-                    description: `$${payment.amount.toLocaleString("es-CL")} - ${daysUntilDue < 0 ? `Hace ${Math.abs(daysUntilDue)} días` : `En ${daysUntilDue} días`}`,
-                    propertyAddress: property.address || "Propiedad",
-                    icon: DollarSign,
-                    color: daysUntilDue < 0 ? "bg-red-50 border-red-200" : "bg-yellow-50 border-yellow-200",
-                    badgeColor: daysUntilDue < 0 ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
-                  })
-                }
-              })
+          // Pago del mes actual pendiente o atrasado (datos reales del API)
+          const pay = property.payments?.[0]
+          if (pay && (pay.status === "PENDING" || pay.status === "OVERDUE")) {
+            const today = new Date()
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+            const iso = lastDay.toISOString()
+            const isOverdue = pay.status === "OVERDUE"
+            calendarEvents.push({
+              id: `payment-${property.id}-${pay.month}-${pay.year}`,
+              type: "PAYMENT",
+              date: iso,
+              title: isOverdue ? "Pago atrasado (mes actual)" : "Pago pendiente (mes actual)",
+              description: property.monthlyRentCLP
+                ? `Monto referencia: $${Number(property.monthlyRentCLP).toLocaleString("es-CL")}`
+                : "Revisa la sección Pagos",
+              propertyAddress: property.address || "Propiedad",
+              icon: DollarSign,
+              color: isOverdue ? "bg-red-50 border-red-200" : "bg-yellow-50 border-yellow-200",
+              badgeColor: isOverdue ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+            })
           }
         }
 
@@ -244,7 +258,12 @@ export default function CalendarioPage() {
         try {
           const propertiesRes = await fetch("/api/properties")
           if (!propertiesRes.ok) throw new Error("Failed to load properties")
-          const properties = await propertiesRes.json()
+          const propertiesJson = await propertiesRes.json()
+          const properties = Array.isArray(propertiesJson.properties)
+            ? propertiesJson.properties
+            : Array.isArray(propertiesJson)
+              ? propertiesJson
+              : []
 
           const calendarEvents: CalendarEvent[] = []
 
@@ -252,7 +271,12 @@ export default function CalendarioPage() {
             try {
               const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
               if (inspectionsRes.ok) {
-                const inspections = await inspectionsRes.json()
+                const inspectionsPayload = await inspectionsRes.json()
+                const inspections = Array.isArray(inspectionsPayload.inspections)
+                  ? inspectionsPayload.inspections
+                  : Array.isArray(inspectionsPayload)
+                    ? inspectionsPayload
+                    : []
                 inspections.forEach((inspection: any) => {
                   if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
                     calendarEvents.push({

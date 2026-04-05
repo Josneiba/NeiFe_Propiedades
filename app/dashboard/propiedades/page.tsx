@@ -10,7 +10,9 @@ import { ContractProgressChart } from "@/components/charts/contract-progress"
 
 interface PropertyWithPaymentStatus {
   id: string
+  name: string
   address: string
+  commune: string
   monthlyRentCLP: number | null
   tenant: {
     name: string | null
@@ -40,6 +42,7 @@ export default async function PropiedadesPage() {
   const properties = (await prisma.property.findMany({
     where: {
       landlordId: session.user.id,
+      isActive: true,
     },
     include: {
       tenant: {
@@ -106,7 +109,13 @@ export default async function PropiedadesPage() {
           <Card className="bg-card border-border">
             <CardContent className="p-12 text-center">
               <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">No tienes propiedades registradas aún</p>
+              <p className="text-muted-foreground mb-4">No tienes propiedades registradas aún</p>
+              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+                <Link href="/dashboard/propiedades/nueva">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar primera propiedad
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -128,16 +137,23 @@ export default async function PropiedadesPage() {
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
                         <div>
                           <h3 className="text-lg font-semibold text-foreground">
-                            {property.address}
+                            {property.name || property.address}
                           </h3>
                           <div className="flex items-center gap-2 text-muted-foreground text-sm">
                             <MapPin className="h-4 w-4" />
-                            {property.address.split(",").pop()?.trim() || "Sin ubicación"}
+                            {property.commune}
                           </div>
                         </div>
+                        <div className="flex flex-col items-end gap-1">
                         <Badge className={status.className}>
                           {status.label}
                         </Badge>
+                        {!property.tenant && (
+                          <Badge variant="outline" className="text-xs border-[#F2C94C]/40 text-[#F2C94C] bg-[#F2C94C]/10">
+                            Sin arrendatario
+                          </Badge>
+                        )}
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

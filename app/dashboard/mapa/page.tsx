@@ -21,6 +21,7 @@ export default async function MapaPage() {
       },
       select: {
         id: true,
+        name: true,
         address: true,
         commune: true,
         lat: true,
