@@ -24,6 +24,7 @@ interface MaintenanceWithProperty {
   createdAt: Date
   photos: string[]
   property: {
+    id: string
     address: string
     tenant: {
       name: string | null
@@ -74,10 +75,18 @@ const categoryIcons: Record<string, string> = {
   "Otro": "📋"
 }
 
+function mantencionesQueryHref(status: string, propertyId?: string) {
+  const q = new URLSearchParams()
+  if (propertyId) q.set("property", propertyId)
+  if (status !== "all") q.set("status", status)
+  const s = q.toString()
+  return `/dashboard/mantenciones${s ? `?${s}` : ""}`
+}
+
 export default async function MantencionesPage({
-  searchParams
+  searchParams,
 }: {
-  searchParams: { status?: string }
+  searchParams: Promise<{ status?: string; property?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -85,19 +94,35 @@ export default async function MantencionesPage({
     redirect("/mi-arriendo")
   }
 
-  const statusFilter = searchParams.status || "all"
+  const sp = await searchParams
+  const statusFilter = sp.status || "all"
+  const filterPropertyId = sp.property?.trim() || undefined
+
+  const filterProperty =
+    filterPropertyId != null && filterPropertyId !== ""
+      ? await prisma.property.findFirst({
+          where: { id: filterPropertyId, landlordId: session.user.id },
+          select: { id: true, name: true, address: true },
+        })
+      : null
+
+  if (filterPropertyId && !filterProperty) {
+    redirect("/dashboard/mantenciones")
+  }
 
   // Get maintenance requests for all properties of current landlord
   const requests = (await prisma.maintenanceRequest.findMany({
     where: {
       property: {
         landlordId: session.user.id,
+        ...(filterProperty ? { id: filterProperty.id } : {}),
       },
       ...(statusFilter !== "all" && { status: statusFilter.toUpperCase() }),
     },
     include: {
       property: {
         select: {
+          id: true,
           address: true,
           tenant: {
             select: {
@@ -125,6 +150,20 @@ export default async function MantencionesPage({
       <div>
         <h1 className="text-3xl font-bold text-foreground">Mantenciones</h1>
         <p className="text-muted-foreground">Gestiona las solicitudes de mantención de tus propiedades</p>
+        {filterProperty && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-foreground">
+              Filtrado por:{" "}
+              <strong>{filterProperty.name || filterProperty.address}</strong>
+            </span>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <a href={mantencionesQueryHref(statusFilter)}>Quitar filtro de propiedad</a>
+            </Button>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <a href={`/dashboard/propiedades/${filterProperty.id}`}>Ir al detalle</a>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -146,7 +185,7 @@ export default async function MantencionesPage({
             }
             asChild
           >
-            <a href={`/dashboard/mantenciones${tab.value !== "all" ? `?status=${tab.value}` : ""}`}>
+            <a href={mantencionesQueryHref(tab.value, filterProperty?.id)}>
               {tab.label}
             </a>
           </Button>

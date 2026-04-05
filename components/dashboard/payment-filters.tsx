@@ -30,7 +30,7 @@ export function PaymentFilters({ properties, onFiltersChange }: PaymentFiltersPr
   const router = useRouter()
   const searchParams = useSearchParams()
   const [filters, setFilters] = useState<FilterState>({
-    propertyId: searchParams.get('propertyId') || '',
+    propertyId: searchParams.get('property') || searchParams.get('propertyId') || '',
     status: searchParams.get('status') || '',
     month: searchParams.get('month') || '',
     year: searchParams.get('year') || '',
@@ -49,7 +49,9 @@ export function PaymentFilters({ properties, onFiltersChange }: PaymentFiltersPr
   const updateURL = (newFilters: FilterState) => {
     const params = new URLSearchParams()
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value) params.append(key, value)
+      if (!value) return
+      if (key === 'propertyId') params.set('property', value)
+      else params.set(key, value)
     })
     router.push(`/dashboard/pagos?${params.toString()}`)
   }

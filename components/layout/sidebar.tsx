@@ -36,6 +36,7 @@ const landlordNavItems = [
   { href: "/dashboard/mapa", label: "Mapa", icon: MapPin, id: undefined },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar, id: undefined },
   { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard, id: "sidebar-pagos" },
+  { href: "/dashboard/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
   { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
   { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },
   { href: "/dashboard/proveedores", label: "Proveedores", icon: Users, id: "sidebar-servicios" },

@@ -13,7 +13,8 @@ import {
   Star,
   Edit2,
   Trash2,
-  User
+  User,
+  Info
 } from "lucide-react"
 import Link from "next/link"
 
@@ -73,7 +74,7 @@ export default async function ProveedoresPage() {
           <h1 className="text-3xl font-bold text-foreground">Proveedores de Confianza</h1>
           <p className="text-muted-foreground">Administra tu red de proveedores verificados</p>
         </div>
-        <Button 
+        <Button
           className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
           asChild
         >
@@ -83,6 +84,17 @@ export default async function ProveedoresPage() {
           </Link>
         </Button>
       </div>
+
+      <Card className="bg-[#5E8B8C]/10 border-[#5E8B8C]/25">
+        <CardContent className="p-4 flex gap-3 text-sm text-foreground">
+          <Info className="h-5 w-5 shrink-0 text-[#5E8B8C] mt-0.5" />
+          <p>
+            Aquí guardas tu <strong>directorio</strong> de proveedores. Quién atiende cada arriendo se define en el
+            detalle de la propiedad (pestaña Proveedores): así evitas que un arrendatario en una ciudad
+            contacte por error a un técnico de otra región.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Providers Grid */}
       <div className="grid md:grid-cols-2 gap-6">

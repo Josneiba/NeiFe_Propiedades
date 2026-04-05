@@ -40,6 +40,8 @@ export default function InvitationClient({
     try {
       const res = await fetch(`/api/invitations/${token}`, {
         method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       })
       const data = await res.json()
 

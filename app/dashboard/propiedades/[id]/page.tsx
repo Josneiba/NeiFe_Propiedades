@@ -23,7 +23,8 @@ import {
   Users,
   TrendingUp,
   Loader2,
-  Edit
+  Edit,
+  ExternalLink
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
@@ -552,14 +553,22 @@ export default function PropertyDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Placeholder tabs for other sections */}
         <TabsContent value="pagos">
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Pagos</CardTitle>
+              <CardDescription>
+                Misma vista que en la lista de propiedades, filtrada por esta unidad.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Sección de pagos</p>
+            <CardContent className="space-y-4">
+              <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
+                <Link href={`/dashboard/pagos?property=${propertyId}`}>
+                  <CreditCard className="h-4 w-4" />
+                  Abrir pagos de esta propiedad
+                  <ExternalLink className="h-4 w-4 opacity-80" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -568,9 +577,18 @@ export default function PropertyDetailPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Servicios</CardTitle>
+              <CardDescription>
+                Consumos mensuales (agua, luz, gas) registrados para esta propiedad.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Sección de servicios mensuales</p>
+            <CardContent className="space-y-4">
+              <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
+                <Link href={`/dashboard/servicios?property=${propertyId}`}>
+                  <FileText className="h-4 w-4" />
+                  Abrir servicios de esta propiedad
+                  <ExternalLink className="h-4 w-4 opacity-80" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -579,9 +597,18 @@ export default function PropertyDetailPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Mantenciones</CardTitle>
+              <CardDescription>
+                Solicitudes y estados de mantención filtrados por esta propiedad.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Sección de mantenciones</p>
+            <CardContent className="space-y-4">
+              <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
+                <Link href={`/dashboard/mantenciones?property=${propertyId}`}>
+                  <Wrench className="h-4 w-4" />
+                  Abrir mantenciones de esta propiedad
+                  <ExternalLink className="h-4 w-4 opacity-80" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -590,9 +617,18 @@ export default function PropertyDetailPage() {
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Contrato</CardTitle>
+              <CardDescription>
+                PDF y fechas del contrato asociados a esta propiedad.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Sección de contrato</p>
+            <CardContent className="space-y-4">
+              <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
+                <Link href={`/dashboard/contratos?property=${propertyId}`}>
+                  <FileText className="h-4 w-4" />
+                  Abrir contratos y documentos
+                  <ExternalLink className="h-4 w-4 opacity-80" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

@@ -30,11 +30,32 @@ interface PaymentWithProperty {
   }
 }
 
-export default async function PagosPage() {
+export default async function PagosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ property?: string }>
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
     redirect("/mi-arriendo")
+  }
+
+  const { property: filterPropertyId } = await searchParams
+
+  const filterProperty =
+    filterPropertyId != null && filterPropertyId !== ""
+      ? await prisma.property.findFirst({
+          where: {
+            id: filterPropertyId,
+            landlordId: session.user.id,
+          },
+          select: { id: true, name: true, address: true },
+        })
+      : null
+
+  if (filterPropertyId && !filterProperty) {
+    redirect("/dashboard/pagos")
   }
 
   // Get all payments for this landlord's properties
@@ -42,6 +63,7 @@ export default async function PagosPage() {
     where: {
       property: {
         landlordId: session.user.id,
+        ...(filterProperty ? { id: filterProperty.id } : {}),
       },
     },
     include: {
@@ -96,6 +118,20 @@ export default async function PagosPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Gestión de Pagos</h1>
         <p className="text-muted-foreground">Monitorea y confirma pagos de tus arrendatarios</p>
+        {filterProperty && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-foreground">
+              Filtrado por:{" "}
+              <strong>{filterProperty.name || filterProperty.address}</strong>
+            </span>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <Link href="/dashboard/pagos">Ver todas las propiedades</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <Link href={`/dashboard/propiedades/${filterProperty.id}`}>Ir al detalle</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}

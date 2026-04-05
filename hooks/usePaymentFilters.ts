@@ -31,7 +31,8 @@ export function usePaymentFilters(allPayments: Payment[]) {
   const searchParams = useSearchParams()
 
   const filters: FilterParams = {
-    propertyId: searchParams.get('propertyId') || undefined,
+    propertyId:
+      searchParams.get('property') || searchParams.get('propertyId') || undefined,
     status: searchParams.get('status') || undefined,
     month: searchParams.get('month') || undefined,
     year: searchParams.get('year') || undefined,

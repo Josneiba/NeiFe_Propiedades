@@ -16,17 +16,40 @@ import {
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { ContractPdfActions } from '@/components/dashboard/contract-pdf-actions'
 
-export default async function ContratosPage() {
+export default async function ContratosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ property?: string }>
+}) {
   const session = await auth()
   if (!session?.user) redirect('/login')
   if (session.user.role !== 'LANDLORD' && session.user.role !== 'OWNER') {
     redirect('/mi-arriendo')
   }
 
+  const { property: filterPropertyId } = await searchParams
+
+  const filterProperty =
+    filterPropertyId != null && filterPropertyId !== ''
+      ? await prisma.property.findFirst({
+          where: {
+            id: filterPropertyId,
+            landlordId: session.user.id,
+            isActive: true,
+          },
+          select: { id: true, name: true, address: true },
+        })
+      : null
+
+  if (filterPropertyId && !filterProperty) {
+    redirect('/dashboard/contratos')
+  }
+
   const properties = await prisma.property.findMany({
     where: {
       landlordId: session.user.id,
       isActive: true,
+      ...(filterProperty ? { id: filterProperty.id } : {}),
     },
     include: {
       tenant: {
@@ -56,6 +79,20 @@ export default async function ContratosPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Contratos y Documentos</h1>
         <p className="text-muted-foreground">Gestiona contratos digitales y registros fotográficos</p>
+        {filterProperty && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-foreground">
+              Filtrado por:{' '}
+              <strong>{filterProperty.name || filterProperty.address}</strong>
+            </span>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <Link href="/dashboard/contratos">Ver todas las propiedades</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <Link href={`/dashboard/propiedades/${filterProperty.id}`}>Ir al detalle</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="contracts" className="space-y-6">

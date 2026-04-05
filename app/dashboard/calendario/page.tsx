@@ -361,11 +361,11 @@ export default function CalendarioPage() {
               Nuevo evento
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <DialogHeader>
+          <DialogContent className="w-[min(100vw-1.5rem,40rem)] max-w-none sm:max-w-3xl max-h-[min(88vh,44rem)] overflow-y-auto overscroll-contain bg-[#2D3C3C] border-[#D5C3B6]/10 p-4 sm:p-6 gap-3">
+            <DialogHeader className="shrink-0">
               <DialogTitle className="text-[#FAF6F2]">Crear nuevo evento</DialogTitle>
             </DialogHeader>
-            <div className="space-y-5">
+            <div className="space-y-5 pb-1">
               
               <div>
                 <Label htmlFor="propertyId" className="text-[#D5C3B6]">Propiedad *</Label>
@@ -385,7 +385,7 @@ export default function CalendarioPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="title" className="text-[#D5C3B6]">Título *</Label>
                   <Input
@@ -412,7 +412,7 @@ export default function CalendarioPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="date" className="text-[#D5C3B6]">Fecha *</Label>
                   <Input
