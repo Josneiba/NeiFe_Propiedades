@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
   Calendar,
@@ -67,7 +67,55 @@ export default function CalendarioPage() {
 
         const calendarEvents: CalendarEvent[] = []
 
-        // Process each property
+        // Fetch calendar events from API
+        try {
+          const calendarRes = await fetch("/api/calendar/events")
+          if (calendarRes.ok) {
+            const calendarPayload = await calendarRes.json()
+            const savedEvents = Array.isArray(calendarPayload.events) ? calendarPayload.events : []
+            savedEvents.forEach((event: any) => {
+              const typeIcons: Record<string, any> = {
+                INSPECTION: Calendar,
+                PAYMENT_DUE: DollarSign,
+                CONTRACT_RENEWAL: FileText,
+                IPC_ADJUSTMENT: TrendingUp,
+                MAINTENANCE: Wrench,
+                TENANT_REMINDER: Bell,
+              }
+              const typeColors: Record<string, string> = {
+                INSPECTION: "bg-blue-50 border-blue-200",
+                PAYMENT_DUE: "bg-red-50 border-red-200",
+                CONTRACT_RENEWAL: "bg-purple-50 border-purple-200",
+                IPC_ADJUSTMENT: "bg-green-50 border-green-200",
+                MAINTENANCE: "bg-yellow-50 border-yellow-200",
+                TENANT_REMINDER: "bg-pink-50 border-pink-200",
+              }
+              const typeBadgeColors: Record<string, string> = {
+                INSPECTION: "bg-blue-100 text-blue-800",
+                PAYMENT_DUE: "bg-red-100 text-red-800",
+                CONTRACT_RENEWAL: "bg-purple-100 text-purple-800",
+                IPC_ADJUSTMENT: "bg-green-100 text-green-800",
+                MAINTENANCE: "bg-yellow-100 text-yellow-800",
+                TENANT_REMINDER: "bg-pink-100 text-pink-800",
+              }
+              calendarEvents.push({
+                id: event.id,
+                type: event.type,
+                date: event.date,
+                title: event.title,
+                description: event.description || "",
+                propertyAddress: event.property?.address || "Propiedad",
+                icon: typeIcons[event.type] || Calendar,
+                color: typeColors[event.type] || "bg-gray-50 border-gray-200",
+                badgeColor: typeBadgeColors[event.type] || "bg-gray-100 text-gray-800",
+              })
+            })
+          }
+        } catch (error) {
+          console.error("Error loading calendar events:", error)
+        }
+
+        // Process each property (resto de lógica)
         for (const property of propertiesData) {
           // Fetch inspections
           try {
@@ -230,7 +278,7 @@ export default function CalendarioPage() {
           type: newEvent.type,
           date: newEvent.date,
           reminder: newEvent.reminder,
-          notifyType: newEvent.notifyType,
+          notifyTenant: newEvent.notifyType === "BOTH" || newEvent.notifyType === "TENANT",
         }),
       })
 
@@ -364,6 +412,9 @@ export default function CalendarioPage() {
           <DialogContent className="w-[min(100vw-1.5rem,40rem)] max-w-none sm:max-w-3xl max-h-[min(88vh,44rem)] overflow-y-auto overscroll-contain bg-[#2D3C3C] border-[#D5C3B6]/10 p-4 sm:p-6 gap-3">
             <DialogHeader className="shrink-0">
               <DialogTitle className="text-[#FAF6F2]">Crear nuevo evento</DialogTitle>
+              <DialogDescription className="text-[#9C8578]">
+                Registra un nuevo evento en el calendario para tus propiedades
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-5 pb-1">
               
