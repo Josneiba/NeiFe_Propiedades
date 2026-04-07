@@ -39,6 +39,7 @@ model User {
   activityLogs       ActivityLog[]
   accounts           Account[]
   sessions           Session[]
+  calendarEvents     CalendarEvent[]
 }
 
 model Account {
@@ -129,6 +130,7 @@ model Property {
   activityLogs   ActivityLog[]
   inspections    PropertyInspection[]
   ipcAdjustments IpcAdjustment[]
+  calendarEvents CalendarEvent[]
 }
 
 model Invitation {
@@ -492,4 +494,31 @@ enum NotificationType {
   SERVICE_UPLOADED
   INVITATION_RECEIVED
   SYSTEM
+}
+
+enum CalendarEventType {
+  INSPECTION
+  PAYMENT_DUE
+  CONTRACT_RENEWAL
+  IPC_ADJUSTMENT
+  MAINTENANCE
+  TENANT_REMINDER
+  OTHER
+}
+
+model CalendarEvent {
+  id        String   @id @default(cuid())
+  title     String
+  description String?
+  type      CalendarEventType
+  date      DateTime
+  reminder  Int?    // Días antes para recordatorio
+  notifyTenant Boolean @default(false)
+  propertyId String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  creator   User     @relation(fields: [createdBy], references: [id])
 }

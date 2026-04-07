@@ -14,10 +14,10 @@ interface FormData {
   name: string
   email: string
   phone: string
-  company: string
-  serviceType: string
-  rut: string
-  bankAccount?: string
+  description: string
+  specialty: string
+  photoUrl?: string
+  rating?: string
 }
 
 export default function AgregarProveedor() {
@@ -30,10 +30,10 @@ export default function AgregarProveedor() {
     name: '',
     email: '',
     phone: '',
-    company: '',
-    serviceType: 'MANTENIMIENTO',
-    rut: '',
-    bankAccount: '',
+    description: '',
+    specialty: 'GENERAL',
+    photoUrl: '',
+    rating: '',
   })
 
   const handleInputChange = (
@@ -54,7 +54,7 @@ export default function AgregarProveedor() {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.email || !formData.phone || !formData.rut) {
+      if (!formData.name || !formData.email || !formData.phone || !formData.specialty) {
         setError('Por favor completa los campos obligatorios')
         setLoading(false)
         return
@@ -64,10 +64,10 @@ export default function AgregarProveedor() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        company: formData.company || undefined,
-        serviceType: formData.serviceType,
-        rut: formData.rut,
-        bankAccount: formData.bankAccount || undefined,
+        specialty: formData.specialty,
+        description: formData.description || undefined,
+        photoUrl: formData.photoUrl || undefined,
+        rating: formData.rating ? parseFloat(formData.rating) : undefined,
       }
 
       const response = await fetch('/api/providers', {
@@ -127,7 +127,7 @@ export default function AgregarProveedor() {
               </div>
             )}
 
-            {/* Row 1: Name and RUT */}
+            {/* Row 1: Name and Specialty */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground text-sm font-medium">
@@ -144,18 +144,25 @@ export default function AgregarProveedor() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rut" className="text-foreground text-sm font-medium">
-                  RUT *
+                <Label htmlFor="specialty" className="text-foreground text-sm font-medium">
+                  Especialidad *
                 </Label>
-                <Input
-                  id="rut"
-                  name="rut"
-                  value={formData.rut}
+                <select
+                  id="specialty"
+                  name="specialty"
+                  value={formData.specialty}
                   onChange={handleInputChange}
-                  placeholder="Ej: 12345678-9"
-                  className="bg-background border-border text-foreground"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-[#5E8B8C]"
                   required
-                />
+                >
+                  <option value="PLUMBER">Plomero</option>
+                  <option value="ELECTRICIAN">Electricista</option>
+                  <option value="PAINTER">Pintor</option>
+                  <option value="CARPENTER">Carpintero</option>
+                  <option value="LOCKSMITH">Cerrajero</option>
+                  <option value="GENERAL">Mantenimiento General</option>
+                  <option value="OTHER">Otro</option>
+                </select>
               </div>
             </div>
 
@@ -192,56 +199,51 @@ export default function AgregarProveedor() {
               </div>
             </div>
 
-            {/* Row 3: Company and Service Type */}
+            {/* Row 3: Description and Rating */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="company" className="text-foreground text-sm font-medium">
-                  Empresa / Negocio
+                <Label htmlFor="description" className="text-foreground text-sm font-medium">
+                  Descripción / Experiencia
                 </Label>
                 <Input
-                  id="company"
-                  name="company"
-                  value={formData.company}
+                  id="description"
+                  name="description"
+                  value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Ej: García y Asociados"
+                  placeholder="Ej: 15 años de experiencia en reparaciones"
                   className="bg-background border-border text-foreground"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serviceType" className="text-foreground text-sm font-medium">
-                  Tipo de Servicio *
+                <Label htmlFor="rating" className="text-foreground text-sm font-medium">
+                  Calificación (0-5)
                 </Label>
-                <select
-                  id="serviceType"
-                  name="serviceType"
-                  value={formData.serviceType}
+                <Input
+                  id="rating"
+                  name="rating"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={formData.rating}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-[#5E8B8C]"
-                  required
-                >
-                  <option value="MANTENIMIENTO">Mantenimiento</option>
-                  <option value="ELECTRICIDAD">Electricidad</option>
-                  <option value="PLOMERIA">Plomería</option>
-                  <option value="LIMPIEZA">Limpieza</option>
-                  <option value="JARDINERIA">Jardinería</option>
-                  <option value="REPARACIONES">Reparaciones</option>
-                  <option value="SEGURIDAD">Seguridad</option>
-                  <option value="OTRO">Otro</option>
-                </select>
+                  placeholder="Ej: 4.5"
+                  className="bg-background border-border text-foreground"
+                />
               </div>
             </div>
 
-            {/* Row 4: Bank Account */}
+            {/* Row 4: Photo URL */}
             <div className="space-y-2">
-              <Label htmlFor="bankAccount" className="text-foreground text-sm font-medium">
-                Cuenta Bancaria (opcional)
+              <Label htmlFor="photoUrl" className="text-foreground text-sm font-medium">
+                URL de Foto (opcional)
               </Label>
               <Input
-                id="bankAccount"
-                name="bankAccount"
-                value={formData.bankAccount}
+                id="photoUrl"
+                name="photoUrl"
+                value={formData.photoUrl}
                 onChange={handleInputChange}
-                placeholder="Ej: Nombre Banco - Tipo de Cuenta - Número"
+                placeholder="Ej: https://example.com/photo.jpg"
                 className="bg-background border-border text-foreground"
               />
             </div>

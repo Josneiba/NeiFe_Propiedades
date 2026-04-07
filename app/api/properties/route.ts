@@ -95,7 +95,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ property }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
+      const messages = error.errors
+        .map(e => `${e.path.join('.')}: ${e.message}`)
+        .join(', ')
+      return NextResponse.json({ error: messages }, { status: 400 })
     }
     console.error('Error creating property:', error)
     return NextResponse.json(

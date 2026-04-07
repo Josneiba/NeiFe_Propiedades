@@ -76,6 +76,11 @@ export default function EditarPropiedad() {
   })
 
   const currentCommunas = getCommunesByRegion(formData.region)
+  const toNumber = (value: string) => {
+    if (value === '' || value === null || typeof value === 'undefined') return undefined
+    const n = Number(value)
+    return Number.isFinite(n) ? n : undefined
+  }
 
   // Load property data
   useEffect(() => {
@@ -147,15 +152,15 @@ export default function EditarPropiedad() {
         commune: formData.commune,
         region: formData.region,
         description: formData.description || undefined,
-        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
-        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
-        squareMeters: formData.squareMeters ? parseFloat(formData.squareMeters) : undefined,
-        monthlyRentCLP: formData.monthlyRentCLP ? parseInt(formData.monthlyRentCLP) : undefined,
-        monthlyRentUF: formData.monthlyRentUF ? parseFloat(formData.monthlyRentUF) : undefined,
+        bedrooms: toNumber(formData.bedrooms),
+        bathrooms: toNumber(formData.bathrooms),
+        squareMeters: toNumber(formData.squareMeters),
+        monthlyRentCLP: toNumber(formData.monthlyRentCLP),
+        monthlyRentUF: toNumber(formData.monthlyRentUF),
         contractStart: formData.contractStart || undefined,
         contractEnd: formData.contractEnd || undefined,
-        lat: formData.lat ? parseFloat(formData.lat) : undefined,
-        lng: formData.lng ? parseFloat(formData.lng) : undefined,
+        lat: toNumber(formData.lat),
+        lng: toNumber(formData.lng),
       }
 
       const response = await fetch(`/api/properties/${propertyId}`, {
@@ -167,8 +172,14 @@ export default function EditarPropiedad() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        setError(data.error || 'Error al actualizar la propiedad')
+        const data = await response.json().catch(() => ({}))
+        const msg = Array.isArray(data.error)
+          ? data.error
+              .map((e: { message?: string; path?: string[] }) => e?.message || e?.path?.join('.') || '')
+              .filter(Boolean)
+              .join(', ')
+          : data.error
+        setError(typeof msg === 'string' && msg.trim() ? msg : 'Error al actualizar la propiedad')
         setSaving(false)
         return
       }
