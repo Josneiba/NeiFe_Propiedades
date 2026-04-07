@@ -173,9 +173,13 @@ export default function EditarPropiedad() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        const msg = typeof data.error === 'string' ? data.error : 'Error al actualizar la propiedad'
-        setError(msg)
-        console.error('Update error:', msg)
+        const errorMsg = typeof data.error === 'string' ? data.error : 'Error al actualizar la propiedad'
+        
+        // Log errores detallados en consola para debugging
+        console.error('Update error details:', errorMsg)
+        
+        // Mostrar mensaje genérico al usuario
+        setError('Error al actualizar la propiedad. Por favor intenta nuevamente.')
         setSaving(false)
         return
       }

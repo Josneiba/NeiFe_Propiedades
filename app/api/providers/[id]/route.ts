@@ -15,7 +15,7 @@ const updateSchema = z.object({
 // GET — obtener detalle del proveedor
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -23,9 +23,10 @@ export async function GET(
   }
 
   try {
+    const { id } = await params
     const provider = await prisma.provider.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
       include: {
@@ -55,7 +56,7 @@ export async function GET(
 // PUT — actualizar proveedor
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -63,12 +64,13 @@ export async function PUT(
   }
 
   try {
+    const { id } = await params
     const body = await req.json()
     const data = updateSchema.parse(body)
 
     const provider = await prisma.provider.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
     })
@@ -81,14 +83,18 @@ export async function PUT(
     }
 
     const updated = await prisma.provider.update({
-      where: { id: params.id },
+      where: { id },
       data,
     })
 
     return NextResponse.json({ provider: updated })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
+      const messages = error.errors
+        .map(e => `${e.path.join('.')}: ${e.message}`)
+        .join(', ')
+      console.error('Validation error:', messages)
+      return NextResponse.json({ error: messages }, { status: 400 })
     }
     console.error('Error updating provider:', error)
     return NextResponse.json(
@@ -100,7 +106,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -108,9 +114,10 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params
     const provider = await prisma.provider.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
     })
@@ -123,7 +130,7 @@ export async function DELETE(
     }
 
     const deleted = await prisma.provider.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: false },
     })
 

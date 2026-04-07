@@ -55,7 +55,7 @@ const updateSchema = z.object({
 // GET — detalle de propiedad
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -63,9 +63,10 @@ export async function GET(
   }
 
   try {
+    const { id } = await params
     const property = await prisma.property.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
       include: {
@@ -121,7 +122,7 @@ export async function GET(
 // PUT — actualizar propiedad
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -129,10 +130,12 @@ export async function PUT(
   }
 
   try {
+    const { id } = await params
+
     // Verificar que el usuario es el propietario
     const property = await prisma.property.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
     })
@@ -157,7 +160,7 @@ export async function PUT(
     console.log('Update payload:', JSON.stringify(data, null, 2))
 
     const updated = await prisma.property.update({
-      where: { id: params.id },
+      where: { id },
       data,
     })
 
@@ -176,7 +179,7 @@ export async function PUT(
     console.error('Error updating property:', errorMessage)
     
     return NextResponse.json(
-      { error: `Error al actualizar propiedad: ${errorMessage}` },
+      { error: 'Error al actualizar propiedad' },
       { status: 500 }
     )
   }
@@ -187,7 +190,7 @@ export const PATCH = PUT
 // DELETE — desactivar propiedad (soft delete)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -195,9 +198,10 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params
     const property = await prisma.property.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
     })
@@ -210,7 +214,7 @@ export async function DELETE(
     }
 
     const deleted = await prisma.property.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: false },
     })
 
