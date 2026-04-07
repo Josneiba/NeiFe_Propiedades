@@ -173,13 +173,9 @@ export default function EditarPropiedad() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        const msg = Array.isArray(data.error)
-          ? data.error
-              .map((e: { message?: string; path?: string[] }) => e?.message || e?.path?.join('.') || '')
-              .filter(Boolean)
-              .join(', ')
-          : data.error
-        setError(typeof msg === 'string' && msg.trim() ? msg : 'Error al actualizar la propiedad')
+        const msg = typeof data.error === 'string' ? data.error : 'Error al actualizar la propiedad'
+        setError(msg)
+        console.error('Update error:', msg)
         setSaving(false)
         return
       }

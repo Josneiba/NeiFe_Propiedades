@@ -36,7 +36,7 @@ const updateSchema = z.object({
   contractStart: optionalDate,
   contractEnd: optionalDate,
   monthlyRentUF: optionalNumber,
-  monthlyRentCLP: optionalNumber,
+  monthlyRentCLP: optionalInt,  // Cambio: debe ser Int, no Number
   // Campos del agente/corredor
   agentName: z.string().max(100).optional(),
   agentRut: z.string().max(20).optional(),
@@ -154,6 +154,8 @@ export async function PUT(
       )
     )
 
+    console.log('Update payload:', JSON.stringify(data, null, 2))
+
     const updated = await prisma.property.update({
       where: { id: params.id },
       data,
@@ -165,11 +167,16 @@ export async function PUT(
       const messages = error.errors
         .map(e => `${e.path.join('.')}: ${e.message}`)
         .join(', ')
+      console.error('Validation error:', messages)
       return NextResponse.json({ error: messages }, { status: 400 })
     }
-    console.error('Error updating property:', error)
+    
+    // Manejo mejorado de errores de Prisma y otros errores
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Error updating property:', errorMessage)
+    
     return NextResponse.json(
-      { error: 'Error al actualizar propiedad' },
+      { error: `Error al actualizar propiedad: ${errorMessage}` },
       { status: 500 }
     )
   }

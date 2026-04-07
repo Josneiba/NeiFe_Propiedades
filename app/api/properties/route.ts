@@ -17,7 +17,7 @@ const createSchema = z.object({
   contractStart: z.string().optional(),
   contractEnd: z.string().optional(),
   monthlyRentUF: z.number().optional(),
-  monthlyRentCLP: z.number().optional(),
+  monthlyRentCLP: z.number().int().optional(),  // Int, no decimal
 })
 
 // GET — listar propiedades del arrendador autenticado
