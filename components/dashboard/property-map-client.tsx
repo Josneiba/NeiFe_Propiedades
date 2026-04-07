@@ -15,11 +15,11 @@ interface PropertyForMap {
 }
 
 const STATUS_COLORS = {
-  PAID: '#5E8B8C',
-  PENDING: '#F2C94C',
-  OVERDUE: '#C27F79',
-  PROCESSING: '#B8965A',
-  default: '#75524C',
+  PAID: '#5E8B8C',      // Verde azulado - Pagado
+  PENDING: '#F2C94C',   // Amarillo - Pendiente
+  OVERDUE: '#C27F79',   // Rojo/marrón - Atrasado
+  PROCESSING: '#B8965A', // Naranja - En revisión
+  default: '#75524C',   // Marrón default - Sin pago
 }
 
 const STATUS_LABELS = {
@@ -30,11 +30,17 @@ const STATUS_LABELS = {
 }
 
 function getStatusColor(payments: Array<{ status: string }>) {
+  if (!payments || payments.length === 0) {
+    return STATUS_COLORS.default // Sin pago registrado
+  }
   const status = payments[0]?.status ?? 'default'
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.default
 }
 
 function getStatusLabel(payments: Array<{ status: string }>) {
+  if (!payments || payments.length === 0) {
+    return 'Sin pago'
+  }
   const status = payments[0]?.status ?? ''
   return STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? 'Sin pago'
 }

@@ -19,6 +19,8 @@ import {
   Loader2,
   Plus,
   Bell,
+  Edit2,
+  Trash2,
 } from "lucide-react"
 
 interface CalendarEvent {
@@ -50,6 +52,9 @@ export default function CalendarioPage() {
     reminder: 1,
     notifyType: "ME" as "ME" | "TENANT" | "BOTH",
   })
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [updatingEvent, setUpdatingEvent] = useState(false)
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -386,6 +391,135 @@ export default function CalendarioPage() {
     }
   }
 
+  const handleEditEvent = async () => {
+    if (!editingEvent || !editingEvent.title || !editingEvent.date) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos requeridos",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setUpdatingEvent(true)
+    try {
+      const res = await fetch(`/api/calendar/events/${editingEvent.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editingEvent.title,
+          description: editingEvent.description,
+          date: editingEvent.date,
+          type: editingEvent.type,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Error al actualizar evento")
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Evento actualizado correctamente",
+      })
+
+      setShowEditModal(false)
+      setEditingEvent(null)
+
+      // Reload events
+      setLoading(true)
+      const eventsRes = await fetch("/api/calendar/events")
+      if (eventsRes.ok) {
+        const eventsPayload = await eventsRes.json()
+        const savedEvents = Array.isArray(eventsPayload.events) ? eventsPayload.events : []
+        const calendarEvents: CalendarEvent[] = []
+
+        const typeIcons: Record<string, any> = {
+          INSPECTION: Calendar,
+          PAYMENT_DUE: DollarSign,
+          CONTRACT_RENEWAL: FileText,
+          IPC_ADJUSTMENT: TrendingUp,
+          MAINTENANCE: Wrench,
+          TENANT_REMINDER: Bell,
+        }
+        const typeColors: Record<string, string> = {
+          INSPECTION: "bg-blue-50 border-blue-200",
+          PAYMENT_DUE: "bg-red-50 border-red-200",
+          CONTRACT_RENEWAL: "bg-purple-50 border-purple-200",
+          IPC_ADJUSTMENT: "bg-green-50 border-green-200",
+          MAINTENANCE: "bg-yellow-50 border-yellow-200",
+          TENANT_REMINDER: "bg-pink-50 border-pink-200",
+        }
+        const typeBadgeColors: Record<string, string> = {
+          INSPECTION: "bg-blue-100 text-blue-800",
+          PAYMENT_DUE: "bg-red-100 text-red-800",
+          CONTRACT_RENEWAL: "bg-purple-100 text-purple-800",
+          IPC_ADJUSTMENT: "bg-green-100 text-green-800",
+          MAINTENANCE: "bg-yellow-100 text-yellow-800",
+          TENANT_REMINDER: "bg-pink-100 text-pink-800",
+        }
+
+        savedEvents.forEach((event: any) => {
+          calendarEvents.push({
+            id: event.id,
+            type: event.type,
+            date: event.date,
+            title: event.title,
+            description: event.description || "",
+            propertyAddress: event.property?.address || "Propiedad",
+            icon: typeIcons[event.type] || Calendar,
+            color: typeColors[event.type] || "bg-gray-50 border-gray-200",
+            badgeColor: typeBadgeColors[event.type] || "bg-gray-100 text-gray-800",
+          })
+        })
+        setEvents(calendarEvents)
+      }
+      setLoading(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Error al actualizar evento",
+        variant: "destructive"
+      })
+      setUpdatingEvent(false)
+    }
+  }
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este evento?")) {
+      return
+    }
+
+    setUpdatingEvent(true)
+    try {
+      const res = await fetch(`/api/calendar/events/${eventId}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Error al eliminar evento")
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Evento eliminado correctamente",
+      })
+
+      // Remove from local state
+      setEvents(events.filter(e => e.id !== eventId))
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Error al eliminar evento",
+        variant: "destructive"
+      })
+    } finally {
+      setUpdatingEvent(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -548,18 +682,102 @@ export default function CalendarioPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Event Dialog */}
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="w-[min(100vw-1.5rem,40rem)] max-w-none sm:max-w-3xl max-h-[min(88vh,44rem)] overflow-y-auto overscroll-contain bg-[#2D3C3C] border-[#D5C3B6]/10 p-4 sm:p-6 gap-3">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="text-[#FAF6F2]">Editar evento</DialogTitle>
+              <DialogDescription className="text-[#9C8578]">
+                Modifica los detalles del evento
+              </DialogDescription>
+            </DialogHeader>
+            {editingEvent && (
+              <div className="space-y-5 pb-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-title" className="text-[#D5C3B6]">Título *</Label>
+                    <Input
+                      id="edit-title"
+                      value={editingEvent.title}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
+                      className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-type" className="text-[#D5C3B6]">Tipo *</Label>
+                    <select
+                      id="edit-type"
+                      value={editingEvent.type}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, type: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                    >
+                      <option value="INSPECTION">Inspección</option>
+                      <option value="IPC">Reajuste IPC</option>
+                      <option value="CONTRACT">Contrato</option>
+                      <option value="PAYMENT">Pago</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-date" className="text-[#D5C3B6]">Fecha *</Label>
+                  <Input
+                    id="edit-date"
+                    type="date"
+                    value={editingEvent.date instanceof Date ? editingEvent.date.toISOString().split('T')[0] : new Date(editingEvent.date).toISOString().split('T')[0]}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
+                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-description" className="text-[#D5C3B6]">Descripción</Label>
+                  <textarea
+                    id="edit-description"
+                    value={editingEvent.description}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingEvent(null)
+                    }}
+                    disabled={updatingEvent}
+                    className="bg-transparent border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleEditEvent}
+                    disabled={updatingEvent}
+                    className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90"
+                  >
+                    {updatingEvent ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {(["ALL", "INSPECTION", "IPC", "CONTRACT", "PAYMENT"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-4 py-2 rounded-lg transition font-medium text-sm ${
               filter === f
-                ? "bg-[#5E8B8C] text-white"
-                : "bg-muted text-foreground hover:bg-muted/80"
+                ? "bg-[#5E8B8C] text-white shadow-md"
+                : "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
             }`}
           >
             {f === "ALL" && "Todos"}
@@ -640,6 +858,29 @@ export default function CalendarioPage() {
                           </div>
                         </div>
                       </div>
+                      {/* Action buttons for custom calendar events */}
+                      {!event.id.includes("-") && (
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() => {
+                              setEditingEvent(event)
+                              setShowEditModal(true)
+                            }}
+                            className="p-2 rounded-md hover:bg-blue-100 text-blue-600 transition"
+                            title="Editar evento"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            disabled={updatingEvent}
+                            className="p-2 rounded-md hover:bg-red-100 text-red-600 transition disabled:opacity-50"
+                            title="Eliminar evento"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
