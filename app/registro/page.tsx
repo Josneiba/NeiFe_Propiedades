@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,9 +16,14 @@ type Role = "landlord" | "tenant"
 
 export default function RegistroPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const inviteRole = searchParams.get("role")
+  const inviteToken = searchParams.get("invite")
+  const [selectedRole, setSelectedRole] = useState<Role | null>(
+    inviteRole === "tenant" || inviteToken ? "tenant" : null
+  )
   const [privacy, setPrivacy] = useState({
     terms: false,
     privacyPolicy: false,

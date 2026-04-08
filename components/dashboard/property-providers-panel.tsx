@@ -156,9 +156,9 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Las asignaciones son <strong className="text-foreground font-medium">por propiedad</strong>: un
-            arrendatario en Punta Arenas no verá los mismos contactos que uno en Santiago salvo que los
-            asignes aquí. Crea tu base en Proveedores y luego elige quién aplica a cada unidad.
+            Las asignaciones son <strong className="text-foreground font-medium">por propiedad</strong>: define qué
+            proveedores estarán disponibles para esta unidad. Administra tu directorio en “Proveedores” y asigna aquí
+            a los que correspondan.
           </p>
           {assigned.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aún no hay proveedores asignados.</p>

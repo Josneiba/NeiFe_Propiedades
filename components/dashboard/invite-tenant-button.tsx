@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -100,6 +101,7 @@ export function InviteTenantButton({ propertyId, propertyLabel }: Props) {
       <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invitar arrendatario</DialogTitle>
+          <DialogDescription>Genera un enlace o envía la invitación por correo.</DialogDescription>
         </DialogHeader>
         {propertyLabel && (
           <p className="text-sm text-muted-foreground">{propertyLabel}</p>

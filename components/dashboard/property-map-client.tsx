@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet/dist/leaflet.css'
 
 type PaymentStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'PROCESSING' | 'CANCELLED'
 type MarkerStatus = PaymentStatus | 'VACANT' | 'DEFAULT'
@@ -125,15 +126,6 @@ export default function PropertyMapClient({ properties }: { properties: Property
       if (cancelled || !mapContainerRef.current) return
       const L = (leafletModule as any).default ?? leafletModule
       leafletRef.current = L
-
-      // Fix for marker assets in Next.js
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      })
 
       const map = L.map(mapContainerRef.current, {
         center: DEFAULT_CENTER,
