@@ -79,8 +79,8 @@ export default function ReajustesPage() {
         const adjustmentsData = await adjustmentsRes.json()
         const propertyData = await propertyRes.json()
         
-        setAdjustments(adjustmentsData)
-        setProperty(propertyData)
+        setAdjustments(Array.isArray(adjustmentsData.adjustments) ? adjustmentsData.adjustments : [])
+        setProperty(propertyData.property ?? propertyData)
       } catch (error) {
         toast({
           title: "Error",
@@ -132,13 +132,14 @@ export default function ReajustesPage() {
       if (!res.ok) throw new Error("Failed to apply IPC adjustment")
       
       const newAdjustment = await res.json()
-      setAdjustments([newAdjustment, ...adjustments])
+      const created = newAdjustment.adjustment ?? newAdjustment
+      setAdjustments([created, ...adjustments])
       
       // Refresh property to get updated rent
       const propertyRes = await fetch(`/api/properties/${propertyId}`)
       if (propertyRes.ok) {
         const updatedProperty = await propertyRes.json()
-        setProperty(updatedProperty)
+        setProperty(updatedProperty.property ?? updatedProperty)
       }
       
       toast({
@@ -168,7 +169,7 @@ export default function ReajustesPage() {
   }
 
   const currentRent = property?.monthlyRentCLP || 0
-  const nextAdjustment = adjustments.find(a => a.status === "PENDING")
+  const nextAdjustment = adjustments?.find?.((a) => a.status === "PENDING")
 
   return (
     <div className="space-y-6">

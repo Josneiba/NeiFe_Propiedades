@@ -92,6 +92,7 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
   const assign = async () => {
     if (!selectedId) return
     setSaving(true)
+    const selectedProvider = pool.find((p) => p.id === selectedId)
     try {
       const res = await fetch(`/api/properties/${propertyId}/providers`, {
         method: 'POST',
@@ -106,6 +107,19 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
           variant: 'destructive',
         })
         return
+      }
+      // Refrescar UI rápidamente
+      if (selectedProvider) {
+        setAssigned((prev) => [
+          ...prev,
+          {
+            providerId: selectedProvider.id,
+            provider: {
+              ...selectedProvider,
+              email: null,
+            } as any,
+          },
+        ])
       }
       toast({ title: 'Listo', description: 'Proveedor asignado a esta propiedad' })
       setSelectedId('')
