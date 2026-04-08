@@ -1,6 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import 'leaflet/dist/leaflet.css'
+
+type PaymentStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'PROCESSING' | 'CANCELLED'
+type MarkerStatus = PaymentStatus | 'VACANT' | 'DEFAULT'
 
 interface PropertyForMap {
   id: string
@@ -14,35 +18,39 @@ interface PropertyForMap {
   payments: Array<{ status: string }>
 }
 
-const STATUS_COLORS = {
-  PAID: '#5E8B8C',      // Verde azulado - Pagado
-  PENDING: '#F2C94C',   // Amarillo - Pendiente
-  OVERDUE: '#C27F79',   // Rojo/marrón - Atrasado
-  PROCESSING: '#B8965A', // Naranja - En revisión
-  default: '#75524C',   // Marrón default - Sin pago
+const DEFAULT_CENTER: [number, number] = [-33.45, -70.65] // Santiago
+const REFRESH_INTERVAL_MS = 60_000
+
+const STATUS_ORDER: MarkerStatus[] = ['PAID', 'PENDING', 'OVERDUE', 'PROCESSING', 'VACANT', 'CANCELLED']
+
+const STATUS_COLORS: Record<MarkerStatus, string> = {
+  PAID: '#5E8B8C',
+  PENDING: '#F2C94C',
+  OVERDUE: '#C27F79',
+  PROCESSING: '#B8965A',
+  CANCELLED: '#94A3B8',
+  VACANT: '#9CA3AF',
+  DEFAULT: '#75524C',
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<MarkerStatus, string> = {
   PAID: 'Pagado',
   PENDING: 'Pendiente',
   OVERDUE: 'Atrasado',
   PROCESSING: 'En revisión',
+  CANCELLED: 'Anulado',
+  VACANT: 'Sin arrendatario',
+  DEFAULT: 'Sin pago',
 }
 
-function getStatusColor(payments: Array<{ status: string }>) {
-  if (!payments || payments.length === 0) {
-    return STATUS_COLORS.default // Sin pago registrado
+function resolveStatus(payments: Array<{ status: string }>, hasTenant: boolean): MarkerStatus {
+  const raw = payments?.[0]?.status as PaymentStatus | undefined
+  if (!hasTenant) return 'VACANT'
+  if (!raw) return 'PENDING'
+  if (['PAID', 'PENDING', 'OVERDUE', 'PROCESSING', 'CANCELLED'].includes(raw)) {
+    return raw
   }
-  const status = payments[0]?.status ?? 'default'
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.default
-}
-
-function getStatusLabel(payments: Array<{ status: string }>) {
-  if (!payments || payments.length === 0) {
-    return 'Sin pago'
-  }
-  const status = payments[0]?.status ?? ''
-  return STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? 'Sin pago'
+  return 'DEFAULT'
 }
 
 function createMarkerIcon(color: string) {
@@ -68,24 +76,55 @@ function createMarkerIcon(color: string) {
 
 export default function PropertyMapClient({ properties }: { properties: PropertyForMap[] }) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
+  const mapInstanceRef = useRef<import('leaflet').Map | null>(null)
+  const markersLayerRef = useRef<import('leaflet').LayerGroup | null>(null)
+  const leafletRef = useRef<typeof import('leaflet') | null>(null)
+
+  const [liveProperties, setLiveProperties] = useState(properties)
   const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    setLiveProperties(properties)
+  }, [properties])
 
   useEffect(() => {
     setIsReady(true)
   }, [])
 
+  // Pull fresh status/coords every minute so markers change color without recargar la página
   useEffect(() => {
-    if (!isReady || !mapContainerRef.current) return
+    let active = true
 
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove()
-      mapInstanceRef.current = null
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch('/api/properties', { cache: 'no-store' })
+        if (!active || !res.ok) return
+        const json = await res.json()
+        if (Array.isArray(json.properties)) {
+          setLiveProperties(json.properties)
+        }
+      } catch (error) {
+        console.error('Map refresh error', error)
+      }
     }
 
+    fetchLatest()
+    const id = setInterval(fetchLatest, REFRESH_INTERVAL_MS)
+
+    return () => {
+      active = false
+      clearInterval(id)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isReady || !mapContainerRef.current || mapInstanceRef.current) return
+    let cancelled = false
+
     import('leaflet').then((leafletModule) => {
-      const L = leafletModule as typeof import('leaflet')
-      if (!mapContainerRef.current || mapInstanceRef.current) return
+      if (cancelled || !mapContainerRef.current) return
+      const L = (leafletModule as any).default ?? leafletModule
+      leafletRef.current = L
 
       // Fix for marker assets in Next.js
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +135,42 @@ export default function PropertyMapClient({ properties }: { properties: Property
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
 
-      const coords = properties
+      const map = L.map(mapContainerRef.current, {
+        center: DEFAULT_CENTER,
+        zoom: 11,
+        zoomControl: true,
+        scrollWheelZoom: true,
+      })
+
+      mapInstanceRef.current = map
+      markersLayerRef.current = L.layerGroup().addTo(map)
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map)
+
+      renderMarkers(liveProperties)
+    })
+
+    return () => {
+      cancelled = true
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady])
+
+  const renderMarkers = useCallback(
+    (data: PropertyForMap[]) => {
+      const L = leafletRef.current
+      if (!L || !mapInstanceRef.current || !markersLayerRef.current) return
+
+      markersLayerRef.current.clearLayers()
+
+      const coords = data
         .map((p) => ({
           ...p,
           lat: p.lat != null ? Number(p.lat) : null,
@@ -104,33 +178,15 @@ export default function PropertyMapClient({ properties }: { properties: Property
         }))
         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
 
-      const lats = coords.map((p) => p.lat!) as number[]
-      const lngs = coords.map((p) => p.lng!) as number[]
-      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length
-      const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length
-      const zoom = properties.length === 1 ? 15 : 12
+      if (coords.length === 0) {
+        mapInstanceRef.current.setView(DEFAULT_CENTER, 11)
+        return
+      }
 
-      const map = L.map(mapContainerRef.current, {
-        center: [centerLat, centerLng],
-        zoom,
-        zoomControl: true,
-        scrollWheelZoom: true,
-      })
-
-      mapInstanceRef.current = map
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(map)
-
-      properties.forEach((property) => {
-        const lat = property.lat != null ? Number(property.lat) : null
-        const lng = property.lng != null ? Number(property.lng) : null
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
-
-        const color = getStatusColor(property.payments)
-        const statusLabel = getStatusLabel(property.payments)
+      coords.forEach((property) => {
+        const status = resolveStatus(property.payments, !!property.tenant)
+        const color = STATUS_COLORS[status] ?? STATUS_COLORS.DEFAULT
+        const statusLabel = STATUS_LABELS[status] ?? STATUS_LABELS.DEFAULT
         const icon = L.icon(createMarkerIcon(color))
 
         const rentFormatted = property.monthlyRentCLP
@@ -171,28 +227,24 @@ export default function PropertyMapClient({ properties }: { properties: Property
           </div>
         `
 
-        const marker = L.marker([lat!, lng!], { icon })
+        const marker = L.marker([property.lat!, property.lng!], { icon })
         marker.bindPopup(popupContent, { maxWidth: 260, className: 'neife-popup' })
-        marker.addTo(map)
+        markersLayerRef.current.addLayer(marker)
       })
 
-      if (properties.length > 1) {
-        const bounds = L.latLngBounds(
-          properties
-            .map((p) => [Number(p.lat), Number(p.lng)] as [number, number])
-            .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
-        )
-        map.fitBounds(bounds, { padding: [50, 50] })
+      if (coords.length > 1) {
+        const bounds = L.latLngBounds(coords.map((p) => [p.lat!, p.lng!] as [number, number]))
+        mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] })
+      } else {
+        mapInstanceRef.current.setView([coords[0].lat!, coords[0].lng!], 15)
       }
-    })
+    },
+    []
+  )
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
-        mapInstanceRef.current = null
-      }
-    }
-  }, [isReady, properties])
+  useEffect(() => {
+    renderMarkers(liveProperties)
+  }, [liveProperties, renderMarkers])
 
   return (
     <>
@@ -213,37 +265,15 @@ export default function PropertyMapClient({ properties }: { properties: Property
           font-family: system-ui, sans-serif;
           border-radius: 12px;
         }
-        .leaflet-pane,
-        .leaflet-tile,
-        .leaflet-marker-icon,
-        .leaflet-marker-shadow,
-        .leaflet-tile-pane,
-        .leaflet-overlay-pane,
-        .leaflet-shadow-pane,
-        .leaflet-marker-pane,
-        .leaflet-popup-pane,
-        .leaflet-map-pane svg,
-        .leaflet-map-pane canvas {
-          z-index: auto !important;
-        }
-        .leaflet-top,
-        .leaflet-bottom {
-          z-index: 400 !important;
-        }
-        .leaflet-popup {
-          z-index: 450 !important;
-        }
       `}</style>
 
       <div className="flex flex-wrap gap-3 mb-3">
-        {Object.entries(STATUS_COLORS)
-          .filter(([key]) => key !== 'default')
-          .map(([status, color]) => (
-            <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-              {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
-            </div>
-          ))}
+        {STATUS_ORDER.map((status) => (
+          <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[status] }} />
+            {STATUS_LABELS[status]}
+          </div>
+        ))}
       </div>
 
       <div

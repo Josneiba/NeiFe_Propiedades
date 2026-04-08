@@ -110,6 +110,12 @@ export default async function MantencionesPage({
     redirect("/dashboard/mantenciones")
   }
 
+  const properties = await prisma.property.findMany({
+    where: { landlordId: session.user.id, isActive: true },
+    select: { id: true, name: true, address: true },
+    orderBy: { createdAt: "desc" },
+  })
+
   // Get maintenance requests for all properties of current landlord
   const requests = (await prisma.maintenanceRequest.findMany({
     where: {
@@ -165,6 +171,60 @@ export default async function MantencionesPage({
           </div>
         )}
       </div>
+
+      {/* Filtros */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-4">
+          <form className="grid gap-4 md:grid-cols-3" action="/dashboard/mantenciones" method="GET">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm text-muted-foreground" htmlFor="property">
+                Propiedad
+              </label>
+              <select
+                id="property"
+                name="property"
+                defaultValue={filterPropertyId ?? ""}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              >
+                <option value="">Todas</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || p.address}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground" htmlFor="status">
+                Estado
+              </label>
+              <select
+                id="status"
+                name="status"
+                defaultValue={statusFilter}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              >
+                <option value="all">Todos</option>
+                <option value="REQUESTED">Solicitadas</option>
+                <option value="APPROVED">Aprobadas</option>
+                <option value="IN_PROGRESS">En ejecución</option>
+                <option value="COMPLETED">Completadas</option>
+                <option value="REJECTED">Rechazadas</option>
+              </select>
+            </div>
+            <div className="md:col-span-3 flex gap-3 pt-1">
+              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
+                Aplicar filtros
+              </Button>
+              {(filterPropertyId || statusFilter !== "all") && (
+                <Button variant="outline" className="border-border" asChild>
+                  <a href="/dashboard/mantenciones">Limpiar</a>
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2">

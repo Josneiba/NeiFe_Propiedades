@@ -35,6 +35,72 @@ interface CalendarEvent {
   badgeColor: string
 }
 
+const EVENT_STYLES = {
+  INSPECTION: {
+    card: "bg-[#233334]/80 border-[#5E8B8C]/50",
+    badge: "bg-[#5E8B8C]/18 text-[#5E8B8C]",
+    icon: "text-[#5E8B8C]",
+  },
+  IPC: {
+    card: "bg-[#2E3C35]/80 border-[#5E8B8C]/45",
+    badge: "bg-[#5E8B8C]/16 text-[#5E8B8C]",
+    icon: "text-[#5E8B8C]",
+  },
+  IPC_ADJUSTMENT: {
+    card: "bg-[#2E3C35]/80 border-[#5E8B8C]/45",
+    badge: "bg-[#5E8B8C]/16 text-[#5E8B8C]",
+    icon: "text-[#5E8B8C]",
+  },
+  CONTRACT: {
+    card: "bg-[#32282E]/80 border-[#D5C3B6]/40",
+    badge: "bg-[#D5C3B6]/20 text-[#D5C3B6]",
+    icon: "text-[#D5C3B6]",
+  },
+  CONTRACT_RENEWAL: {
+    card: "bg-[#32282E]/80 border-[#D5C3B6]/40",
+    badge: "bg-[#D5C3B6]/20 text-[#D5C3B6]",
+    icon: "text-[#D5C3B6]",
+  },
+  PAYMENT: {
+    card: "bg-[#3D3221]/80 border-[#B8965A]/45",
+    badge: "bg-[#B8965A]/20 text-[#B8965A]",
+    icon: "text-[#B8965A]",
+  },
+  PAYMENT_DUE: {
+    card: "bg-[#3D3221]/80 border-[#B8965A]/45",
+    badge: "bg-[#B8965A]/20 text-[#B8965A]",
+    icon: "text-[#B8965A]",
+  },
+  PAYMENT_OVERDUE: {
+    card: "bg-[#402728]/85 border-[#C27F79]/55",
+    badge: "bg-[#C27F79]/20 text-[#C27F79]",
+    icon: "text-[#C27F79]",
+  },
+  MAINTENANCE: {
+    card: "bg-[#3A2E24]/80 border-[#B8965A]/45",
+    badge: "bg-[#B8965A]/20 text-[#B8965A]",
+    icon: "text-[#B8965A]",
+  },
+  TENANT_REMINDER: {
+    card: "bg-[#3C2B2B]/80 border-[#C27F79]/45",
+    badge: "bg-[#C27F79]/22 text-[#C27F79]",
+    icon: "text-[#C27F79]",
+  },
+  DEFAULT: {
+    card: "bg-[#2D3C3C]/70 border-[#D5C3B6]/30",
+    badge: "bg-[#D5C3B6]/18 text-[#D5C3B6]",
+    icon: "text-[#D5C3B6]",
+  },
+}
+
+type StyleVariant = "OVERDUE" | "PENDING" | undefined
+const getStyle = (type: string, variant?: StyleVariant) => {
+  if (type === "PAYMENT" && variant === "OVERDUE") return EVENT_STYLES.PAYMENT_OVERDUE
+  if (type === "PAYMENT_DUE") return EVENT_STYLES.PAYMENT_DUE
+  if (type === "PAYMENT") return EVENT_STYLES.PAYMENT
+  return (EVENT_STYLES as any)[type] || EVENT_STYLES.DEFAULT
+}
+
 export default function CalendarioPage() {
   const { toast } = useToast()
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -87,22 +153,6 @@ export default function CalendarioPage() {
                 MAINTENANCE: Wrench,
                 TENANT_REMINDER: Bell,
               }
-              const typeColors: Record<string, string> = {
-                INSPECTION: "bg-blue-50 border-blue-200",
-                PAYMENT_DUE: "bg-red-50 border-red-200",
-                CONTRACT_RENEWAL: "bg-purple-50 border-purple-200",
-                IPC_ADJUSTMENT: "bg-green-50 border-green-200",
-                MAINTENANCE: "bg-yellow-50 border-yellow-200",
-                TENANT_REMINDER: "bg-pink-50 border-pink-200",
-              }
-              const typeBadgeColors: Record<string, string> = {
-                INSPECTION: "bg-blue-100 text-blue-800",
-                PAYMENT_DUE: "bg-red-100 text-red-800",
-                CONTRACT_RENEWAL: "bg-purple-100 text-purple-800",
-                IPC_ADJUSTMENT: "bg-green-100 text-green-800",
-                MAINTENANCE: "bg-yellow-100 text-yellow-800",
-                TENANT_REMINDER: "bg-pink-100 text-pink-800",
-              }
               calendarEvents.push({
                 id: event.id,
                 type: event.type,
@@ -111,8 +161,8 @@ export default function CalendarioPage() {
                 description: event.description || "",
                 propertyAddress: event.property?.address || "Propiedad",
                 icon: typeIcons[event.type] || Calendar,
-                color: typeColors[event.type] || "bg-gray-50 border-gray-200",
-                badgeColor: typeBadgeColors[event.type] || "bg-gray-100 text-gray-800",
+                color: getStyle(event.type).card,
+                badgeColor: getStyle(event.type).badge,
               })
             })
           }
@@ -134,6 +184,7 @@ export default function CalendarioPage() {
                   : []
               inspections.forEach((inspection: any) => {
                 if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
+                  const style = getStyle("INSPECTION")
                   calendarEvents.push({
                     id: `inspection-${inspection.id}`,
                     type: "INSPECTION",
@@ -142,8 +193,8 @@ export default function CalendarioPage() {
                     description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
                     propertyAddress: property.address || "Propiedad",
                     icon: Calendar,
-                    color: "bg-blue-50 border-blue-200",
-                    badgeColor: "bg-blue-100 text-blue-800"
+                    color: style.card,
+                    badgeColor: style.badge
                   })
                 }
               })
@@ -164,6 +215,7 @@ export default function CalendarioPage() {
                   : []
               adjustments.forEach((adj: any) => {
                 if (adj.status === "PENDING") {
+                  const style = getStyle("IPC")
                   calendarEvents.push({
                     id: `ipc-${adj.id}`,
                     type: "IPC",
@@ -174,8 +226,8 @@ export default function CalendarioPage() {
                       : 'Reajuste IPC pendiente',
                     propertyAddress: property.address || "Propiedad",
                     icon: TrendingUp,
-                    color: "bg-green-50 border-green-200",
-                    badgeColor: "bg-green-100 text-green-800"
+                    color: style.card,
+                    badgeColor: style.badge
                   })
                 }
               })
@@ -191,6 +243,7 @@ export default function CalendarioPage() {
             const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
             if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
+              const style = getStyle("CONTRACT")
               calendarEvents.push({
                 id: `contract-${property.id}`,
                 type: "CONTRACT",
@@ -199,8 +252,8 @@ export default function CalendarioPage() {
                 description: `Vence en ${daysUntilEnd} días`,
                 propertyAddress: property.address || "Propiedad",
                 icon: FileText,
-                color: "bg-orange-50 border-orange-200",
-                badgeColor: "bg-orange-100 text-orange-800"
+                color: style.card,
+                badgeColor: style.badge
               })
             }
           }
@@ -212,6 +265,7 @@ export default function CalendarioPage() {
             const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
             const iso = lastDay.toISOString()
             const isOverdue = pay.status === "OVERDUE"
+            const style = getStyle("PAYMENT", isOverdue ? "OVERDUE" : undefined)
             calendarEvents.push({
               id: `payment-${property.id}-${pay.month}-${pay.year}`,
               type: "PAYMENT",
@@ -222,8 +276,8 @@ export default function CalendarioPage() {
                 : "Revisa la sección Pagos",
               propertyAddress: property.address || "Propiedad",
               icon: DollarSign,
-              color: isOverdue ? "bg-red-50 border-red-200" : "bg-yellow-50 border-yellow-200",
-              badgeColor: isOverdue ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+              color: style.card,
+              badgeColor: style.badge
             })
           }
         }
@@ -332,6 +386,7 @@ export default function CalendarioPage() {
                     : []
                 inspections.forEach((inspection: any) => {
                   if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
+                    const style = getStyle("INSPECTION")
                     calendarEvents.push({
                       id: `inspection-${inspection.id}`,
                       type: "INSPECTION",
@@ -340,8 +395,8 @@ export default function CalendarioPage() {
                       description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
                       propertyAddress: property.address || "Propiedad",
                       icon: Calendar,
-                      color: "bg-blue-50 border-blue-200",
-                      badgeColor: "bg-blue-100 text-blue-800"
+                      color: style.card,
+                      badgeColor: style.badge
                     })
                   }
                 })
@@ -356,6 +411,7 @@ export default function CalendarioPage() {
               const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
               if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
+                const style = getStyle("CONTRACT")
                 calendarEvents.push({
                   id: `contract-${property.id}`,
                   type: "CONTRACT",
@@ -364,8 +420,8 @@ export default function CalendarioPage() {
                   description: `Vence en ${daysUntilEnd} días`,
                   propertyAddress: property.address || "Propiedad",
                   icon: FileText,
-                  color: "bg-orange-50 border-orange-200",
-                  badgeColor: "bg-orange-100 text-orange-800"
+                  color: style.card,
+                  badgeColor: style.badge
                 })
               }
             }
@@ -444,20 +500,20 @@ export default function CalendarioPage() {
           TENANT_REMINDER: Bell,
         }
         const typeColors: Record<string, string> = {
-          INSPECTION: "bg-blue-50 border-blue-200",
-          PAYMENT_DUE: "bg-red-50 border-red-200",
-          CONTRACT_RENEWAL: "bg-purple-50 border-purple-200",
-          IPC_ADJUSTMENT: "bg-green-50 border-green-200",
-          MAINTENANCE: "bg-yellow-50 border-yellow-200",
-          TENANT_REMINDER: "bg-pink-50 border-pink-200",
+          INSPECTION: getStyle("INSPECTION").card,
+          PAYMENT_DUE: getStyle("PAYMENT_DUE").card,
+          CONTRACT_RENEWAL: getStyle("CONTRACT_RENEWAL").card,
+          IPC_ADJUSTMENT: getStyle("IPC_ADJUSTMENT").card,
+          MAINTENANCE: getStyle("MAINTENANCE").card,
+          TENANT_REMINDER: getStyle("TENANT_REMINDER").card,
         }
         const typeBadgeColors: Record<string, string> = {
-          INSPECTION: "bg-blue-100 text-blue-800",
-          PAYMENT_DUE: "bg-red-100 text-red-800",
-          CONTRACT_RENEWAL: "bg-purple-100 text-purple-800",
-          IPC_ADJUSTMENT: "bg-green-100 text-green-800",
-          MAINTENANCE: "bg-yellow-100 text-yellow-800",
-          TENANT_REMINDER: "bg-pink-100 text-pink-800",
+          INSPECTION: getStyle("INSPECTION").badge,
+          PAYMENT_DUE: getStyle("PAYMENT_DUE").badge,
+          CONTRACT_RENEWAL: getStyle("CONTRACT_RENEWAL").badge,
+          IPC_ADJUSTMENT: getStyle("IPC_ADJUSTMENT").badge,
+          MAINTENANCE: getStyle("MAINTENANCE").badge,
+          TENANT_REMINDER: getStyle("TENANT_REMINDER").badge,
         }
 
         savedEvents.forEach((event: any) => {
@@ -469,8 +525,8 @@ export default function CalendarioPage() {
             description: event.description || "",
             propertyAddress: event.property?.address || "Propiedad",
             icon: typeIcons[event.type] || Calendar,
-            color: typeColors[event.type] || "bg-gray-50 border-gray-200",
-            badgeColor: typeBadgeColors[event.type] || "bg-gray-100 text-gray-800",
+            color: typeColors[event.type] || EVENT_STYLES.DEFAULT.card,
+            badgeColor: typeBadgeColors[event.type] || EVENT_STYLES.DEFAULT.badge,
           })
         })
         setEvents(calendarEvents)
@@ -811,22 +867,36 @@ export default function CalendarioPage() {
                 const eventDate = new Date(event.date)
                 const today = new Date()
                 const daysFromNow = Math.floor((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                const isOverduePayment = event.type === "PAYMENT" && daysFromNow < 0
+                const style = getStyle(event.type, isOverduePayment ? "OVERDUE" : undefined)
+                const badgeLabels: Record<string, string> = {
+                  INSPECTION: "Inspección",
+                  IPC: "Reajuste IPC",
+                  CONTRACT: "Contrato",
+                  PAYMENT: isOverduePayment ? "Atrasado" : "Pago",
+                  PAYMENT_DUE: "Pago pendiente",
+                  CONTRACT_RENEWAL: "Contrato",
+                  IPC_ADJUSTMENT: "Reajuste IPC",
+                  MAINTENANCE: "Mantención",
+                  TENANT_REMINDER: "Recordatorio",
+                }
+                const badgeText = badgeLabels[event.type] ?? event.type
                 
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border-2 transition ${event.color}`}
+                    className={`p-4 rounded-lg border-2 transition ${style.card}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
-                        <div className="p-2 rounded-lg bg-white/50">
-                          <event.icon className="h-5 w-5 text-[#5E8B8C]" />
+                        <div className="p-2 rounded-lg bg-[#FAF6F2]/5 border border-[#D5C3B6]/15">
+                          <event.icon className={`h-5 w-5 ${style.icon}`} />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold text-foreground">{event.title}</h3>
-                            <Badge className={event.badgeColor}>
-                              {event.type === "PAYMENT" && daysFromNow < 0 ? "VENCIDO" : event.type}
+                            <Badge className={`${style.badge} uppercase tracking-wide text-[10px] font-semibold`}>
+                              {badgeText}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
@@ -866,7 +936,7 @@ export default function CalendarioPage() {
                               setEditingEvent(event)
                               setShowEditModal(true)
                             }}
-                            className="p-2 rounded-md hover:bg-blue-100 text-blue-600 transition"
+                            className="p-2 rounded-md hover:bg-[#5E8B8C]/20 text-[#5E8B8C] transition"
                             title="Editar evento"
                           >
                             <Edit2 className="h-4 w-4" />

@@ -33,7 +33,7 @@ interface PaymentWithProperty {
 export default async function PagosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string }>
+  searchParams: Promise<{ property?: string; status?: string; behavior?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -41,7 +41,14 @@ export default async function PagosPage({
     redirect("/mi-arriendo")
   }
 
-  const { property: filterPropertyId } = await searchParams
+  const { property: filterPropertyId, status: statusFilter = "ALL", behavior: behaviorFilter = "ALL" } =
+    await searchParams
+
+  const properties = await prisma.property.findMany({
+    where: { landlordId: session.user.id, isActive: true },
+    select: { id: true, name: true, address: true },
+    orderBy: { createdAt: "desc" },
+  })
 
   const filterProperty =
     filterPropertyId != null && filterPropertyId !== ""
@@ -59,7 +66,7 @@ export default async function PagosPage({
   }
 
   // Get all payments for this landlord's properties
-  const payments = (await prisma.payment.findMany({
+  let payments = (await prisma.payment.findMany({
     where: {
       property: {
         landlordId: session.user.id,
@@ -81,7 +88,17 @@ export default async function PagosPage({
       },
     },
     orderBy: [{ year: "desc" }, { month: "desc" }],
+    ...(statusFilter !== "ALL" && {
+      status: statusFilter as any,
+    }),
   })) as PaymentWithProperty[]
+
+  payments =
+    behaviorFilter === "ONTIME"
+      ? payments.filter((p) => p.status === "PAID")
+      : behaviorFilter === "LATE"
+      ? payments.filter((p) => p.status === "OVERDUE" || p.status === "PENDING")
+      : payments
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string; label: string }> = {
@@ -133,6 +150,78 @@ export default async function PagosPage({
           </div>
         )}
       </div>
+
+      {/* Filtros */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-4">
+          <form className="grid gap-4 md:grid-cols-3" action="/dashboard/pagos" method="GET">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground" htmlFor="property">
+                Propiedad
+              </label>
+              <select
+                id="property"
+                name="property"
+                defaultValue={filterPropertyId ?? ""}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              >
+                <option value="">Todas</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || p.address}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground" htmlFor="status">
+                Estado de pago
+              </label>
+              <select
+                id="status"
+                name="status"
+                defaultValue={statusFilter}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              >
+                <option value="ALL">Todos</option>
+                <option value="PAID">Pagado</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="PROCESSING">En revisión</option>
+                <option value="OVERDUE">Vencido</option>
+                <option value="CANCELLED">Cancelado</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground" htmlFor="behavior">
+                Comportamiento
+              </label>
+              <select
+                id="behavior"
+                name="behavior"
+                defaultValue={behaviorFilter}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              >
+                <option value="ALL">Todos</option>
+                <option value="ONTIME">Al día (Pagados)</option>
+                <option value="LATE">Atrasados / Pendientes</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-3 flex gap-3 pt-1">
+              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
+                Aplicar filtros
+              </Button>
+              {(filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL") && (
+                <Button variant="outline" className="border-border" asChild>
+                  <Link href="/dashboard/pagos">Limpiar</Link>
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-4">

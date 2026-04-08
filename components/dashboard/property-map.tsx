@@ -35,8 +35,8 @@ const MapWithNoSSR = dynamic(() => import('./property-map-client'), {
 })
 
 export function PropertyMap({ properties }: PropertyMapProps) {
-  const withCoords = properties.filter((p) => p.lat && p.lng)
-  const withoutCoords = properties.filter((p) => !p.lat || !p.lng)
+  const withCoords = properties.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+  const withoutCoords = properties.filter((p) => !Number.isFinite(p.lat) || !Number.isFinite(p.lng))
 
   return (
     <div className="space-y-4">
