@@ -50,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark" suppressHydrationWarning style={{ colorScheme: 'dark' }}>
       <body className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable} font-sans antialiased`}>
         <Providers>
           {children}

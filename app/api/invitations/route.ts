@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     if (data.type === 'EMAIL' && data.email) {
       try {
         await resend.emails.send({
-          from: 'noreply@neife.cl',
+          from: process.env.RESEND_FROM || 'invitaciones@neife.cl',
           to: data.email,
           subject: 'Invitación a NeiFe - Plataforma de Gestión de Arriendos',
           html: `
@@ -77,7 +77,13 @@ export async function POST(req: NextRequest) {
         })
       } catch (emailError) {
         console.error('Error sending invitation email:', emailError)
-        // No fallar toda la operación si falla el email, pero loguear el error
+        return NextResponse.json(
+          {
+            error: 'No se pudo enviar el correo de invitación. Revisa la configuración de Resend.',
+            details: emailError instanceof Error ? emailError.message : emailError,
+          },
+          { status: 502 },
+        )
       }
     }
 

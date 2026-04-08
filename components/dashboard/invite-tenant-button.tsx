@@ -61,7 +61,7 @@ export function InviteTenantButton({ propertyId, propertyLabel }: Props) {
         title: type === 'EMAIL' ? 'Invitación enviada' : 'Enlace listo',
         description:
           type === 'EMAIL'
-            ? 'Revisa que el correo sea correcto.'
+            ? 'Correo enviado. Revisa spam si no aparece.'
             : 'Copia el enlace y compártelo con tu arrendatario.',
       })
     } catch {
