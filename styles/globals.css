@@ -39,6 +39,16 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Numeric styling for money/metrics */
+body {
+  font-variant-numeric: lining-nums;
+}
+.money {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

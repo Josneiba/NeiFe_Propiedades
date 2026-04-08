@@ -192,10 +192,10 @@ export default async function DashboardPage() {
                     <TrendingUp className="h-4 w-4 text-[#5E8B8C] flex-shrink-0" />
                   )}
                 </div>
-                <p className="text-xl sm:text-2xl font-serif font-semibold text-[#FAF6F2] truncate">
+                <p className="text-xl sm:text-2xl font-semibold text-[#FAF6F2] truncate money">
                   {stat.value}
                 </p>
-                <p className="text-xs sm:text-sm font-mono text-[#9C8578] truncate">{stat.subValue}</p>
+                <p className="text-xs sm:text-sm text-[#9C8578] truncate money">{stat.subValue}</p>
                 <p className="text-xs text-[#9C8578] mt-1 sm:mt-2 line-clamp-2">{stat.title}</p>
                 {stat.change && (
                   <p className="text-xs text-[#5E8B8C] mt-1 line-clamp-1">{stat.change}</p>

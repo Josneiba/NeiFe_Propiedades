@@ -135,20 +135,6 @@ export default async function PagosPage({
       <div>
         <h1 className="text-3xl font-bold text-foreground">Gestión de Pagos</h1>
         <p className="text-muted-foreground">Monitorea y confirma pagos de tus arrendatarios</p>
-        {filterProperty && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <span className="text-foreground">
-              Filtrado por:{" "}
-              <strong>{filterProperty.name || filterProperty.address}</strong>
-            </span>
-            <Button variant="outline" size="sm" className="border-border" asChild>
-              <Link href="/dashboard/pagos">Ver todas las propiedades</Link>
-            </Button>
-            <Button variant="outline" size="sm" className="border-border" asChild>
-              <Link href={`/dashboard/propiedades/${filterProperty.id}`}>Ir al detalle</Link>
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Filtros */}
@@ -233,7 +219,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total esperado</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-2xl font-bold text-foreground money">
                   ${stats.total.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -248,7 +234,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-2xl font-bold text-foreground money">
                   ${stats.paid.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -263,7 +249,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-2xl font-bold text-foreground money">
                   ${stats.pending.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -312,7 +298,7 @@ export default async function PagosPage({
                       <td className="py-4 px-2 text-muted-foreground">
                         {getMonthName(payment.month)} {payment.year}
                       </td>
-                      <td className="py-4 px-2 text-right font-mono font-medium text-foreground">
+                      <td className="py-4 px-2 text-right font-medium text-foreground money">
                         ${payment.amountCLP.toLocaleString("es-CL")}
                       </td>
                       <td className="py-4 px-2 text-center">

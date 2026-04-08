@@ -148,8 +148,6 @@ export default async function MantencionesPage({
     },
   })) as MaintenanceWithProperty[]
 
-  const statuses = ["all", "REQUESTED", "APPROVED", "IN_PROGRESS", "COMPLETED", "REJECTED"]
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -225,32 +223,6 @@ export default async function MantencionesPage({
           </form>
         </CardContent>
       </Card>
-
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { value: "all", label: "Todas" },
-          { value: "REQUESTED", label: "Solicitadas" },
-          { value: "APPROVED", label: "Aprobadas" },
-          { value: "IN_PROGRESS", label: "En ejecución" },
-          { value: "COMPLETED", label: "Completadas" }
-        ].map((tab) => (
-          <Button
-            key={tab.value}
-            variant={statusFilter === tab.value ? "default" : "outline"}
-            size="sm"
-            className={statusFilter === tab.value 
-              ? "bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90" 
-              : "text-foreground border-border hover:bg-muted"
-            }
-            asChild
-          >
-            <a href={mantencionesQueryHref(tab.value, filterProperty?.id)}>
-              {tab.label}
-            </a>
-          </Button>
-        ))}
-      </div>
 
       {/* Requests List */}
       <div className="space-y-4">
