@@ -148,7 +148,7 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
     const loadEvents = async () => {
       try {
         // Fetch properties managed by broker
-        const propertiesRes = await fetch("/api/properties/current")
+        const propertiesRes = await fetch("/api/broker/properties")
         if (!propertiesRes.ok) throw new Error("Failed to load properties")
         const propertiesJson = await propertiesRes.json()
         const propertiesData = Array.isArray(propertiesJson.properties)

@@ -74,7 +74,7 @@ const roles = [
       "Contratos con firma digital"
     ],
     color: "bg-[#75524C]",
-    href: "/demo/landlord"
+    href: "/login"
   },
   {
     icon: Home,
@@ -87,7 +87,7 @@ const roles = [
       "Historial completo de pagos"
     ],
     color: "bg-[#5E8B8C]",
-    href: "/demo/tenant"
+    href: "/login"
   },
   {
     icon: Briefcase,
@@ -100,7 +100,7 @@ const roles = [
       "Control de comisiones y acuerdos"
     ],
     color: "bg-[#B8965A]",
-    href: "/demo/broker"
+    href: "/login"
   }
 ]
 

@@ -60,7 +60,7 @@ export default async function BrokerDashboardPage() {
             property: {
               include: {
                 tenant: { select: { name: true } },
-                owner: { select: { name: true, email: true } },
+                landlord: { select: { name: true, email: true } },
                 payments: { 
                   where: { month: currentMonth, year: currentYear }, 
                   take: 1 

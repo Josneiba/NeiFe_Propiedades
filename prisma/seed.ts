@@ -79,8 +79,10 @@ async function main() {
     })
 
     // PROPIEDAD 2 — Ñuñoa
-    const prop2 = await prisma.property.create({
-      data: {
+    const prop2 = await prisma.property.upsert({
+      where: { tenantId: tenant2.id },
+      update: {},
+      create: {
         name: 'Casa Ñuñoa',
         address: 'Los Leones 567, Casa 12',
         commune: 'Ñuñoa',
@@ -219,7 +221,7 @@ async function main() {
     })
 
     // Usuario corredor demo
-    const broker = await prisma.user.upsert({
+    const corredor = await prisma.user.upsert({
       where: { email: 'corredor@neife.cl' },
       update: {},
       create: {
@@ -247,7 +249,7 @@ async function main() {
         data: {
           propertyId: prop1.id,
           ownerId: owner.id,
-          brokerId: broker.id,
+          brokerId: corredor.id,
           status: 'ACTIVE',
           signedByOwner: true,
           signedByBroker: true,
@@ -260,7 +262,7 @@ async function main() {
       // Actualizar managedBy en la propiedad
       await prisma.property.update({
         where: { id: prop1.id },
-        data: { managedBy: broker.id }
+        data: { managedBy: corredor.id }
       })
     }
 
