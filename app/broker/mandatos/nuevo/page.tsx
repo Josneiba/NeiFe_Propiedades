@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Building2, Mail, Search, ArrowLeft } from 'lucide-react'
+import { Building2, Mail, Search, ArrowLeft, Copy } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import Link from 'next/link'
 
 interface Property {
@@ -35,14 +35,86 @@ export default function NuevoMandatoPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [permissionStatus, setPermissionStatus] = useState<'NONE' | 'PENDING' | 'REJECTED' | 'APPROVED'>('NONE')
+  const [requestingPermission, setRequestingPermission] = useState(false)
 
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([])
   const [formData, setFormData] = useState({
-    propertyId: '',
     notes: '',
     startsAt: '',
     expiresAt: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+
+  // Pre-llenar email si viene de una notificación
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const email = searchParams.get('email')
+    if (email) {
+      setOwnerEmail(email)
+      // Buscar automáticamente si hay email
+      handleSearchOwnerFromParam(email)
+    }
+  }, [])
+
+  const handleSearchOwnerFromParam = async (email: string) => {
+    setLoading(true)
+    setSearchError(null)
+
+    try {
+      const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`)
+      if (!response.ok) {
+        setSearchError('El propietario no tiene cuenta en NeiFe')
+        setOwner(null)
+        setProperties([])
+        setLoading(false)
+        return
+      }
+
+      const userData = await response.json()
+      setOwner(userData.user)
+
+      setPermissionStatus('NONE')
+      // Verificar estado de permiso del corredor con este propietario
+      const permissionResponse = await fetch(`/api/broker-permissions/check?landlordId=${userData.user.id}`)
+      if (permissionResponse.ok) {
+        const permissionData = await permissionResponse.json()
+        setPermissionStatus(permissionData.status || 'NONE')
+        if (!permissionData.hasPermission) {
+          setSearchError('Aún no tienes permiso aprobado para administrar las propiedades de este propietario.')
+          setProperties([])
+          setLoading(false)
+          return
+        }
+      }
+
+      // Get properties for this owner
+      const propsResponse = await fetch(`/api/properties?ownerId=${userData.user.id}`)
+      if (!propsResponse.ok) {
+        throw new Error('Error al obtener propiedades')
+      }
+
+      const propsData = await propsResponse.json()
+      const availableProps = propsData.properties.filter(
+        (p: any) => !p.mandates?.some((m: any) => m.status === 'ACTIVE')
+      )
+
+      setProperties(availableProps)
+      setSelectedPropertyIds([])
+      if (availableProps.length > 0) {
+        setStep('form')
+      } else {
+        setSearchError('Este propietario no tiene propiedades disponibles para administrar')
+      }
+    } catch (err) {
+      setSearchError('Error al buscar propietario')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSearchOwner = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +136,20 @@ export default function NuevoMandatoPage() {
       const userData = await response.json()
       setOwner(userData.user)
 
+      setPermissionStatus('NONE')
+      // Verificar estado de permiso del corredor con este propietario
+      const permissionResponse = await fetch(`/api/broker-permissions/check?landlordId=${userData.user.id}`)
+      if (permissionResponse.ok) {
+        const permissionData = await permissionResponse.json()
+        setPermissionStatus(permissionData.status || 'NONE')
+        if (!permissionData.hasPermission) {
+          setSearchError('Aún no tienes permiso aprobado para administrar las propiedades de este propietario.')
+          setProperties([])
+          setLoading(false)
+          return
+        }
+      }
+
       // Get properties for this owner
       const propsResponse = await fetch(`/api/properties?ownerId=${userData.user.id}`)
       if (!propsResponse.ok) {
@@ -76,6 +162,7 @@ export default function NuevoMandatoPage() {
       )
 
       setProperties(availableProps)
+      setSelectedPropertyIds([])
       if (availableProps.length > 0) {
         setStep('form')
       } else {
@@ -89,39 +176,110 @@ export default function NuevoMandatoPage() {
     }
   }
 
+  const toggleProperty = (id: string) => {
+    setSelectedPropertyIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const selectAllAvailable = () => {
+    setSelectedPropertyIds(properties.map((p) => p.id))
+  }
+
+  const clearSelection = () => setSelectedPropertyIds([])
+
+  const handleRequestPermission = async () => {
+    if (!owner) return
+    setRequestingPermission(true)
+    try {
+      const response = await fetch('/api/broker-permissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ landlordId: owner.id }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: data.error || 'No se pudo enviar la solicitud de permiso',
+        })
+        return
+      }
+
+      setPermissionStatus('PENDING')
+      toast({
+        title: 'Solicitud enviada',
+        description: 'El propietario recibió una notificación para aprobar tu acceso.',
+      })
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error de conexión al enviar la solicitud',
+      })
+    } finally {
+      setRequestingPermission(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!owner || !formData.propertyId) return
+    if (!owner || selectedPropertyIds.length === 0) return
 
     setSubmitting(true)
 
-    try {
-      const response = await fetch('/api/mandates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          propertyId: formData.propertyId,
-          ownerId: owner.id,
-          notes: formData.notes || undefined,
-          startsAt: formData.startsAt ? new Date(formData.startsAt) : undefined,
-          expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
-        }),
-      })
+    const bodyBase = {
+      ownerId: owner.id,
+      notes: formData.notes || undefined,
+      startsAt: formData.startsAt ? new Date(formData.startsAt) : undefined,
+      expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+    }
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al crear mandato')
+    try {
+      const results = await Promise.allSettled(
+        selectedPropertyIds.map((propertyId) =>
+          fetch('/api/mandates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...bodyBase, propertyId }),
+          }).then(async (res) => {
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+              throw new Error(data.error || `Error en propiedad ${propertyId}`)
+            }
+            return data
+          })
+        )
+      )
+
+      const failed = results.filter((r) => r.status === 'rejected')
+      const ok = results.length - failed.length
+
+      if (ok === 0) {
+        const first = failed[0]
+        const msg =
+          first?.status === 'rejected' ? first.reason?.message || 'Error' : 'Error'
+        throw new Error(msg)
       }
 
-      toast({
-        title: 'Éxito',
-        description: 'Solicitud enviada. El propietario recibirá una notificación para firmar.',
-      })
+      if (failed.length === 0) {
+        toast({
+          title: 'Éxito',
+          description: `Se enviaron ${ok} solicitud${ok !== 1 ? 'es' : ''}. El propietario recibirá notificaciones para firmar.`,
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: ok > 0 ? 'Parcialmente enviado' : 'Error',
+          description: `Se enviaron ${ok} solicitud${ok !== 1 ? 'es' : ''}. ${failed.length} no se pudieron crear (p. ej. ya hay mandato pendiente o activo).`,
+        })
+      }
 
-      // Show success message for 3 seconds before redirecting
       setTimeout(() => {
         router.push('/broker/mandatos')
-      }, 3000)
+      }, failed.length > 0 ? 500 : 2000)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -130,6 +288,58 @@ export default function NuevoMandatoPage() {
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleSendInvite = async () => {
+    if (!ownerEmail.trim()) return
+
+    setSendingInvite(true)
+    setInviteUrl(null)
+
+    try {
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'BROKER_INVITE',
+          email: ownerEmail.trim(),
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        toast({
+          title: 'Error',
+          description: data.error || 'No se pudo enviar la invitación',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      const url = data.inviteUrl || `${window.location.origin}/invitacion/${data.invitation?.token || data.token}`
+      setInviteUrl(url)
+
+      if (data.emailSent) {
+        toast({
+          title: 'Invitación enviada',
+          description: 'Correo enviado. Revisa spam si no aparece.',
+        })
+      } else {
+        toast({
+          title: 'Invitación creada — correo no enviado',
+          description: data.warning || 'Revisa Resend y RESEND_FROM, o copia el enlace de abajo.',
+          variant: 'destructive',
+        })
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Error de conexión',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingInvite(false)
     }
   }
 
@@ -144,7 +354,9 @@ export default function NuevoMandatoPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-[#FAF6F2]">Nueva Solicitud</h1>
-          <p className="text-[#9C8578]">Solicita administrar una propiedad</p>
+          <p className="text-[#9C8578]">
+            Permiso del propietario y luego elige una o más propiedades para administrar
+          </p>
         </div>
       </div>
 
@@ -179,6 +391,72 @@ export default function NuevoMandatoPage() {
               {searchError && (
                 <div className="p-3 rounded-lg bg-red-600/10 border border-red-600/30">
                   <p className="text-red-600 text-sm">{searchError}</p>
+                  {owner && permissionStatus !== 'APPROVED' && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-[#9C8578]">
+                        {permissionStatus === 'PENDING'
+                          ? 'Ya enviaste una solicitud. Espera la aprobación del propietario.'
+                          : permissionStatus === 'REJECTED'
+                            ? 'Tu solicitud anterior fue rechazada. Puedes enviar una nueva solicitud.'
+                            : 'Primero debes solicitar autorización a este propietario.'}
+                      </p>
+                      {permissionStatus !== 'PENDING' && (
+                        <Button
+                          onClick={handleRequestPermission}
+                          disabled={requestingPermission}
+                          size="sm"
+                          className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
+                        >
+                          {requestingPermission ? 'Enviando...' : 'Solicitar Permiso'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {searchError === 'El propietario no tiene cuenta en NeiFe' && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-[#9C8578]">
+                        Puedes enviar una invitación para que se registre y luego administres sus propiedades.
+                      </p>
+                      <Button
+                        onClick={handleSendInvite}
+                        disabled={sendingInvite}
+                        size="sm"
+                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
+                      >
+                        {sendingInvite ? (
+                          <>Enviando...</>
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4 mr-2" />
+                            Enviar Invitación
+                          </>
+                        )}
+                      </Button>
+                      {inviteUrl && (
+                        <div className="mt-2 p-2 bg-[#1C1917] rounded border text-xs">
+                          <p className="text-[#FAF6F2] mb-1">Enlace de invitación:</p>
+                          <div className="flex gap-2">
+                            <Input
+                              value={inviteUrl}
+                              readOnly
+                              className="bg-[#1C1917] border-[#D5C3B6]/10 text-[#FAF6F2] text-xs"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(inviteUrl)
+                                toast({ title: 'Enlace copiado' })
+                              }}
+                              className="border-[#D5C3B6]/10 text-[#FAF6F2] hover:bg-[#D5C3B6]/10"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -216,6 +494,7 @@ export default function NuevoMandatoPage() {
                       setStep('search')
                       setOwner(null)
                       setProperties([])
+                      setSelectedPropertyIds([])
                     }}
                     className="text-[#9C8578] hover:text-[#D5C3B6]"
                   >
@@ -224,34 +503,58 @@ export default function NuevoMandatoPage() {
                 </div>
               </div>
 
-              {/* Property Selection */}
+              {/* Property Selection (multiple) */}
               <div>
-                <Label htmlFor="property" className="text-[#FAF6F2]">
-                  Propiedad *
-                </Label>
-                <Select
-                  value={formData.propertyId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, propertyId: value })
-                  }
-                >
-                  <SelectTrigger
-                    id="property"
-                    className="bg-[#1C1917] border-[#D5C3B6]/10 text-[#FAF6F2] mt-2"
-                  >
-                    <SelectValue placeholder="Selecciona una propiedad" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1C1917] border-[#D5C3B6]/10">
-                    {properties.map((prop) => (
-                      <SelectItem key={prop.id} value={prop.id}>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-[#5E8B8C]" />
-                          {prop.name || prop.address}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <Label className="text-[#FAF6F2]">Propiedades a administrar *</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllAvailable}
+                      className="text-xs border-[#D5C3B6]/10 text-[#FAF6F2]"
+                    >
+                      Todas
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearSelection}
+                      className="text-xs border-[#D5C3B6]/10 text-[#FAF6F2]"
+                    >
+                      Ninguna
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-[#9C8578] mt-1 mb-3">
+                  Se enviará una solicitud de mandato por cada propiedad seleccionada. El propietario debe aprobar cada una.
+                </p>
+                <div className="max-h-56 overflow-y-auto rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917] divide-y divide-[#D5C3B6]/10">
+                  {properties.map((prop) => (
+                    <label
+                      key={prop.id}
+                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#2D3C3C]/50"
+                    >
+                      <Checkbox
+                        checked={selectedPropertyIds.includes(prop.id)}
+                        onCheckedChange={() => toggleProperty(prop.id)}
+                      />
+                      <Building2 className="h-4 w-4 text-[#5E8B8C] shrink-0" />
+                      <span className="text-sm text-[#FAF6F2]">
+                        {prop.name || prop.address}
+                        <span className="text-[#9C8578] text-xs block">{prop.commune}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {selectedPropertyIds.length > 0 && (
+                  <p className="text-xs text-[#5E8B8C] mt-2">
+                    {selectedPropertyIds.length} propiedad{selectedPropertyIds.length !== 1 ? 'es' : ''} seleccionada
+                    {selectedPropertyIds.length !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
 
               {/* Notes */}
@@ -315,10 +618,10 @@ export default function NuevoMandatoPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={submitting || !formData.propertyId}
+                  disabled={submitting || selectedPropertyIds.length === 0}
                   className="flex-1 bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
                 >
-                  {submitting ? 'Enviando...' : 'Enviar Solicitud'}
+                  {submitting ? 'Enviando...' : `Enviar solicitud${selectedPropertyIds.length > 1 ? 'es' : ''}`}
                 </Button>
               </div>
             </form>

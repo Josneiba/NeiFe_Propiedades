@@ -166,3 +166,59 @@ export async function PATCH(
     )
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  try {
+    const { id } = await params
+    const mandate = await getMandateOrThrow(id)
+
+    if (!canAccessMandate(mandate, session.user.id)) {
+      return forbiddenResponse()
+    }
+
+    if (mandate.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: 'Solo puedes eliminar solicitudes pendientes' },
+        { status: 400 }
+      )
+    }
+
+    const canDelete =
+      mandate.brokerId === session.user.id || mandate.ownerId === session.user.id
+
+    if (!canDelete) {
+      return forbiddenResponse()
+    }
+
+    await prisma.mandate.delete({
+      where: { id },
+    })
+
+    await logActivity(
+      session.user.id,
+      'MANDATE_DELETED',
+      `Solicitud de mandato eliminada para ${mandate.property.name || mandate.property.address}`,
+      mandate.propertyId,
+      { mandateId: id }
+    )
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    if (isMandateError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Error deleting mandate:', error)
+    return NextResponse.json(
+      { error: 'Error al eliminar mandato' },
+      { status: 500 }
+    )
+  }
+}

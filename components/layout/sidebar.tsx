@@ -40,6 +40,7 @@ const landlordNavItems = [
   { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
   { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },
   { href: "/dashboard/proveedores", label: "Proveedores", icon: Users, id: "sidebar-servicios" },
+  { href: "/dashboard/solicitudes-corredores", label: "Corredores", icon: User, id: undefined },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, id: undefined },
 ]
 

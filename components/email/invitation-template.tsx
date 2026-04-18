@@ -18,18 +18,20 @@ interface InvitationEmailProps {
   inviteLink: string
   invitedEmail: string
   propertyAddress?: string
-  senderName?: string
+  senderName?: string,
+  isBrokerInvite?: boolean
 }
 
 export const InvitationEmail = ({
   inviteLink,
   invitedEmail,
-  propertyAddress = 'Tu propiedad en NeiFe',
-  senderName = 'Tu arrendador',
+  propertyAddress,
+  senderName,
+  isBrokerInvite = false,
 }: InvitationEmailProps) => (
   <Html>
     <Head />
-    <Preview>Invitación a NeiFe - Plataforma de Gestión de Arriendos</Preview>
+    <Preview>Invitación a NeiFe - {isBrokerInvite ? 'Solicitud de corredor' : 'Plataforma de Gestión de Arriendos'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={box}>
@@ -44,9 +46,16 @@ export const InvitationEmail = ({
           </Row>
           <Row>
             <Text style={paragraph}>
-              <strong>{senderName}</strong> te ha invitado a unirte a <strong>{propertyAddress}</strong> en NeiFe, la plataforma de gestión de arriendos más moderna de Chile.
+              <strong>{senderName}</strong> te ha invitado a registrarte en NeiFe{isBrokerInvite ? ' y ha solicitado permiso para administrar tus propiedades' : ', la plataforma de gestión de arriendos más moderna de Chile'}.
             </Text>
           </Row>
+          {isBrokerInvite && (
+            <Row>
+              <Text style={paragraph}>
+                Una vez que te registres, podrás revisar y aprobar su solicitud desde tu panel de control.
+              </Text>
+            </Row>
+          )}
           <Row>
             <Text style={paragraph}>
               Con NeiFe podrás:

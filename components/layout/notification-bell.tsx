@@ -72,9 +72,33 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const handleClick = async (id: string, link?: string | null, isRead?: boolean) => {
+  const resolveNotificationLink = (link?: string | null, title?: string, message?: string) => {
+    if (!link) return link
+
+    const isBrokerPermissionNotification =
+      title?.toLowerCase().includes('corredor') ||
+      title?.toLowerCase().includes('permiso') ||
+      message?.toLowerCase().includes('administrar tus propiedades')
+
+    // Compatibilidad con notificaciones antiguas que abrían propiedades
+    // cuando en realidad debían abrir la sección para aprobar corredores.
+    if (isBrokerPermissionNotification && link.startsWith('/dashboard/propiedades')) {
+      return '/dashboard/solicitudes-corredores'
+    }
+
+    return link
+  }
+
+  const handleClick = async (
+    id: string,
+    link?: string | null,
+    isRead?: boolean,
+    title?: string,
+    message?: string
+  ) => {
     if (!isRead) await markAsRead([id])
-    if (link) router.push(link)
+    const nextLink = resolveNotificationLink(link, title, message)
+    if (nextLink) router.push(nextLink)
     setOpen(false)
   }
 
@@ -109,7 +133,7 @@ export function NotificationBell() {
               <button
                 key={n.id}
                 type="button"
-                onClick={() => handleClick(n.id, n.link, n.isRead)}
+                onClick={() => handleClick(n.id, n.link, n.isRead, n.title, n.message)}
                 className={`w-full text-left px-4 py-3 border-b border-[#5E8B8C]/10 hover:bg-[#5E8B8C]/10 transition-colors flex gap-3 ${
                   !n.isRead ? 'bg-[#5E8B8C]/5' : ''
                 }`}

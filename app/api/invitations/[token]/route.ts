@@ -61,9 +61,9 @@ export async function POST(
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  if (session.user.role !== 'TENANT') {
+  if (session.user.role !== 'TENANT' && session.user.role !== 'LANDLORD') {
     return NextResponse.json(
-      { error: 'Solo una cuenta de arrendatario puede aceptar esta invitación' },
+      { error: 'Solo arrendatarios o propietarios pueden aceptar invitaciones' },
       { status: 403 }
     )
   }
@@ -87,16 +87,51 @@ export async function POST(
         throw Object.assign(new Error('EXPIRADA'), { code: 'EXPIRED' })
       }
 
-      if (invitation.property.tenantId != null) {
-        throw Object.assign(new Error('OCUPADA'), { code: 'PROPERTY_TAKEN' })
-      }
+      if (invitation.type === 'BROKER_INVITE') {
+        if (session.user.role !== 'LANDLORD') {
+          throw Object.assign(new Error('SOLO_PROPIETARIOS'), { code: 'WRONG_ROLE' })
+        }
 
-      const existingRental = await tx.property.findFirst({
-        where: { tenantId: session.user.id },
-        select: { id: true },
-      })
-      if (existingRental && existingRental.id !== invitation.propertyId) {
-        throw Object.assign(new Error('YA_ARRIENDAS'), { code: 'ALREADY_TENANT' })
+        // Aceptar esta invitación equivale a autorizar al corredor.
+        await tx.brokerPermission.upsert({
+          where: {
+            landlordId_brokerId: {
+              landlordId: session.user.id,
+              brokerId: invitation.senderId,
+            },
+          },
+          update: {
+            status: 'APPROVED',
+            approvedAt: new Date(),
+            rejectedAt: null,
+          },
+          create: {
+            landlordId: session.user.id,
+            brokerId: invitation.senderId,
+            status: 'APPROVED',
+            approvedAt: new Date(),
+          },
+        })
+      } else {
+        if (session.user.role !== 'TENANT') {
+          throw Object.assign(new Error('SOLO_ARRENDATARIOS'), { code: 'WRONG_ROLE' })
+        }
+
+        if (!invitation.property) {
+          throw Object.assign(new Error('PROPIEDAD_NO_ENCONTRADA'), { code: 'NO_PROPERTY' })
+        }
+
+        if (invitation.property.tenantId != null) {
+          throw Object.assign(new Error('OCUPADA'), { code: 'PROPERTY_TAKEN' })
+        }
+
+        const existingRental = await tx.property.findFirst({
+          where: { tenantId: session.user.id },
+          select: { id: true },
+        })
+        if (existingRental && existingRental.id !== invitation.propertyId) {
+          throw Object.assign(new Error('YA_ARRIENDAS'), { code: 'ALREADY_TENANT' })
+        }
       }
 
       const updated = await tx.invitation.update({
@@ -107,31 +142,51 @@ export async function POST(
         },
       })
 
-      await tx.property.update({
-        where: { id: invitation.propertyId },
-        data: { tenantId: session.user.id },
-      })
+      if (invitation.type !== 'BROKER_INVITE' && invitation.property) {
+        await tx.property.update({
+          where: { id: invitation.propertyId! },
+          data: { tenantId: session.user.id },
+        })
+      }
 
-      return { invitation: updated, property: invitation.property }
+      return { invitation: updated, property: invitation.property, senderId: invitation.senderId, senderName: invitation.sender.name }
     })
 
-    const propLabel =
-      result.property.name?.trim() || result.property.address
+    if (result.invitation.type === 'BROKER_INVITE') {
+      // Notificar al corredor que ya tiene autorización para gestionar propiedades.
+      await createNotification(
+        result.senderId,
+        'SYSTEM',
+        'Permiso aprobado por propietario',
+        `${session.user.name || session.user.email} aceptó tu invitación y te autorizó para administrar sus propiedades.`,
+        `/broker/mandatos/nuevo?email=${encodeURIComponent(session.user.email)}`
+      )
 
-    await createNotification(
-      result.property.landlordId,
-      'INVITATION_RECEIVED',
-      'Invitación aceptada',
-      `${session.user.name || session.user.email} aceptó tu invitación para ${propLabel}`,
-      `/dashboard/propiedades/${result.property.id}`
-    )
+      await logActivity(
+        session.user.id,
+        'BROKER_PERMISSION_APPROVED',
+        `Aprobaste al corredor ${result.senderName || 'sin nombre'}`,
+        undefined
+      )
+    } else {
+      const propLabel =
+        result.property?.name?.trim() || result.property?.address || 'propiedad'
 
-    await logActivity(
-      session.user.id,
-      'INVITATION_ACCEPTED',
-      `Invitación aceptada para ${propLabel}`,
-      result.property.id
-    )
+      await createNotification(
+        result.property!.landlordId,
+        'INVITATION_RECEIVED',
+        'Invitación aceptada',
+        `${session.user.name || session.user.email} aceptó tu invitación para ${propLabel}`,
+        `/dashboard/propiedades/${result.property!.id}`
+      )
+
+      await logActivity(
+        session.user.id,
+        'INVITATION_ACCEPTED',
+        `Invitación aceptada para ${propLabel}`,
+        result.property!.id
+      )
+    }
 
     return NextResponse.json({ invitation: result.invitation })
   } catch (error: unknown) {
@@ -155,6 +210,18 @@ export async function POST(
       return NextResponse.json(
         { error: 'Ya tienes otra propiedad como arrendatario. Solo puedes arrendar una a la vez.' },
         { status: 409 }
+      )
+    }
+    if (code === 'WRONG_ROLE') {
+      return NextResponse.json(
+        { error: 'Tipo de cuenta incorrecto para esta invitación' },
+        { status: 403 }
+      )
+    }
+    if (code === 'NO_PROPERTY') {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada' },
+        { status: 404 }
       )
     }
     console.error('Error accepting invitation:', error)

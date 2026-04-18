@@ -44,6 +44,8 @@ model User {
   accounts               Account[]
   sessions               Session[]
   calendarEvents         CalendarEvent[]
+  landlordPermissions    BrokerPermission[]   @relation("LandlordPermissions")
+  brokerPermissions      BrokerPermission[]   @relation("BrokerPermissions")
 }
 
 model Account {
@@ -166,14 +168,14 @@ model Invitation {
   type       InvitationType
   email      String?
   token      String           @unique @default(cuid())
-  propertyId String
+  propertyId String?
   senderId   String
   receiverId String?
   status     InvitationStatus @default(PENDING)
   expiresAt  DateTime
   createdAt  DateTime         @default(now())
 
-  property   Property @relation(fields: [propertyId], references: [id])
+  property   Property? @relation(fields: [propertyId], references: [id])
   sender     User     @relation("InvitationSender", fields: [senderId], references: [id])
   receiver   User?    @relation("InvitationReceiver", fields: [receiverId], references: [id])
 }
@@ -427,6 +429,7 @@ enum MandateStatus {
 enum InvitationType {
   EMAIL
   LINK
+  BROKER_INVITE
 }
 
 enum InvitationStatus {
@@ -560,4 +563,26 @@ model CalendarEvent {
 
   property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   creator   User     @relation(fields: [createdBy], references: [id])
+}
+
+enum PermissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model BrokerPermission {
+  id          String   @id @default(cuid())
+  landlordId  String
+  brokerId    String
+  status      PermissionStatus @default(PENDING)
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  landlord    User     @relation("LandlordPermissions", fields: [landlordId], references: [id])
+  broker      User     @relation("BrokerPermissions", fields: [brokerId], references: [id])
+
+  @@unique([landlordId, brokerId])
 }

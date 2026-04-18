@@ -25,7 +25,6 @@ import {
   Loader2,
   Edit,
   ExternalLink,
-  Briefcase,
   AlertTriangle
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -80,7 +79,8 @@ export default function PropertyDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
   const propertyId = params.id as string
-  const currentTab = searchParams.get("tab") || "resumen"
+  const rawTab = searchParams.get("tab") || "resumen"
+  const currentTab = rawTab === "corredor" ? "administracion" : rawTab
 
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
@@ -264,7 +264,6 @@ export default function PropertyDetailPage() {
             <TabsTrigger value="servicios">Servicios</TabsTrigger>
             <TabsTrigger value="mantenciones">Mantenciones</TabsTrigger>
             <TabsTrigger value="contrato">Contrato</TabsTrigger>
-            <TabsTrigger value="corredor">Corredor</TabsTrigger>
             <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
             <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
             <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
@@ -285,7 +284,6 @@ export default function PropertyDetailPage() {
               <option value="servicios">Servicios</option>
               <option value="mantenciones">Mantenciones</option>
               <option value="contrato">Contrato</option>
-              <option value="corredor">Corredor</option>
               <option value="inspecciones">Inspecciones</option>
               <option value="reajuste">Reajuste IPC</option>
               <option value="proveedores">Proveedores</option>
@@ -492,131 +490,115 @@ export default function PropertyDetailPage() {
           ) : (
             <AdministrationSection propertyId={propertyId} />
           )}
-        </TabsContent>
 
-        {/* Corredor Tab */}
-        <TabsContent value="corredor" className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Users className="h-5 w-5 text-[#5E8B8C]" />
-                  Información del Corredor
-                </CardTitle>
-                <CardDescription>Datos del agente o corredor de propiedades</CardDescription>
-              </div>
-              {!editingAgent && !hasBroker && (
-                <Button
-                  onClick={() => setEditingAgent(true)}
-                  size="sm"
-                  className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-              )}
-              {!editingAgent && hasBroker && (
-                <Button
-                  size="sm"
-                  className="text-muted-foreground cursor-not-allowed"
-                  disabled
-                  title="La edición está deshabilitada cuando la propiedad es administrada por un corredor"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {editingAgent ? (
-                <>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="agentName" className="text-foreground">Nombre</Label>
-                      <Input
-                        id="agentName"
-                        value={agentData.agentName}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, agentName: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
+          {!hasBroker && (
+            <Card className="bg-card border-border">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <Users className="h-5 w-5 text-[#5E8B8C]" />
+                    Información del agente / corredor
+                  </CardTitle>
+                  <CardDescription>Datos del agente o corredor de propiedades (registro propio)</CardDescription>
+                </div>
+                {!editingAgent && (
+                  <Button
+                    onClick={() => setEditingAgent(true)}
+                    size="sm"
+                    className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {editingAgent ? (
+                  <>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="agentName" className="text-foreground">Nombre</Label>
+                        <Input
+                          id="agentName"
+                          value={agentData.agentName}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, agentName: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agentRut" className="text-foreground">RUT</Label>
+                        <Input
+                          id="agentRut"
+                          value={agentData.agentRut}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, agentRut: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agentEmail" className="text-foreground">Email</Label>
+                        <Input
+                          id="agentEmail"
+                          type="email"
+                          value={agentData.agentEmail}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, agentEmail: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agentPhone" className="text-foreground">Teléfono</Label>
+                        <Input
+                          id="agentPhone"
+                          value={agentData.agentPhone}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, agentPhone: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agentCompany" className="text-foreground">Empresa</Label>
+                        <Input
+                          id="agentCompany"
+                          value={agentData.agentCompany}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, agentCompany: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="commissionRate" className="text-foreground">Comisión (%)</Label>
+                        <Input
+                          id="commissionRate"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={agentData.commissionRate}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, commissionRate: e.target.value }))}
+                          className="bg-background border-input text-foreground"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="agentRut" className="text-foreground">RUT</Label>
-                      <Input
-                        id="agentRut"
-                        value={agentData.agentRut}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, agentRut: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleSaveAgent} 
+                        disabled={savingAgent}
+                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+                      >
+                        {savingAgent ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Guardando...
+                          </>
+                        ) : (
+                          <>Guardar</>
+                        )}
+                      </Button>
+                      <Button onClick={() => setEditingAgent(false)} variant="outline" className="text-foreground border-border">
+                        Cancelar
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="agentEmail" className="text-foreground">Email</Label>
-                      <Input
-                        id="agentEmail"
-                        type="email"
-                        value={agentData.agentEmail}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, agentEmail: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="agentPhone" className="text-foreground">Teléfono</Label>
-                      <Input
-                        id="agentPhone"
-                        value={agentData.agentPhone}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, agentPhone: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="agentCompany" className="text-foreground">Empresa</Label>
-                      <Input
-                        id="agentCompany"
-                        value={agentData.agentCompany}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, agentCompany: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="commissionRate" className="text-foreground">Comisión (%)</Label>
-                      <Input
-                        id="commissionRate"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={agentData.commissionRate}
-                        onChange={(e) => setAgentData(prev => ({ ...prev, commissionRate: e.target.value }))}
-                        className="bg-background border-input text-foreground"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleSaveAgent} 
-                      disabled={savingAgent}
-                      className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                    >
-                      {savingAgent ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          Guardar
-                        </>
-                      )}
-                    </Button>
-                    <Button onClick={() => setEditingAgent(false)} variant="outline" className="text-foreground border-border">
-                      Cancelar
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-4">
-                  {agentData.agentName ? (
-                    <>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    {agentData.agentName ? (
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Nombre</p>
@@ -643,14 +625,14 @@ export default function PropertyDetailPage() {
                           <p className="text-foreground font-semibold">{agentData.commissionRate}% ({agentData.commissionType})</p>
                         </div>
                       </div>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">No hay información de corredor registrada</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">No hay información de corredor registrada</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Inspecciones Tab */}

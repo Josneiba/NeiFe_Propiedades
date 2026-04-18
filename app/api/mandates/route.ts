@@ -85,6 +85,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const brokerPermission = await prisma.brokerPermission.findUnique({
+      where: {
+        landlordId_brokerId: {
+          landlordId: data.ownerId,
+          brokerId: session.user.id,
+        },
+      },
+      select: { status: true },
+    })
+
+    if (!brokerPermission || brokerPermission.status !== 'APPROVED') {
+      return NextResponse.json(
+        {
+          error:
+            'Primero debes solicitar y obtener permiso del propietario para administrar sus propiedades.',
+        },
+        { status: 403 }
+      )
+    }
+
     const existing = await prisma.mandate.findFirst({
       where: {
         propertyId: data.propertyId,

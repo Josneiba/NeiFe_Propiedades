@@ -32,21 +32,27 @@ async function getInvitation(token: string) {
       return { ok: false as const, error: 'Invitación expirada' }
     }
 
-    const p = invitation.property
+    const result: any = {
+      type: invitation.type,
+      sender: invitation.sender,
+      expiresAt: invitation.expiresAt.toISOString(),
+    }
+
+    if (invitation.property) {
+      const p = invitation.property
+      result.property = {
+        name: p.name || p.address,
+        address: p.address,
+        commune: p.commune,
+        region: p.region,
+        monthlyRentUF: p.monthlyRentUF,
+        monthlyRentCLP: p.monthlyRentCLP,
+      }
+    }
+
     return {
       ok: true as const,
-      invitation: {
-        property: {
-          name: p.name || p.address,
-          address: p.address,
-          commune: p.commune,
-          region: p.region,
-          monthlyRentUF: p.monthlyRentUF,
-          monthlyRentCLP: p.monthlyRentCLP,
-        },
-        sender: invitation.sender,
-        expiresAt: invitation.expiresAt.toISOString(),
-      },
+      invitation: result,
     }
   } catch {
     return { ok: false as const, error: 'Error al cargar la invitación' }

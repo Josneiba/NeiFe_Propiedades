@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, type KeyboardEvent } from "react"
+import { useState, type KeyboardEvent, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -21,14 +21,37 @@ export default function RegistroClient() {
   const [isLoading, setIsLoading] = useState(false)
   const inviteRole = searchParams.get("role")
   const inviteToken = searchParams.get("invite")
-  const [selectedRole, setSelectedRole] = useState<Role | null>(
-    inviteRole === "tenant" || inviteToken ? "tenant" : null
-  )
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [inviteType, setInviteType] = useState<string | null>(null)
   const [privacy, setPrivacy] = useState({
     terms: false,
     privacyPolicy: false,
     dataConsent: false,
   })
+
+  useEffect(() => {
+    if (inviteToken && !inviteRole) {
+      // Verificar el tipo de invitación
+      fetch(`/api/invitations/${inviteToken}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.invitation) {
+            setInviteType(data.invitation.type)
+            if (data.invitation.type === 'BROKER_INVITE') {
+              setSelectedRole('landlord')
+            } else {
+              setSelectedRole('tenant')
+            }
+          }
+        })
+        .catch(() => {
+          // Si hay error, asumir tenant por defecto
+          setSelectedRole('tenant')
+        })
+    } else if (inviteRole === "tenant" || inviteToken) {
+      setSelectedRole("tenant")
+    }
+  }, [inviteToken, inviteRole])
   const [formData, setFormData] = useState({
     name: "",
     email: "",

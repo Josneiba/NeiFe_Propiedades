@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { Building2, MapPin, DollarSign, User } from 'lucide-react'
 
 interface Invitation {
-  property: {
+  type: string
+  property?: {
     name: string
     address: string
     commune: string
@@ -46,7 +47,11 @@ export default function InvitationClient({
       const data = await res.json()
 
       if (res.ok) {
-        router.push('/mi-arriendo')
+        if (invitation.type === 'BROKER_INVITE') {
+          router.push('/dashboard')
+        } else {
+          router.push('/mi-arriendo')
+        }
         router.refresh()
       } else {
         setError(data.error ?? 'Error al aceptar la invitación')
@@ -73,33 +78,46 @@ export default function InvitationClient({
         <p className="text-[#FAF6F2] font-semibold text-lg">{invitation.sender.name}</p>
       </div>
 
-      {/* Detalles de la propiedad */}
+      {/* Detalles */}
       <div className="px-8 py-6 space-y-4">
-        <h2 className="font-serif text-xl text-[#FAF6F2]">
-          {invitation.property.name}
-        </h2>
+        {invitation.type === 'BROKER_INVITE' ? (
+          <>
+            <h2 className="font-serif text-xl text-[#FAF6F2]">
+              Invitación para administrar propiedades
+            </h2>
+            <p className="text-[#9C8578] text-sm">
+              Este corredor quiere administrar tus propiedades en NeiFe. Al aceptar, podrás compartir el acceso a tus inmuebles con este profesional.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="font-serif text-xl text-[#FAF6F2]">
+              {invitation.property!.name}
+            </h2>
 
-        <div className="space-y-2">
-          <div className="flex items-start gap-2 text-sm text-[#9C8578]">
-            <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#75524C]" />
-            <span>{invitation.property.address}, {invitation.property.commune}</span>
-          </div>
-          <div className="flex items-start gap-2 text-sm text-[#9C8578]">
-            <Building2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#75524C]" />
-            <span>Región {invitation.property.region}</span>
-          </div>
-          {(invitation.property.monthlyRentUF || invitation.property.monthlyRentCLP) && (
-            <div className="flex items-start gap-2 text-sm text-[#D5C3B6]">
-              <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#5E8B8C]" />
-              <span className="font-mono">
-                {invitation.property.monthlyRentUF
-                  ? `UF ${invitation.property.monthlyRentUF}/mes`
-                  : `$${invitation.property.monthlyRentCLP?.toLocaleString('es-CL')}/mes`
-                }
-              </span>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-sm text-[#9C8578]">
+                <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#75524C]" />
+                <span>{invitation.property!.address}, {invitation.property!.commune}</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-[#9C8578]">
+                <Building2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#75524C]" />
+                <span>Región {invitation.property!.region}</span>
+              </div>
+              {(invitation.property!.monthlyRentUF || invitation.property!.monthlyRentCLP) && (
+                <div className="flex items-start gap-2 text-sm text-[#D5C3B6]">
+                  <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#5E8B8C]" />
+                  <span className="font-mono">
+                    {invitation.property!.monthlyRentUF
+                      ? `UF ${invitation.property!.monthlyRentUF}/mes`
+                      : `$${invitation.property!.monthlyRentCLP?.toLocaleString('es-CL')}/mes`
+                    }
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         <p className="text-xs text-[#9C8578] bg-[#1C1917]/30 rounded-lg px-3 py-2">
           Esta invitación expira en {daysUntilExpiry} día{daysUntilExpiry !== 1 ? 's' : ''}
@@ -124,7 +142,7 @@ export default function InvitationClient({
               Necesitas una cuenta NeiFe para aceptar esta invitación
             </p>
             <Link
-              href={`/registro?invite=${token}&role=tenant`}
+              href={`/registro?invite=${token}&role=${invitation.type === 'BROKER_INVITE' ? 'landlord' : 'tenant'}`}
               className="flex items-center justify-center w-full bg-[#75524C] text-[#FAF6F2] py-3 rounded-xl font-medium hover:opacity-90 transition"
             >
               Crear cuenta y aceptar →
@@ -136,16 +154,19 @@ export default function InvitationClient({
               Ya tengo cuenta — Iniciar sesión
             </Link>
           </>
-        ) : session?.user.role !== 'TENANT' ? (
+        ) : (invitation.type === 'BROKER_INVITE' && session?.user.role !== 'LANDLORD') || (invitation.type !== 'BROKER_INVITE' && session?.user.role !== 'TENANT') ? (
           <>
             <p className="text-[#C27F79] text-sm text-center">
-              Tu cuenta es de arrendador. Solo los arrendatarios pueden aceptar invitaciones.
+              {invitation.type === 'BROKER_INVITE'
+                ? 'Tu cuenta debe ser de propietario para aceptar esta invitación.'
+                : 'Tu cuenta es de arrendador. Solo los arrendatarios pueden aceptar invitaciones a propiedades.'
+              }
             </p>
             <Link
-              href="/dashboard"
+              href={session?.user.role === 'TENANT' ? '/mi-arriendo' : session?.user.role === 'BROKER' ? '/broker' : '/dashboard'}
               className="flex items-center justify-center w-full border border-[#5E8B8C]/30 text-[#5E8B8C] py-3 rounded-xl text-sm hover:bg-[#5E8B8C]/10 transition"
             >
-              Ir a mi dashboard
+              Ir a mi panel
             </Link>
           </>
         ) : (

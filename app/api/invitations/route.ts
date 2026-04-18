@@ -15,9 +15,9 @@ if (!process.env.RESEND_API_KEY) {
 }
 
 const createSchema = z.object({
-  type: z.enum(['EMAIL', 'LINK']),
+  type: z.enum(['EMAIL', 'LINK', 'BROKER_INVITE']),
   email: z.string().email().optional(),
-  propertyId: z.string(),
+  propertyId: z.string().optional(),
 })
 
 // POST — crear invitación
@@ -34,24 +34,49 @@ export async function POST(req: NextRequest) {
 
     if (data.type === 'EMAIL' && !data.email?.trim()) {
       return NextResponse.json(
-        { error: 'Indica el correo del arrendatario para enviar la invitación' },
+        { error: 'Indica el correo del destinatario para enviar la invitación' },
         { status: 400 }
       )
     }
 
-    // Verificar que el usuario es el propietario
-    const property = await prisma.property.findFirst({
-      where: {
-        id: data.propertyId,
-        landlordId: session.user.id,
-      },
-    })
-
-    if (!property) {
+    if (data.type === 'BROKER_INVITE' && !data.email?.trim()) {
       return NextResponse.json(
-        { error: 'Propiedad no encontrada' },
-        { status: 404 }
+        { error: 'Indica el correo del propietario para enviar la invitación' },
+        { status: 400 }
       )
+    }
+
+    // Verificar permisos según el tipo de invitación
+    let property = null
+    if (data.type === 'BROKER_INVITE') {
+      if (session.user.role !== 'BROKER') {
+        return NextResponse.json(
+          { error: 'Solo corredores pueden enviar invitaciones a propietarios' },
+          { status: 403 }
+        )
+      }
+    } else {
+      // Para invitaciones normales, verificar que el usuario es el propietario
+      if (!data.propertyId) {
+        return NextResponse.json(
+          { error: 'Se requiere propertyId para este tipo de invitación' },
+          { status: 400 }
+        )
+      }
+
+      property = await prisma.property.findFirst({
+        where: {
+          id: data.propertyId,
+          landlordId: session.user.id,
+        },
+      })
+
+      if (!property) {
+        return NextResponse.json(
+          { error: 'Propiedad no encontrada' },
+          { status: 404 }
+        )
+      }
     }
 
     // Expiración en 7 días
@@ -61,8 +86,8 @@ export async function POST(req: NextRequest) {
     const invitation = await prisma.invitation.create({
       data: {
         type: data.type,
-        email: data.type === 'EMAIL' ? data.email?.trim() ?? null : null,
-        propertyId: data.propertyId,
+        email: data.type === 'EMAIL' || data.type === 'BROKER_INVITE' ? data.email?.trim() ?? null : null,
+        propertyId: data.propertyId || null,
         senderId: session.user.id,
         expiresAt,
         status: 'PENDING',
@@ -74,8 +99,8 @@ export async function POST(req: NextRequest) {
     let emailSent = false
     let emailError: unknown = undefined
 
-    // Solo enviar correo cuando el flujo es EMAIL (nunca para "solo enlace")
-    if (data.type === 'EMAIL' && data.email?.trim()) {
+    // Solo enviar correo cuando el flujo es EMAIL o BROKER_INVITE
+    if ((data.type === 'EMAIL' || data.type === 'BROKER_INVITE') && data.email?.trim()) {
       if (!process.env.RESEND_API_KEY) {
         emailError = { message: 'RESEND_API_KEY no está configurada' }
         console.error('⚠️ No se envió el correo: falta RESEND_API_KEY')
@@ -84,14 +109,25 @@ export async function POST(req: NextRequest) {
           const toEmail = data.email.trim()
           console.log(`📧 Intentando enviar email de invitación a ${toEmail}`)
           console.log(`🔗 URL de invitación: ${inviteUrl}`)
-          console.log(`📍 Propiedad: ${property.address}`)
+
+          let propertyAddress = 'Tus propiedades'
+          let senderDescription = 'el corredor'
+
+          if (data.type === 'BROKER_INVITE') {
+            propertyAddress = 'administrar tus propiedades'
+            senderDescription = 'el corredor'
+          } else if (property) {
+            propertyAddress = property.address || 'Tu propiedad'
+            senderDescription = 'tu arrendador'
+          }
 
           const emailHtml = await render(
             InvitationEmail({
               inviteLink: inviteUrl,
               invitedEmail: toEmail,
-              propertyAddress: property.address || 'Tu propiedad',
-              senderName: session.user.name || 'Tu arrendador',
+              propertyAddress,
+              senderName: session.user.name || senderDescription,
+              isBrokerInvite: data.type === 'BROKER_INVITE',
             })
           )
 
