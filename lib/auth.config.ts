@@ -1,5 +1,21 @@
 import type { NextAuthConfig } from 'next-auth'
 
+const publicPathnames = [
+  '/',
+  '/login',
+  '/registro',
+  '/privacidad',
+  '/terminos',
+  '/legal',
+]
+
+function isPublicPath(pathname: string) {
+  return (
+    publicPathnames.some((r) => pathname === r) ||
+    pathname.startsWith('/invitacion/')
+  )
+}
+
 /** Edge-safe config: no Prisma / Node-only deps (used by middleware + auth-session). */
 export const authConfig = {
   session: { strategy: 'jwt' },
@@ -8,6 +24,11 @@ export const authConfig = {
     error: '/login',
   },
   callbacks: {
+    authorized({ auth, request }) {
+      const pathname = request.nextUrl.pathname
+      if (isPublicPath(pathname)) return true
+      return !!auth?.user
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id

@@ -183,17 +183,7 @@ async function DashboardContent({ session }: { session: any }) {
     return (
       <div className="space-y-8">
         {/* Onboarding Welcome Card - Show for new landlords */}
-        {isNewLandlord && (
-          <OnboardingCard 
-            onClose={async () => {
-              await fetch('/api/users/me', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ onboardingDone: true })
-              })
-            }}
-          />
-        )}
+        {isNewLandlord && <OnboardingCard />}
 
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

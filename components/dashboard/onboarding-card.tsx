@@ -5,12 +5,25 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { X, ChevronDown } from 'lucide-react'
 
-interface OnboardingCardProps {
-  onClose: () => Promise<void>
-}
-
-export function OnboardingCard({ onClose }: OnboardingCardProps) {
+export function OnboardingCard() {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const handleClose = async () => {
+    setIsClosing(true)
+    try {
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingDone: true }),
+      })
+    } finally {
+      setIsVisible(false)
+    }
+  }
+
+  if (!isVisible) return null
 
   return (
     <Card className="bg-white border-l-4 border-[#B8965A] mb-8">
@@ -28,7 +41,8 @@ export function OnboardingCard({ onClose }: OnboardingCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isClosing}
             className="text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4" />

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye } from 'lucide-react'
+import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye, FileText } from 'lucide-react'
 import { handleApiError } from '@/lib/error-handler'
 import Link from 'next/link'
 
@@ -239,9 +239,9 @@ export default async function BrokerDashboardPage() {
                           <MapPin className="h-4 w-4" />
                           {mandate.property.commune}
                         </div>
-                        {mandate.property.owner && (
+                        {mandate.property.landlord && (
                           <p className="text-xs text-[#9C8578] mt-1">
-                            Propietario: {mandate.property.owner.name}
+                            Propietario: {mandate.property.landlord.name}
                           </p>
                         )}
                         {mandate.property.tenant && (

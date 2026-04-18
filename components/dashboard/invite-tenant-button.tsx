@@ -42,7 +42,9 @@ export function InviteTenantButton({ propertyId, propertyLabel }: Props) {
         body: JSON.stringify({
           type,
           propertyId,
-          email: type === 'EMAIL' ? email.trim() : undefined,
+          ...(type === 'EMAIL' && email.trim()
+            ? { email: email.trim() }
+            : {}),
         }),
       })
       const data = await res.json()
@@ -58,13 +60,29 @@ export function InviteTenantButton({ propertyId, propertyLabel }: Props) {
         data.inviteUrl ||
         `${baseUrl}/invitacion/${data.invitation?.token || data.token}`
       setInviteUrl(url)
-      toast({
-        title: type === 'EMAIL' ? 'Invitación enviada' : 'Enlace listo',
-        description:
-          type === 'EMAIL'
-            ? 'Correo enviado. Revisa spam si no aparece.'
-            : 'Copia el enlace y compártelo con tu arrendatario.',
-      })
+
+      if (type === 'LINK') {
+        toast({
+          title: 'Enlace listo',
+          description: 'Copia el enlace y compártelo con tu arrendatario.',
+        })
+        return
+      }
+
+      if (data.emailSent) {
+        toast({
+          title: 'Invitación enviada',
+          description: 'Correo enviado. Revisa spam si no aparece.',
+        })
+      } else {
+        toast({
+          title: 'Invitación creada — correo no enviado',
+          description:
+            data.warning ||
+            'Revisa Resend y RESEND_FROM, o copia el enlace de abajo.',
+          variant: 'destructive',
+        })
+      }
     } catch {
       toast({
         title: 'Error',
