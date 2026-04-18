@@ -271,18 +271,26 @@ export default function PropertyDetailPage() {
           </TabsList>
         </div>
         <div className="md:hidden">
-          <TabsList className="bg-muted w-full justify-start overflow-x-auto flex flex-wrap">
-            <TabsTrigger value="resumen">Resumen</TabsTrigger>
-            <TabsTrigger value="administracion">Administración</TabsTrigger>
-            <TabsTrigger value="pagos">Pagos</TabsTrigger>
-            <TabsTrigger value="servicios">Servicios</TabsTrigger>
-            <TabsTrigger value="mantenciones">Mantenciones</TabsTrigger>
-            <TabsTrigger value="contrato">Contrato</TabsTrigger>
-            <TabsTrigger value="corredor">Corredor</TabsTrigger>
-            <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
-            <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
-            <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
-          </TabsList>
+          <div className="space-y-2">
+            <label htmlFor="property-tab-select" className="text-sm font-semibold text-foreground">Ver sección</label>
+            <select
+              id="property-tab-select"
+              value={currentTab}
+              onChange={(event) => handleTabChange(event.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-ring/50 focus-visible:ring-2"
+            >
+              <option value="resumen">Resumen</option>
+              <option value="administracion">Administración</option>
+              <option value="pagos">Pagos</option>
+              <option value="servicios">Servicios</option>
+              <option value="mantenciones">Mantenciones</option>
+              <option value="contrato">Contrato</option>
+              <option value="corredor">Corredor</option>
+              <option value="inspecciones">Inspecciones</option>
+              <option value="reajuste">Reajuste IPC</option>
+              <option value="proveedores">Proveedores</option>
+            </select>
+          </div>
         </div>
 
         {/* Resumen Tab */}

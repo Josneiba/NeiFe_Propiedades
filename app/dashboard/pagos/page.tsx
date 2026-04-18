@@ -1,5 +1,3 @@
-'use client'
-
 import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
@@ -11,7 +9,8 @@ import {
   Check,
   DollarSign,
   Download,
-  Clock
+  Clock,
+  CreditCard
 } from "lucide-react"
 import Link from "next/link"
 
@@ -67,9 +66,7 @@ export default async function PagosPage({
     redirect("/dashboard/pagos")
   }
 
-  // Add pagination state
-  // const [page, setPage] = useState(1)
-  // const [hasMore, setHasMore] = useState(true)
+  const page = 1
 
   // Get all payments for this landlord's properties
   let payments = (await prisma.payment.findMany({
@@ -78,6 +75,9 @@ export default async function PagosPage({
         landlordId: session.user.id,
         ...(filterProperty ? { id: filterProperty.id } : {}),
       },
+      ...(statusFilter !== "ALL" && {
+        status: statusFilter as any,
+      }),
     },
     include: {
       property: {
@@ -96,9 +96,6 @@ export default async function PagosPage({
     orderBy: [{ year: "desc" }, { month: "desc" }],
     take: 50,
     skip: (page - 1) * 50,
-    ...(statusFilter !== "ALL" && {
-      status: statusFilter as any,
-    }),
   })) as PaymentWithProperty[]
 
   // Check if there are more payments to load
@@ -241,7 +238,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total esperado</p>
-                <p className="text-2xl font-bold text-foreground money font-mono">
+                <p className="text-2xl font-bold text-foreground font-mono">
                   ${stats.total.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -256,7 +253,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-2xl font-bold text-foreground money font-mono">
+                <p className="text-2xl font-bold text-foreground font-mono">
                   ${stats.paid.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -271,7 +268,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className="text-2xl font-bold text-foreground money font-mono">
+                <p className="text-2xl font-bold text-foreground font-mono">
                   ${stats.pending.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -293,10 +290,14 @@ export default async function PagosPage({
                   <CreditCard className="h-12 w-12 text-[#5E8B8C]" />
                 </div>
                 <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
-                  Sin pagos registrados
+                  {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
+                    ? "No se encontraron pagos con los filtros aplicados"
+                    : "Sin pagos registrados"}
                 </h3>
                 <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
-                  Los pagos aparecerán aquí una vez que configures una propiedad con arrendatario.
+                  {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
+                    ? "Intenta cambiar los filtros para ver más resultados."
+                    : "Los pagos aparecerán aquí una vez que configures una propiedad con arrendatario."}
                 </p>
               </CardContent>
             </Card>
@@ -330,7 +331,7 @@ export default async function PagosPage({
                       <td className="py-4 px-2 text-muted-foreground">
                         {getMonthName(payment.month)} {payment.year}
                       </td>
-                      <td className="py-4 px-2 text-right font-medium text-foreground money">
+                      <td className="py-4 px-2 text-right font-medium text-foreground font-mono">
                         ${payment.amountCLP.toLocaleString("es-CL")}
                       </td>
                       <td className="py-4 px-2 text-center">

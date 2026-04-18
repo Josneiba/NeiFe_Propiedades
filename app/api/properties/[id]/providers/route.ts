@@ -5,16 +5,18 @@ import { prisma } from '@/lib/prisma'
 // GET — listar proveedores asignados a esta propiedad
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const { id } = await params
+
   // Anti-IDOR: verificar que la propiedad es del landlord
   const property = await prisma.property.findFirst({
-    where: { id: params.id, landlordId: session.user.id },
+    where: { id, landlordId: session.user.id },
     select: { id: true }
   })
 
@@ -23,7 +25,7 @@ export async function GET(
   }
 
   const providers = await prisma.propertyProvider.findMany({
-    where: { propertyId: params.id },
+    where: { propertyId: id },
     include: {
       provider: {
         select: {
@@ -42,16 +44,18 @@ export async function GET(
 // POST — asignar proveedor a esta propiedad (Body: { providerId, notes? })
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const { id } = await params
+
   // Anti-IDOR: verificar ownership
   const property = await prisma.property.findFirst({
-    where: { id: params.id, landlordId: session.user.id },
+    where: { id, landlordId: session.user.id },
     select: { id: true }
   })
 
@@ -78,11 +82,11 @@ export async function POST(
   const assignment = await prisma.propertyProvider.upsert({
     where: {
       propertyId_providerId: {
-        propertyId: params.id,
+        propertyId: id,
         providerId,
       }
     },
-    create: { propertyId: params.id, providerId },
+    create: { propertyId: id, providerId },
     update: {},
   })
 
@@ -92,16 +96,18 @@ export async function POST(
 // DELETE — desasignar proveedor de esta propiedad (Body: { providerId })
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const { id } = await params
+
   // Anti-IDOR
   const property = await prisma.property.findFirst({
-    where: { id: params.id, landlordId: session.user.id },
+    where: { id, landlordId: session.user.id },
     select: { id: true }
   })
 
@@ -114,7 +120,7 @@ export async function DELETE(
   await prisma.propertyProvider.delete({
     where: {
       propertyId_providerId: {
-        propertyId: params.id,
+        propertyId: id,
         providerId,
       }
     }

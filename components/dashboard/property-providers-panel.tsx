@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { Wrench, Loader2, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
+import { Wrench, Loader2, Trash2, Search, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 
 const SPECIALTY_ES: Record<string, string> = {
@@ -48,6 +50,8 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
   const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>('all')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -151,6 +155,25 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
   const assignedIds = new Set(assigned.map((a) => a.providerId))
   const available = pool.filter((p) => !assignedIds.has(p.id))
 
+  // Filtrar proveedores disponibles
+  const filteredProviders = useMemo(() => {
+    return available.filter((provider) => {
+      const matchesSearch = searchTerm === '' ||
+        provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        provider.phone.includes(searchTerm)
+
+      const matchesSpecialty = specialtyFilter === 'all' || provider.specialty === specialtyFilter
+
+      return matchesSearch && matchesSpecialty
+    })
+  }, [available, searchTerm, specialtyFilter])
+
+  // Obtener especialidades únicas para el filtro
+  const availableSpecialties = useMemo(() => {
+    const specialties = new Set(available.map(p => p.specialty))
+    return Array.from(specialties).sort()
+  }, [available])
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -219,25 +242,85 @@ export function PropertyProvidersPanel({ propertyId }: { propertyId: string }) {
             </p>
           ) : (
             <>
-              <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Selecciona proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {available.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {SPECIALTY_ES[p.specialty] ?? p.specialty}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Barra de búsqueda y filtros */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre o teléfono..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-background border-border"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                    <SelectTrigger className="w-full bg-background border-border">
+                      <SelectValue placeholder="Filtrar por especialidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las especialidades</SelectItem>
+                      {availableSpecialties.map((specialty) => (
+                        <SelectItem key={specialty} value={specialty}>
+                          {SPECIALTY_ES[specialty] ?? specialty}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Lista de proveedores filtrados */}
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {filteredProviders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No se encontraron proveedores con los filtros aplicados.
+                  </p>
+                ) : (
+                  filteredProviders.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedId === provider.id
+                          ? 'border-[#5E8B8C] bg-[#5E8B8C]/5'
+                          : 'border-border hover:border-[#5E8B8C]/50'
+                      }`}
+                      onClick={() => setSelectedId(selectedId === provider.id ? '' : provider.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground">{provider.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {SPECIALTY_ES[provider.specialty] ?? provider.specialty}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">{provider.phone}</span>
+                          </div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border-2 ${
+                          selectedId === provider.id
+                            ? 'border-[#5E8B8C] bg-[#5E8B8C]'
+                            : 'border-muted-foreground'
+                        }`}>
+                          {selectedId === provider.id && (
+                            <div className="w-full h-full rounded-full bg-white scale-50" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
               <Button
                 type="button"
                 disabled={!selectedId || saving}
                 onClick={assign}
-                className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+                className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
               >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Asignar a esta propiedad
               </Button>
             </>
