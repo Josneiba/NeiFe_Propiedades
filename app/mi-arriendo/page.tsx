@@ -17,6 +17,10 @@ import {
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 
+function formatCLP(amount: number) {
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(amount)
+}
+
 export default async function MiArriendoPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -402,11 +406,14 @@ export default async function MiArriendoPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Arrendador</p>
-    </div>
-  </div>
+                <p className="text-foreground">{property.landlord.name}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-  {/* Sidebar */}
-  <div className="space-y-6">
+        {/* Sidebar */}
+        <div className="space-y-6">
     {/* Contract Progress */}
     <Card className="bg-card border-border">
       <CardHeader>

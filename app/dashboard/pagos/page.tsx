@@ -1,7 +1,8 @@
+'use client'
+
 import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -67,8 +68,8 @@ export default async function PagosPage({
   }
 
   // Add pagination state
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
+  // const [page, setPage] = useState(1)
+  // const [hasMore, setHasMore] = useState(true)
 
   // Get all payments for this landlord's properties
   let payments = (await prisma.payment.findMany({
@@ -112,7 +113,7 @@ export default async function PagosPage({
       }),
     },
   })
-  const hasMorePayments = page * 50 < totalPayments
+  // const hasMorePayments = page * 50 < totalPayments
 
   payments =
     behaviorFilter === "ONTIME"
@@ -376,19 +377,6 @@ export default async function PagosPage({
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-          
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={() => setPage(page + 1)}
-                variant="outline"
-                className="border-border text-foreground"
-              >
-                Ver más
-              </Button>
             </div>
           )}
         </CardContent>

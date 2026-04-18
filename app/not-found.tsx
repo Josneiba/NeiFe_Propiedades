@@ -41,6 +41,8 @@ export default function NotFound() {
             <Home className="h-4 w-4 mr-2" />
             Ir al inicio
           </Button>
+        </div>
+
         <div className="space-y-3">
           <Link href="/" className="block">
             <Button className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] h-12">
