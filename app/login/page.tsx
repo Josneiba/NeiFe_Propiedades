@@ -130,7 +130,7 @@ export default function LoginPage() {
 
       {/* Right side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-3xl">
           <Link 
             href="/" 
             className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-8 transition-colors duration-300"
@@ -152,25 +152,25 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
                 {[
                   {
                     key: 'landlord',
                     label: 'Arrendador',
                     icon: Building2,
-                    color: 'border-[#75524C] bg-[#75524C]/10 text-[#D5C3B6] hover:bg-[#75524C]/15'
+                    color: 'border-[#75524C] bg-[#75524C]/20 text-[#D5C3B6] hover:bg-[#75524C]/25'
                   },
                   {
                     key: 'tenant',
                     label: 'Arrendatario',
                     icon: Home,
-                    color: 'border-[#5E8B8C] bg-[#5E8B8C]/10 text-[#D5C3B6] hover:bg-[#5E8B8C]/15'
+                    color: 'border-[#5E8B8C] bg-[#5E8B8C]/20 text-[#D5C3B6] hover:bg-[#5E8B8C]/25'
                   },
                   {
                     key: 'broker',
                     label: 'Corredor',
                     icon: Briefcase,
-                    color: 'border-[#B8965A] bg-[#B8965A]/10 text-[#D5C3B6] hover:bg-[#B8965A]/15'
+                    color: 'border-[#B8965A] bg-[#B8965A]/20 text-[#D5C3B6] hover:bg-[#B8965A]/25'
                   },
                 ].map((roleOption) => {
                   const Icon = roleOption.icon
@@ -183,24 +183,27 @@ export default function LoginPage() {
                       onClick={() => setSelectedDemoRole(roleOption.key as 'landlord' | 'tenant' | 'broker')}
                       onKeyDown={(event) => handleRoleCardKeyDown(event, roleOption.key as 'landlord' | 'tenant' | 'broker')}
                       aria-pressed={isSelected}
-                      className={`cursor-pointer flex flex-col items-start justify-between rounded-3xl border p-4 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] ${roleOption.color} ${isSelected ? 'border-current bg-opacity-30 shadow-lg shadow-current/15' : 'border-[#D5C3B6]/20'}`}
+                      className={`cursor-pointer flex flex-col items-center justify-between rounded-3xl border p-6 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] ${roleOption.color} ${isSelected ? 'border-current bg-opacity-30 shadow-lg shadow-current/15' : 'border-[#D5C3B6]/20'}`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-current">
-                            <Icon className="h-5 w-5" />
-                          </span>
-                          <span className="text-base font-semibold text-[#FAF6F2]">{roleOption.label}</span>
-                        </div>
-                        {isSelected ? <Check className="h-4 w-4 text-[#FAF6F2]" /> : null}
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-current">
+                          <Icon className="h-6 w-6" />
+                        </span>
+                        <span className="text-base font-semibold text-[#FAF6F2]">{roleOption.label}</span>
                       </div>
-                      <p className="mt-3 text-sm text-[#D5C3B6]">
+                      <p className="mt-4 text-sm text-[#D5C3B6]">
                         {roleOption.key === 'landlord'
                           ? 'Panel de gestión de propiedades'
                           : roleOption.key === 'tenant'
                             ? 'Administra tu pago y contrato'
                             : 'Gestiona propiedades de tus clientes'}
                       </p>
+                      {isSelected && (
+                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#FAF6F2]">
+                          <Check className="h-4 w-4" />
+                          Seleccionado
+                        </div>
+                      )}
                     </div>
                   )
                 })}

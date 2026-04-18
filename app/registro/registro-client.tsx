@@ -156,7 +156,7 @@ export default function RegistroClient() {
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-md py-8">
+        <div className="w-full max-w-3xl py-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-8 transition-colors duration-300"
@@ -178,7 +178,7 @@ export default function RegistroClient() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-5 mb-6 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-3">
                 {[
                   {
                     key: 'landlord',
@@ -216,18 +216,18 @@ export default function RegistroClient() {
                       onKeyDown={(event) => handleRoleCardKeyDown(event, option.key as Role)}
                       aria-pressed={isSelected}
                       className={cn(
-                        'cursor-pointer flex flex-col justify-between min-h-[170px] rounded-3xl border-2 p-5 text-left transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] shadow-sm',
+                        'cursor-pointer flex flex-col items-center justify-between min-h-[180px] rounded-3xl border-2 p-6 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] shadow-sm',
                         isSelected ? `${option.selectedColor} shadow-[#D5C3B6]/10` : `${option.defaultColor} hover:border-current`
                       )}
                     >
-                      <div>
+                      <div className="flex flex-col items-center gap-4">
                         <div className={cn(
-                          'inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-4',
+                          'inline-flex h-12 w-12 items-center justify-center rounded-2xl',
                           isSelected ? 'bg-current text-[#1C1917]' : 'bg-white/10 text-current'
                         )}>
                           <Icon className="h-6 w-6" />
                         </div>
-                        <h3 className="text-lg font-semibold text-[#FAF6F2] mb-2">{option.title}</h3>
+                        <h3 className="text-lg font-semibold text-[#FAF6F2]">{option.title}</h3>
                         <p className="text-sm leading-6 text-[#D5C3B6]">{option.description}</p>
                       </div>
                       {isSelected && (
