@@ -45,10 +45,17 @@ export default async function MiArriendoPage() {
         <div>
           <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
         </div>
-        <Card className="bg-card border-border">
-          <CardContent className="p-12 text-center">
-            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground">No tienes una propiedad asignada</p>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-16 text-center">
+            <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+              <Home className="h-12 w-12 text-[#5E8B8C]" />
+            </div>
+            <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+              No estás vinculado a ninguna propiedad
+            </h3>
+            <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+              El propietario debe enviarte una invitación por email para conectarte a tu arriendo.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -241,14 +248,14 @@ export default async function MiArriendoPage() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">Arriendo</p>
                   <p className="text-lg font-bold text-foreground">
-                    ${(property.monthlyRentCLP || 0).toLocaleString("es-CL")}
+                    {formatCLP(property.monthlyRentCLP || 0)}
                   </p>
                 </div>
                 {water > 0 && (
                   <div className="p-4 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Agua</p>
                     <p className="text-lg font-bold text-foreground">
-                      ${water.toLocaleString("es-CL")}
+                      {formatCLP(water)}
                     </p>
                   </div>
                 )}
@@ -256,7 +263,7 @@ export default async function MiArriendoPage() {
                   <div className="p-4 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Luz</p>
                     <p className="text-lg font-bold text-foreground">
-                      ${electricity.toLocaleString("es-CL")}
+                      {formatCLP(electricity)}
                     </p>
                   </div>
                 )}
@@ -264,14 +271,14 @@ export default async function MiArriendoPage() {
                   <div className="p-4 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Gas</p>
                     <p className="text-lg font-bold text-foreground">
-                      ${gas.toLocaleString("es-CL")}
+                      {formatCLP(gas)}
                     </p>
                   </div>
                 )}
                 <div className="p-4 rounded-lg bg-[#5E8B8C]/20">
                   <p className="text-sm text-muted-foreground">Total</p>
                   <p className="text-lg font-bold text-[#5E8B8C]">
-                    ${currentTotal.toLocaleString("es-CL")}
+                    {formatCLP(currentTotal)}
                   </p>
                 </div>
               </div>
@@ -395,18 +402,49 @@ export default async function MiArriendoPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Arrendador</p>
-                <p className="text-foreground">{property.landlord.name || "Sin asignar"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Arriendo mensual</p>
-                <p className="text-lg font-bold text-[#5E8B8C]">
-                  ${(property.monthlyRentCLP || 0).toLocaleString("es-CL")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
+  </div>
+
+  {/* Sidebar */}
+  <div className="space-y-6">
+    {/* Contract Progress */}
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <CardTitle className="text-foreground text-lg">Mi Contrato</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ContractProgressChart 
+          startDate={property.contractStart}
+          endDate={property.contractEnd}
+          size="large"
+        />
+      </CardContent>
+    </Card>
+
+    {/* Property Info */}
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <CardTitle className="text-foreground text-lg">Información</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Dirección</p>
+          <p className="text-foreground">{property.address}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Arrendador</p>
+          <p className="text-foreground">{property.landlord.name || "Sin asignar"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Arriendo mensual</p>
+          <p className="text-lg font-bold text-[#5E8B8C]">
+            {formatCLP(property.monthlyRentCLP || 0)}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</div>
+</div>
   )
 }

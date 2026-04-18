@@ -26,10 +26,24 @@ interface FormData {
   contractEnd: string
 }
 
+interface FormErrors {
+  name?: string
+  address?: string
+  commune?: string
+  monthlyRentCLP?: string
+  monthlyRentUF?: string
+  bedrooms?: string
+  bathrooms?: string
+  squareMeters?: string
+  contractStart?: string
+  contractEnd?: string
+}
+
 export default function NuevaPropiedad() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
   const regions = getRegions()
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -48,6 +62,64 @@ export default function NuevaPropiedad() {
 
   const currentCommunas = getCommunesByRegion(formData.region)
 
+  const validateField = (name: string, value: string): string | undefined => {
+    switch (name) {
+      case 'name':
+        if (!value.trim()) return 'El nombre de la propiedad es requerido'
+        if (value.trim().length < 3) return 'El nombre debe tener al menos 3 caracteres'
+        return undefined
+      case 'address':
+        if (!value.trim()) return 'La dirección es requerida'
+        if (value.trim().length < 5) return 'La dirección debe tener al menos 5 caracteres'
+        return undefined
+      case 'commune':
+        if (!value) return 'La comuna es requerida'
+        return undefined
+      case 'monthlyRentCLP':
+        if (value && (isNaN(Number(value)) || Number(value) <= 0)) {
+          return 'El arriendo debe ser un número positivo'
+        }
+        return undefined
+      case 'monthlyRentUF':
+        if (value && (isNaN(Number(value)) || Number(value) <= 0)) {
+          return 'El arriendo en UF debe ser un número positivo'
+        }
+        return undefined
+      case 'bedrooms':
+        if (value && (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 20)) {
+          return 'El número de dormitorios debe ser entre 0 y 20'
+        }
+        return undefined
+      case 'bathrooms':
+        if (value && (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 10)) {
+          return 'El número de baños debe ser entre 0 y 10'
+        }
+        return undefined
+      case 'squareMeters':
+        if (value && (isNaN(Number(value)) || Number(value) <= 0 || Number(value) > 10000)) {
+          return 'Los metros cuadrados deben ser entre 1 y 10000'
+        }
+        return undefined
+      case 'contractStart':
+        if (value) {
+          const startDate = new Date(value)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          if (startDate < today) return 'La fecha de inicio no puede ser anterior a hoy'
+        }
+        return undefined
+      case 'contractEnd':
+        if (value && formData.contractStart) {
+          const endDate = new Date(value)
+          const startDate = new Date(formData.contractStart)
+          if (endDate <= startDate) return 'La fecha de término debe ser posterior a la de inicio'
+        }
+        return undefined
+      default:
+        return undefined
+    }
+  }
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -56,6 +128,14 @@ export default function NuevaPropiedad() {
       ...prev,
       [name]: value,
     }))
+    
+    // Real-time validation
+    const error = validateField(name, value)
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error,
+    }))
+    
     setError(null)
   }
 
@@ -160,9 +240,14 @@ export default function NuevaPropiedad() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Ej: Depto Providencia"
-                  className="bg-background border-border text-foreground"
+                  className={`bg-background border text-foreground ${
+                    formErrors.name ? 'border-red-500' : 'border-border'
+                  }`}
                   required
                 />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500">{formErrors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address" className="text-foreground text-sm font-medium">
@@ -173,10 +258,15 @@ export default function NuevaPropiedad() {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  placeholder="Ej: Av. Providencia 1234, Depto 501"
-                  className="bg-background border-border text-foreground"
+                  placeholder="Ej: Av. Providencia 1234, Depto 12B"
+                  className={`bg-background border text-foreground ${
+                    formErrors.address ? 'border-red-500' : 'border-border'
+                  }`}
                   required
                 />
+                {formErrors.address && (
+                  <p className="text-sm text-red-500">{formErrors.address}</p>
+                )}
               </div>
             </div>
 

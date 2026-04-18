@@ -16,6 +16,7 @@ model User {
   password          String
   avatar            String?
   phone             String?
+  company           String?
   rut               String?
   isActive          Boolean   @default(true)
   emailVerified     DateTime?
@@ -29,17 +30,20 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  ownedProperties    Property[]           @relation("LandlordProperties")
-  rentedProperty     Property?            @relation("TenantProperty")
-  maintenanceReports MaintenanceRequest[] @relation("MaintenanceRequester")
-  invitationsSent    Invitation[]         @relation("InvitationSender")
-  invitationsReceived Invitation[]        @relation("InvitationReceiver")
-  notifications      Notification[]
+  ownedProperties        Property[]           @relation("LandlordProperties")
+  managedProperties      Property[]           @relation("ManagedProperties")
+  rentedProperty         Property?            @relation("TenantProperty")
+  maintenanceReports     MaintenanceRequest[] @relation("MaintenanceRequester")
+  invitationsSent        Invitation[]         @relation("InvitationSender")
+  invitationsReceived    Invitation[]         @relation("InvitationReceiver")
+  mandatesAsOwner        Mandate[]            @relation("MandateOwner")
+  mandatesAsBroker       Mandate[]            @relation("MandateBroker")
+  notifications          Notification[]
   notificationPreferences NotificationPreferences?
-  activityLogs       ActivityLog[]
-  accounts           Account[]
-  sessions           Session[]
-  calendarEvents     CalendarEvent[]
+  activityLogs           ActivityLog[]
+  accounts               Account[]
+  sessions               Session[]
+  calendarEvents         CalendarEvent[]
 }
 
 model Account {
@@ -89,6 +93,7 @@ model Property {
   lat            Float?
   lng            Float?
   landlordId     String
+  managedBy      String?
   tenantId       String?   @unique
   isActive       Boolean   @default(true)
   contractStart  DateTime?
@@ -99,6 +104,7 @@ model Property {
   updatedAt      DateTime  @updatedAt
 
   landlord       User      @relation("LandlordProperties", fields: [landlordId], references: [id])
+  managedByUser  User?     @relation("ManagedProperties", fields: [managedBy], references: [id])
   tenant         User?     @relation("TenantProperty", fields: [tenantId], references: [id])
 
   // Datos del corredor/agente
@@ -131,6 +137,28 @@ model Property {
   inspections    PropertyInspection[]
   ipcAdjustments IpcAdjustment[]
   calendarEvents CalendarEvent[]
+  mandates       Mandate[]
+}
+
+model Mandate {
+  id              String        @id @default(cuid())
+  propertyId      String
+  ownerId         String
+  brokerId        String
+  status          MandateStatus @default(PENDING)
+  signedByOwner   Boolean       @default(false)
+  signedByBroker  Boolean       @default(false)
+  ownerSignedAt   DateTime?
+  brokerSignedAt  DateTime?
+  startsAt        DateTime?
+  expiresAt       DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  property        Property      @relation(fields: [propertyId], references: [id])
+  owner           User          @relation("MandateOwner", fields: [ownerId], references: [id])
+  broker          User          @relation("MandateBroker", fields: [brokerId], references: [id])
 }
 
 model Invitation {
@@ -384,8 +412,16 @@ model NotificationPreferences {
 enum Role {
   OWNER
   LANDLORD
+  BROKER
   TENANT
   PROVIDER
+}
+
+enum MandateStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+  EXPIRED
 }
 
 enum InvitationType {
@@ -487,6 +523,9 @@ enum NotificationType {
   PAYMENT_DUE
   PAYMENT_RECEIVED
   PAYMENT_OVERDUE
+  MANDATE_REQUESTED
+  MANDATE_SIGNED
+  MANDATE_REVOKED
   MAINTENANCE_NEW
   MAINTENANCE_UPDATE
   CONTRACT_EXPIRING

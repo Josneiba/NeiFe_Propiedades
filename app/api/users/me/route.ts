@@ -7,10 +7,12 @@ const updateProfileSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   phone: z.string().max(20).optional(),
   rut: z.string().max(20).optional(),
+  company: z.string().max(100).optional(),
   bankName: z.string().max(100).optional(),
   bankAccountType: z.string().max(50).optional(),
   bankAccountNumber: z.string().max(50).optional(),
   bankEmail: z.string().email().optional(),
+  onboardingDone: z.boolean().optional(),
 })
 
 // GET — obtener datos del usuario actual
@@ -30,6 +32,7 @@ export async function GET(req: NextRequest) {
         phone: true,
         rut: true,
         avatar: true,
+        company: true,
         bankName: true,
         bankAccountType: true,
         bankAccountNumber: true,
@@ -75,6 +78,7 @@ export async function PATCH(req: NextRequest) {
         email: true,
         phone: true,
         rut: true,
+        company: true,
         bankName: true,
         bankAccountType: true,
         bankAccountNumber: true,

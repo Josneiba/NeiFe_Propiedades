@@ -227,12 +227,16 @@ export default async function MantencionesPage({
       {/* Requests List */}
       <div className="space-y-4">
         {requests.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="p-12 text-center">
-              <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">
-                No hay solicitudes de mantención 
-                {statusFilter !== "all" && ` con estado "${statusFilter}"`}
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-16 text-center">
+              <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+                <Wrench className="h-12 w-12 text-[#5E8B8C]" />
+              </div>
+              <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+                Sin mantenciones activas
+              </h3>
+              <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+                ¡Todo en orden! Aquí verás los reportes de fallas cuando sean enviados.
               </p>
             </CardContent>
           </Card>

@@ -20,6 +20,17 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 
 interface Provider {
   id: string
@@ -62,8 +73,6 @@ function ProviderCard({ provider }: { provider: Provider }) {
   const [deleting, setDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm(`¿Eliminar a ${provider.name}?`)) return
-
     setDeleting(true)
     try {
       const response = await fetch(`/api/providers/${provider.id}`, {
@@ -152,19 +161,39 @@ function ProviderCard({ provider }: { provider: Provider }) {
                     <Edit2 className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground hover:text-[#C27F79]"
-                  disabled={deleting}
-                  onClick={handleDelete}
-                >
-                  {deleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-muted-foreground hover:text-[#C27F79]"
+                      disabled={deleting}
+                    >
+                      {deleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Eliminar proveedor?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción eliminará permanentemente a {provider.name} del sistema. Esta acción no se puede deshacer.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDelete}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>

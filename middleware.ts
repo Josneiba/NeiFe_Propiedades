@@ -25,11 +25,13 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/mi-arriendo', req.url))
   }
 
-  // LANDLORD/OWNER intenta acceder a mi-arriendo → redirigir
-  if (
-    pathname.startsWith('/mi-arriendo') &&
-    (role === 'LANDLORD' || role === 'OWNER')
-  ) {
+  // Solo TENANT puede acceder a mi-arriendo
+  if (pathname.startsWith('/mi-arriendo') && role !== 'TENANT') {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // Solo BROKER u OWNER pueden acceder a /broker
+  if (pathname.startsWith('/broker') && role !== 'BROKER' && role !== 'OWNER') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 

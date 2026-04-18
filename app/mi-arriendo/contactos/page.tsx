@@ -50,7 +50,7 @@ export default async function ContactosPage() {
           </p>
         </div>
 
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2A2520] border-border">
           <CardContent className="p-12 text-center">
             <Home className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
             <p className="text-muted-foreground">No tienes una propiedad asignada aún</p>
@@ -93,7 +93,7 @@ export default async function ContactosPage() {
 
       {/* Landlord Contact */}
       {landlord && (
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2A2520] border-border">
           <CardHeader>
             <CardTitle className="text-foreground">Tu Arrendador</CardTitle>
           </CardHeader>
@@ -130,7 +130,7 @@ export default async function ContactosPage() {
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">Proveedores de Mantención</h2>
         {providers.length === 0 ? (
-          <Card className="bg-card border-border">
+          <Card className="bg-[#2A2520] border-border">
             <CardContent className="p-12 text-center">
               <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
               <p className="text-muted-foreground mb-2">Tu arrendador aún no ha asignado contactos de mantención</p>
@@ -198,7 +198,7 @@ export default async function ContactosPage() {
       </div>
 
       {/* How it works */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2A2520] border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
             <Wrench className="h-5 w-5 text-[#5E8B8C]" />

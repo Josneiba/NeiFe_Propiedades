@@ -13,6 +13,14 @@ import {
 } from 'lucide-react'
 import { PaymentModal } from '@/components/payment/payment-modal'
 
+// Format Chilean pesos
+function formatCLP(amount: number) {
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+  }).format(amount)
+}
+
 interface Payment {
   id: string
   month: number
@@ -120,13 +128,13 @@ export default function TenantPagosPage() {
 
       {/* Current Payment */}
       {pendingPayment && (
-        <Card className="bg-card border-border border-l-4 border-l-[#C27F79]">
+        <Card className="bg-[#2A2520] border-border border-l-4 border-l-[#C27F79]">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-foreground">
                 Pago Pendiente - {getMonthName(pendingPayment.month)} {pendingPayment.year}
               </CardTitle>
-              <Badge className={pendingPayment.status === 'OVERDUE' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
+              <Badge className={pendingPayment.status === 'OVERDUE' ? 'bg-[#C27F79]/20 text-[#C27F79]' : 'bg-[#F2C94C]/20 text-[#F2C94C]'}>
                 <Clock className="h-3 w-3 mr-1" />
                 {pendingPayment.status === 'OVERDUE' ? 'Atrasado' : 'Pendiente'}
               </Badge>
@@ -136,38 +144,38 @@ export default function TenantPagosPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div>
                 <p className="text-sm text-muted-foreground">Arriendo</p>
-                <p className="font-semibold text-foreground">
-                  ${(property?.monthlyRent || 0).toLocaleString('es-CL')}
+                <p className="font-semibold text-foreground font-mono">
+                  {formatCLP(property?.monthlyRent || 0)}
                 </p>
               </div>
               {pendingPayment.water > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground">Agua</p>
-                  <p className="font-semibold text-foreground">
-                    ${pendingPayment.water.toLocaleString('es-CL')}
+                  <p className="font-semibold text-foreground font-mono">
+                    {formatCLP(pendingPayment.water)}
                   </p>
                 </div>
               )}
               {pendingPayment.electricity > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground">Luz</p>
-                  <p className="font-semibold text-foreground">
-                    ${pendingPayment.electricity.toLocaleString('es-CL')}
+                  <p className="font-semibold text-foreground font-mono">
+                    {formatCLP(pendingPayment.electricity)}
                   </p>
                 </div>
               )}
               {(pendingPayment.gas ?? 0) > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground">Gas</p>
-                  <p className="font-semibold text-foreground">
-                    ${(pendingPayment.gas ?? 0).toLocaleString('es-CL')}
+                  <p className="font-semibold text-foreground font-mono">
+                    {formatCLP(pendingPayment.gas ?? 0)}
                   </p>
                 </div>
               )}
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-[#5E8B8C]">
-                  ${getTotal(pendingPayment).toLocaleString('es-CL')}
+                  {formatCLP(getTotal(pendingPayment))}
                 </p>
               </div>
             </div>
@@ -228,7 +236,7 @@ export default function TenantPagosPage() {
                           )}
                         </td>
                         <td className="py-4 px-4 text-right font-semibold text-foreground">
-                          ${getTotal(payment).toLocaleString('es-CL')}
+                          {formatCLP(getTotal(payment))}
                         </td>
                         <td className="py-4 px-4 text-center">
                           <Badge className={status.className}>

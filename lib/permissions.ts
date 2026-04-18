@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth"
+import { auth } from "@/lib/auth-session"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
@@ -10,7 +10,7 @@ export async function forbiddenResponse() {
 }
 
 export async function getSessionUser() {
-  const session = await getServerSession()
+  const session = await auth()
   if (!session?.user?.email) {
     return null
   }
@@ -31,6 +31,44 @@ export async function assertPropertyOwner(propertyId: string, userId: string) {
 
   if (!property || property.landlordId !== userId) {
     throw new Error("No eres propietario de esta propiedad")
+  }
+
+  return property
+}
+
+export async function assertPropertyAccess(propertyId: string, userId: string, userRole: string) {
+  if (userRole === 'LANDLORD' || userRole === 'OWNER') {
+    // El propietario siempre tiene acceso de lectura a sus propiedades
+    return assertPropertyOwner(propertyId, userId)
+  }
+  if (userRole === 'BROKER') {
+    // El corredor solo accede si tiene mandato activo
+    return assertBrokerAccess(propertyId, userId)
+  }
+  throw new Error('Acceso denegado')
+}
+
+export async function assertBrokerAccess(propertyId: string, brokerId: string) {
+  const property = await prisma.property.findFirst({
+    where: {
+      id: propertyId,
+      OR: [
+        { managedBy: brokerId },
+        {
+          mandates: {
+            some: {
+              brokerId,
+              status: "ACTIVE",
+            },
+          },
+        },
+      ],
+    },
+    select: { id: true, managedBy: true },
+  })
+
+  if (!property) {
+    throw new Error("No tienes acceso a esta propiedad")
   }
 
   return property

@@ -22,9 +22,54 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'NeiFe - Gestión de Arriendos',
-  description: 'Plataforma digital para gestión integral de propiedades en arriendo. Elimina intermediarios y digitaliza todo el proceso.',
-  generator: 'v0.app',
+  title: 'NeiFe Propiedades | Gestión de arriendos',
+  description: 'Plataforma para propietarios, arrendatarios y corredores de propiedades. Gestión integral de arriendos sin intermediarios.',
+  keywords: ['arriendo', 'propiedades', 'gestión', 'corredores', 'propietarios', 'arrendatarios', 'chile'],
+  authors: [{ name: 'NeiFe' }],
+  creator: 'NeiFe',
+  publisher: 'NeiFe',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://neife.cl'),
+  openGraph: {
+    title: 'NeiFe Propiedades | Gestión de arriendos',
+    description: 'Plataforma para propietarios, arrendatarios y corredores de propiedades',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://neife.cl',
+    siteName: 'NeiFe Propiedades',
+    locale: 'es_CL',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'NeiFe Propiedades - Gestión de arriendos',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NeiFe Propiedades | Gestión de arriendos',
+    description: 'Plataforma para propietarios, arrendatarios y corredores de propiedades',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
   icons: {
     icon: [
       {

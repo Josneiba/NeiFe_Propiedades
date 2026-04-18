@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, ArrowLeft, Building2, Home, Check, Shield } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
-type Role = "landlord" | "tenant"
+type Role = "landlord" | "tenant" | "broker"
 
 export default function RegistroClient() {
   const router = useRouter()
@@ -34,6 +34,7 @@ export default function RegistroClient() {
     email: "",
     rut: "",
     phone: "",
+    company: "",
     password: "",
     confirmPassword: ""
   })
@@ -66,7 +67,13 @@ export default function RegistroClient() {
           password: formData.password,
           rut: formData.rut,
           phone: formData.phone,
-          role: selectedRole === 'landlord' ? 'LANDLORD' : 'TENANT',
+          company: selectedRole === "broker" ? formData.company : undefined,
+          role:
+            selectedRole === "landlord"
+              ? "LANDLORD"
+              : selectedRole === "broker"
+                ? "BROKER"
+                : "TENANT",
           privacyAccepted: true,
         }),
       })
@@ -89,7 +96,7 @@ export default function RegistroClient() {
 
       if (result?.ok) {
         toast.success('Sesión iniciada')
-        router.push(selectedRole === "landlord" ? "/dashboard" : "/mi-arriendo")
+        router.push(selectedRole === "tenant" ? "/mi-arriendo" : selectedRole === "broker" ? "/broker" : "/dashboard")
       } else {
         toast.error("Error al iniciar sesión")
         router.push("/login")
@@ -164,7 +171,7 @@ export default function RegistroClient() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => setSelectedRole("landlord")}
@@ -230,6 +237,39 @@ export default function RegistroClient() {
                   )}>Arrendatario</p>
                   <p className="text-xs text-[#9C8578]">Administra tus pagos y contratos</p>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole("broker")}
+                  className={cn(
+                    "p-4 rounded-xl border-2 transition-all duration-300 text-left",
+                    selectedRole === "broker"
+                      ? "border-[#B8965A] bg-[#B8965A]/20"
+                      : "border-[#D5C3B6]/10 hover:border-[#B8965A]/50 bg-[#1C1917]/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center",
+                      selectedRole === "broker" ? "bg-[#B8965A]" : "bg-[#B8965A]/20"
+                    )}>
+                      <Briefcase className={cn(
+                        "h-5 w-5",
+                        selectedRole === "broker" ? "text-[#1C1917]" : "text-[#B8965A]"
+                      )} />
+                    </div>
+                    {selectedRole === "broker" && (
+                      <div className="w-5 h-5 rounded-full bg-[#B8965A] flex items-center justify-center">
+                        <Check className="h-3 w-3 text-[#1C1917]" />
+                      </div>
+                    )}
+                  </div>
+                  <p className={cn(
+                    "font-semibold",
+                    selectedRole === "broker" ? "text-[#D5C3B6]" : "text-[#FAF6F2]"
+                  )}>Corredor</p>
+                  <p className="text-xs text-[#9C8578]">Administro propiedades de mis clientes</p>
+                </button>
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
@@ -277,6 +317,18 @@ export default function RegistroClient() {
                     />
                   </div>
                 </div>
+
+                {selectedRole === "broker" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Empresa corredora (opcional)</Label>
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                      className="bg-background border-input text-foreground"
+                    />
+                  </div>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">

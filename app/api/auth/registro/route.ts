@@ -9,8 +9,9 @@ const schema = z.object({
   password: z.string().min(6),
   rut: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(['LANDLORD', 'TENANT']),
+  role: z.enum(['LANDLORD', 'TENANT', 'BROKER']),
   privacyAccepted: z.boolean().refine((v) => v === true),
+  company: z.string().trim().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
         role: data.role,
         rut: data.rut,
         phone: data.phone,
+        company: data.role === 'BROKER' ? data.company || null : null,
         privacyAccepted: true,
         privacyAcceptedAt: new Date(),
       },
@@ -50,6 +52,15 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
     }
+    
+    // Handle Prisma unique constraint error (P2002)
+    if (typeof error === 'object' && error.code === 'P2002' && error.meta?.target?.includes('email')) {
+      return NextResponse.json(
+        { error: "Ya existe una cuenta con este email" },
+        { status: 409 }
+      )
+    }
+    
     console.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Error al crear cuenta' },

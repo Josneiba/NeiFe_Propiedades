@@ -4,9 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const createSchema = z.object({
-  name: z.string().min(2),
-  address: z.string().min(5),
-  commune: z.string(),
+  name: z.string().min(1).max(100),
+  address: z.string().min(1),
+  commune: z.string().min(1),
   region: z.string().optional().default('Metropolitana'),
   description: z.string().optional(),
   bedrooms: z.number().optional(),
@@ -17,10 +17,10 @@ const createSchema = z.object({
   contractStart: z.string().optional(),
   contractEnd: z.string().optional(),
   monthlyRentUF: z.number().optional(),
-  monthlyRentCLP: z.number().int().optional(),  // Int, no decimal
+  monthlyRentCLP: z.number().int().positive().optional(),  // Int, no decimal, positive if provided
 })
 
-// GET — listar propiedades del arrendador autenticado
+// GET — listar propiedades del arrendador autenticado o filtrar por ownerId
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) {
@@ -28,8 +28,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const ownerId = req.nextUrl.searchParams.get('ownerId')
+
+    // Si se especifica ownerId (para corredores buscando propiedades), permitir solo si es broker
+    if (ownerId && ownerId !== session.user.id) {
+      if (session.user.role !== 'BROKER') {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+      }
+    }
+
     const properties = await prisma.property.findMany({
-      where: { landlordId: session.user.id, isActive: true },
+      where: { 
+        landlordId: ownerId || session.user.id, 
+        isActive: true 
+      },
       include: {
         tenant: {
           select: { id: true, name: true, email: true, phone: true },
@@ -40,6 +52,10 @@ export async function GET(req: NextRequest) {
             year: new Date().getFullYear(),
           },
           take: 1,
+        },
+        mandates: {
+          where: { status: 'ACTIVE' },
+          select: { id: true, status: true },
         },
         _count: {
           select: {
@@ -95,6 +111,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ property }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // Return specific error messages for each field
+      const firstError = error.errors[0]
+      if (firstError.path.includes('name')) {
+        return NextResponse.json({ error: "El nombre de la propiedad es requerido" }, { status: 400 })
+      }
+      if (firstError.path.includes('address')) {
+        return NextResponse.json({ error: "La dirección es requerida" }, { status: 400 })
+      }
+      if (firstError.path.includes('commune')) {
+        return NextResponse.json({ error: "La comuna es requerida" }, { status: 400 })
+      }
+      if (firstError.path.includes('monthlyRentCLP')) {
+        return NextResponse.json({ error: "El arriendo debe ser un número positivo" }, { status: 400 })
+      }
       const messages = error.errors
         .map(e => `${e.path.join('.')}: ${e.message}`)
         .join(', ')

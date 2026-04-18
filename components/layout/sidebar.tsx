@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/layout/notification-bell"
 
 interface SidebarProps {
-  role: "landlord" | "tenant"
+  role: "landlord" | "tenant" | "broker"
   userName?: string
   userId?: string
 }
@@ -52,10 +52,21 @@ const tenantNavItems = [
   { href: "/mi-arriendo/contactos", label: "Contactos", icon: Phone, id: undefined },
 ]
 
+const brokerNavItems = [
+  { href: "/broker", label: "Panel", icon: Home, id: undefined },
+  { href: "/broker/propiedades", label: "Propiedades", icon: Building2, id: undefined },
+  { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
+  { href: "/broker/calendario", label: "Calendario", icon: Calendar, id: undefined },
+  { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
+]
+
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const navItems = role === "landlord" ? landlordNavItems : tenantNavItems
+  const navItems = 
+    role === "landlord" ? landlordNavItems : 
+    role === "broker" ? brokerNavItems : 
+    tenantNavItems
 
   return (
     <>
@@ -93,7 +104,7 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         {/* Navigation */}
         <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
           <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]">
-            {role === "landlord" ? "Panel Arrendador" : "Mi Arriendo"}
+            {role === "landlord" ? "Panel Arrendador" : role === "broker" ? "Panel Corredor" : "Mi Arriendo"}
           </p>
           {navItems.map((item) => {
             const isActive = pathname === item.href || 
@@ -138,9 +149,11 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                 "inline-block px-2 py-0.5 text-xs rounded-full font-medium uppercase tracking-wider",
                 role === "landlord" 
                   ? "bg-[#75524C]/30 text-[#D5C3B6]" 
+                  : role === "broker"
+                  ? "bg-[#5E8B8C]/30 text-[#5E8B8C]"
                   : "bg-[#5E8B8C]/30 text-[#5E8B8C]"
               )}>
-                {role === "landlord" ? "Arrendador" : "Arrendatario"}
+                {role === "landlord" ? "Arrendador" : role === "broker" ? "Corredor" : "Arrendatario"}
               </span>
             </div>
           </div>

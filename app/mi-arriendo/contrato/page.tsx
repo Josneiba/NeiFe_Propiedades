@@ -47,7 +47,7 @@ export default async function ContratoPage() {
           <h1 className="text-3xl font-bold text-foreground">Mi Contrato</h1>
           <p className="text-muted-foreground">Información de tu contrato de arriendo</p>
         </div>
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2A2520] border-border">
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
             <p className="text-muted-foreground">No tienes un contrato asignado</p>
@@ -117,11 +117,11 @@ export default async function ContratoPage() {
 
             <TabsContent value="contract" className="space-y-6">
               {/* Contract Card */}
-              <Card className="bg-card border-border">
+              <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-foreground">Contrato de Arriendo</CardTitle>
-                    <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-red-600 text-white"}>
+                    <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-[#C27F79]/20 text-[#C27F79]"}>
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       {isActive ? "Vigente" : "Vencido"}
                     </Badge>
@@ -202,7 +202,7 @@ export default async function ContratoPage() {
               </Card>
 
               {/* Legal Info */}
-              <Card className="bg-card border-border">
+              <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <CardTitle className="text-foreground text-lg">Información Legal</CardTitle>
                 </CardHeader>
@@ -222,7 +222,7 @@ export default async function ContratoPage() {
 
             <TabsContent value="photos" className="space-y-6">
               {/* Check-in Photos */}
-              <Card className="bg-card border-border">
+              <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-foreground flex items-center gap-2">
@@ -251,7 +251,7 @@ export default async function ContratoPage() {
               </Card>
 
               {/* Check-out Photos */}
-              <Card className="bg-card border-border">
+              <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
                     <Badge className="bg-[#C27F79] text-white">Check-out</Badge>
@@ -281,7 +281,7 @@ export default async function ContratoPage() {
         <div className="space-y-6">
           {/* Contract Progress */}
           {contract.endDate && (
-            <Card className="bg-card border-border">
+            <Card className="bg-[#2A2520] border-border">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-[#5E8B8C]" />
@@ -299,7 +299,7 @@ export default async function ContratoPage() {
           )}
 
           {/* Quick Info */}
-          <Card className="bg-card border-border">
+          <Card className="bg-[#2A2520] border-border">
             <CardHeader>
               <CardTitle className="text-foreground text-lg">Resumen</CardTitle>
             </CardHeader>
@@ -326,7 +326,7 @@ export default async function ContratoPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estado</span>
-                <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-red-600 text-white"}>
+                <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-[#C27F79]/20 text-[#C27F79]"}>
                   {isActive ? "Vigente" : "Vencido"}
                 </Badge>
               </div>

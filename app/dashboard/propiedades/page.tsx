@@ -106,14 +106,24 @@ export default async function PropiedadesPage() {
       {/* Properties Grid */}
       <div className="grid gap-4">
         {properties.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="p-12 text-center">
-              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground mb-4">No tienes propiedades registradas aún</p>
-              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-16 text-center">
+              <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+                <Building2 className="h-12 w-12 text-[#5E8B8C]" />
+              </div>
+              <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+                Aún no tienes propiedades registradas
+              </h3>
+              <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+                Agrega tu primera propiedad para comenzar a gestionar arriendos, pagos y mantenciones.
+              </p>
+              <Button 
+                className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6] px-8 py-3 text-base font-medium" 
+                asChild
+              >
                 <Link href="/dashboard/propiedades/nueva">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar primera propiedad
+                  <Plus className="h-5 w-5 mr-2" />
+                  Agregar propiedad
                 </Link>
               </Button>
             </CardContent>

@@ -32,32 +32,32 @@ interface MaintenanceRequest {
 const statusConfig = {
   REQUESTED: { 
     label: "Solicitado", 
-    className: "bg-[#D5C3B6] text-[#2D3C3C]",
+    className: "bg-[#F2C94C]/20 text-[#F2C94C]",
     icon: Clock
   },
   REQUESTED_INFO: { 
     label: "Solicitar info", 
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
+    className: "bg-[#F2C94C]/20 text-[#F2C94C]",
     icon: Clock
   },
   APPROVED: { 
     label: "Aprobado", 
-    className: "bg-[#5E8B8C]/70 text-white",
+    className: "bg-[#5E8B8C] text-[#FAF6F2]",
     icon: Check
   },
   IN_PROGRESS: { 
     label: "En ejecución", 
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
+    className: "bg-[#F2C94C]/20 text-[#F2C94C]",
     icon: Wrench
   },
   COMPLETED: { 
     label: "Completado", 
-    className: "bg-[#5E8B8C] text-white",
+    className: "bg-[#5E8B8C] text-[#FAF6F2]",
     icon: Check
   },
   REJECTED: { 
     label: "Rechazado", 
-    className: "bg-[#C27F79] text-white",
+    className: "bg-[#C27F79]/20 text-[#C27F79]",
     icon: X
   }
 }
@@ -85,7 +85,7 @@ export default async function TenantMantencionesPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Mantenciones</h1>
         </div>
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2A2520] border-border">
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground">No tienes una propiedad asignada</p>
           </CardContent>
@@ -204,7 +204,7 @@ export default async function TenantMantencionesPage() {
       )}
 
       {/* History */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2A2520] border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Historial de Mantenciones</CardTitle>
         </CardHeader>

@@ -3,6 +3,12 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  turbopack: {
+    resolveAlias: {},
+  },
+  experimental: {
+    esmExternals: true,
+  },
   images: {
     unoptimized: true,
     remotePatterns: [

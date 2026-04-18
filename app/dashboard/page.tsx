@@ -1,11 +1,24 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth-session'
-import { prisma } from '@/lib/prisma'
+import { auth } from "@/lib/auth-session"
+import { prisma } from "@/lib/prisma"
+import { Suspense } from "react"
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye } from 'lucide-react'
+import { 
+  DollarSign, 
+  Building2, 
+  Wrench, 
+  AlertTriangle, 
+  TrendingUp, 
+  Plus, 
+  MapPin, 
+  Eye,
+  Home 
+} from 'lucide-react'
 import Link from 'next/link'
+import DashboardLoading from "./loading"
+import { OnboardingCard } from '@/components/dashboard/onboarding-card'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   PAID: { label: 'Pagado', className: 'bg-[#5E8B8C] text-[#FAF6F2]' },
@@ -47,6 +60,31 @@ export default async function DashboardPage() {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
 
+  // Check if user is a new landlord and needs onboarding
+  const isNewLandlord = properties.length === 0 && !(session.user as any).onboardingDone
+
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      {/* Onboarding Welcome Card - Show for new landlords */}
+      {isNewLandlord && (
+        <OnboardingCard 
+          onClose={async () => {
+            // Close onboarding and mark as completed
+            await fetch('/api/users/me', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ onboardingDone: true })
+            })
+          }}
+        />
+      )}
+
+      <DashboardContent session={session} currentMonth={currentMonth} currentYear={currentYear} />
+    </Suspense>
+  )
+}
+
+async function DashboardContent({ session, currentMonth, currentYear }: { session: any, currentMonth: number, currentYear: number }) {
   try {
     const [properties, stats, paidPayments, pendingPayments, activeMaintenances] =
       await Promise.all([
@@ -60,6 +98,13 @@ export default async function DashboardPage() {
               where: {
                 month: currentMonth,
                 year: currentYear,
+              },
+              take: 1,
+            },
+            mandates: {
+              where: { status: 'ACTIVE' },
+              include: {
+                broker: { select: { name: true, email: true } },
               },
               take: 1,
             },
@@ -205,49 +250,112 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        {/* Properties Grid */}
+        {/* Properties Grid - Separating Broker-Managed from Owner-Managed */}
         {properties.length > 0 && (
-          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Propiedades Recientes</h2>
-              <div className="space-y-3">
-                {properties.slice(0, 5).map((property) => {
-                  const currentPayment = property.payments[0]
-                  const paymentStatus = currentPayment?.status || 'PENDING'
-                  const statusLabel = statusConfig[paymentStatus]
+          <div className="space-y-6">
+            {/* Broker-Managed Properties */}
+            {properties.some((p) => p.mandates.length > 0) && (
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold text-[#5E8B8C] mb-4 flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Propiedades Administradas por Corredor
+                  </h2>
+                  <div className="space-y-3">
+                    {properties
+                      .filter((p) => p.mandates.length > 0)
+                      .map((property) => {
+                        const currentPayment = property.payments[0]
+                        const paymentStatus = currentPayment?.status || 'PENDING'
+                        const statusLabel = statusConfig[paymentStatus]
+                        const broker = property.mandates[0]?.broker
 
-                  return (
-                    <Link
-                      key={property.id}
-                      href={`/dashboard/propiedades/${property.id}`}
-                      className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917] hover:bg-[#1C1917]/80 transition-colors"
-                    >
-                      <div>
-                        <p className="text-[#FAF6F2] font-medium">{property.address}</p>
-                        <div className="flex items-center gap-2 text-sm text-[#9C8578]">
-                          <MapPin className="h-4 w-4" />
-                          {property.commune}
-                        </div>
-                        {property.tenant && (
-                          <p className="text-xs text-[#9C8578] mt-1">
-                            Arrendatario: {property.tenant.name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <Badge className={statusLabel?.className || 'bg-gray-600'}>
-                          {statusLabel?.label || 'Sin estado'}
-                        </Badge>
-                        <p className="text-xs text-[#9C8578] mt-2">
-                          Mantenciones: {property._count.maintenance}
-                        </p>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                        return (
+                          <Link
+                            key={property.id}
+                            href={`/dashboard/propiedades/${property.id}`}
+                            className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917] hover:bg-[#1C1917]/80 transition-colors"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-[#FAF6F2] font-medium">{property.address}</p>
+                                <Badge className="bg-[#5E8B8C] text-[#FAF6F2] text-xs">
+                                  Administrada por {broker?.name || 'Corredor'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-[#9C8578]">
+                                <MapPin className="h-4 w-4" />
+                                {property.commune}
+                              </div>
+                              {property.tenant && (
+                                <p className="text-xs text-[#9C8578] mt-1">
+                                  Arrendatario: {property.tenant.name}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <Badge className={statusLabel?.className || 'bg-gray-600'}>
+                                {statusLabel?.label || 'Sin estado'}
+                              </Badge>
+                              <p className="text-xs text-[#9C8578] mt-2">
+                                Mantenciones: {property._count.maintenance}
+                              </p>
+                            </div>
+                          </Link>
+                        )
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Owner-Managed Properties */}
+            {properties.some((p) => p.mandates.length === 0) && (
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Propiedades que Gestionas</h2>
+                  <div className="space-y-3">
+                    {properties
+                      .filter((p) => p.mandates.length === 0)
+                      .map((property) => {
+                        const currentPayment = property.payments[0]
+                        const paymentStatus = currentPayment?.status || 'PENDING'
+                        const statusLabel = statusConfig[paymentStatus]
+
+                        return (
+                          <Link
+                            key={property.id}
+                            href={`/dashboard/propiedades/${property.id}`}
+                            className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917] hover:bg-[#1C1917]/80 transition-colors"
+                          >
+                            <div>
+                              <p className="text-[#FAF6F2] font-medium">{property.address}</p>
+                              <div className="flex items-center gap-2 text-sm text-[#9C8578]">
+                                <MapPin className="h-4 w-4" />
+                                {property.commune}
+                              </div>
+                              {property.tenant && (
+                                <p className="text-xs text-[#9C8578] mt-1">
+                                  Arrendatario: {property.tenant.name}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <Badge className={statusLabel?.className || 'bg-gray-600'}>
+                                {statusLabel?.label || 'Sin estado'}
+                              </Badge>
+                              <p className="text-xs text-[#9C8578] mt-2">
+                                Mantenciones: {property._count.maintenance}
+                              </p>
+                            </div>
+                          </Link>
+                        )
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
         {properties.length === 0 && (

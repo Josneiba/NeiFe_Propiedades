@@ -50,6 +50,10 @@ export default function LoginPage() {
       const role = session?.user?.role || 'TENANT'
       if (role === 'TENANT') {
         router.push("/mi-arriendo")
+      } else if (role === 'BROKER') {
+        router.push("/broker")
+      } else if (role === 'LANDLORD') {
+        router.push("/dashboard")
       } else {
         router.push("/dashboard")
       }

@@ -8,9 +8,9 @@ import { z } from 'zod'
 const createSchema = z.object({
   propertyId: z.string(),
   month: z.number().min(1).max(12),
-  year: z.number().min(2000),
+  year: z.number().min(2020).max(2030),
   amountUF: z.number(),
-  amountCLP: z.number(),
+  amountCLP: z.number().positive(),
   method: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -142,7 +142,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ payment }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
+      // Return specific error messages for each field
+      const firstError = error.errors[0]
+      if (firstError.path.includes('amountCLP')) {
+        return NextResponse.json({ error: "El monto debe ser un número positivo" }, { status: 400 })
+      }
+      if (firstError.path.includes('month')) {
+        return NextResponse.json({ error: "El mes debe estar entre 1 y 12" }, { status: 400 })
+      }
+      if (firstError.path.includes('year')) {
+        return NextResponse.json({ error: "El año debe estar entre 2020 y 2030" }, { status: 400 })
+      }
+      const messages = error.errors
+        .map(e => `${e.path.join('.')}: ${e.message}`)
+        .join(', ')
+      return NextResponse.json({ error: messages }, { status: 400 })
     }
     console.error('Error creating payment:', error)
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -65,6 +66,10 @@ export default async function PagosPage({
     redirect("/dashboard/pagos")
   }
 
+  // Add pagination state
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+
   // Get all payments for this landlord's properties
   let payments = (await prisma.payment.findMany({
     where: {
@@ -88,10 +93,26 @@ export default async function PagosPage({
       },
     },
     orderBy: [{ year: "desc" }, { month: "desc" }],
+    take: 50,
+    skip: (page - 1) * 50,
     ...(statusFilter !== "ALL" && {
       status: statusFilter as any,
     }),
   })) as PaymentWithProperty[]
+
+  // Check if there are more payments to load
+  const totalPayments = await prisma.payment.count({
+    where: {
+      property: {
+        landlordId: session.user.id,
+        ...(filterProperty ? { id: filterProperty.id } : {}),
+      },
+      ...(statusFilter !== "ALL" && {
+        status: statusFilter as any,
+      }),
+    },
+  })
+  const hasMorePayments = page * 50 < totalPayments
 
   payments =
     behaviorFilter === "ONTIME"
@@ -219,7 +240,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total esperado</p>
-                <p className="text-2xl font-bold text-foreground money">
+                <p className="text-2xl font-bold text-foreground money font-mono">
                   ${stats.total.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -234,7 +255,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-2xl font-bold text-foreground money">
+                <p className="text-2xl font-bold text-foreground money font-mono">
                   ${stats.paid.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -249,7 +270,7 @@ export default async function PagosPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className="text-2xl font-bold text-foreground money">
+                <p className="text-2xl font-bold text-foreground money font-mono">
                   ${stats.pending.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -265,9 +286,19 @@ export default async function PagosPage({
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay pagos registrados aún</p>
-            </div>
+            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+              <CardContent className="p-16 text-center">
+                <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+                  <CreditCard className="h-12 w-12 text-[#5E8B8C]" />
+                </div>
+                <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+                  Sin pagos registrados
+                </h3>
+                <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+                  Los pagos aparecerán aquí una vez que configures una propiedad con arrendatario.
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -345,6 +376,19 @@ export default async function PagosPage({
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={() => setPage(page + 1)}
+                variant="outline"
+                className="border-border text-foreground"
+              >
+                Ver más
+              </Button>
             </div>
           )}
         </CardContent>
