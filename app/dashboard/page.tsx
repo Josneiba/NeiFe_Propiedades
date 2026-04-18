@@ -57,35 +57,18 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const currentMonth = new Date().getMonth() + 1
-  const currentYear = new Date().getFullYear()
-
-  // Check if user is a new landlord and needs onboarding
-  const isNewLandlord = properties.length === 0 && !(session.user as any).onboardingDone
-
   return (
     <Suspense fallback={<DashboardLoading />}>
-      {/* Onboarding Welcome Card - Show for new landlords */}
-      {isNewLandlord && (
-        <OnboardingCard 
-          onClose={async () => {
-            // Close onboarding and mark as completed
-            await fetch('/api/users/me', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ onboardingDone: true })
-            })
-          }}
-        />
-      )}
-
-      <DashboardContent session={session} currentMonth={currentMonth} currentYear={currentYear} />
+      <DashboardContent session={session} />
     </Suspense>
   )
 }
 
-async function DashboardContent({ session, currentMonth, currentYear }: { session: any, currentMonth: number, currentYear: number }) {
+async function DashboardContent({ session }: { session: any }) {
   try {
+    const currentMonth = new Date().getMonth() + 1
+    const currentYear = new Date().getFullYear()
+
     const [properties, stats, paidPayments, pendingPayments, activeMaintenances] =
       await Promise.all([
         prisma.property.findMany({
@@ -156,6 +139,7 @@ async function DashboardContent({ session, currentMonth, currentYear }: { sessio
 
     const totalRecaudadoCLP = paidPayments._sum.amountCLP || 0
     const pagosPendientesCLP = pendingPayments._sum.amountCLP || 0
+    const isNewLandlord = properties.length === 0 && !(session.user as any).onboardingDone
 
     const kpiStats = [
       {
@@ -198,6 +182,19 @@ async function DashboardContent({ session, currentMonth, currentYear }: { sessio
 
     return (
       <div className="space-y-8">
+        {/* Onboarding Welcome Card - Show for new landlords */}
+        {isNewLandlord && (
+          <OnboardingCard 
+            onClose={async () => {
+              await fetch('/api/users/me', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ onboardingDone: true })
+              })
+            }}
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>

@@ -12,6 +12,7 @@ import {
   Home,
   ArrowRight,
   Check,
+  Briefcase,
   MapPin,
   Scale,
   Lock,
@@ -87,6 +88,19 @@ const roles = [
     ],
     color: "bg-[#5E8B8C]",
     href: "/demo/tenant"
+  },
+  {
+    icon: Briefcase,
+    title: "Corredores",
+    description: "Administra las propiedades de tus clientes, gestiona mandatos y monitorea contratos con un solo login.",
+    benefits: [
+      "Mandatos activos y seguimiento",
+      "Acceso directo a propiedades de clientes",
+      "Panel centralizado de contratos",
+      "Control de comisiones y acuerdos"
+    ],
+    color: "bg-[#B8965A]",
+    href: "/demo/broker"
   }
 ]
 
@@ -278,7 +292,7 @@ export default function LandingPage() {
               Cada rol tiene su propio panel optimizado para sus necesidades
             </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {roles.map((role, index) => (
               <Card key={index} className="bg-[#2D3C3C] border-[#D5C3B6]/10 overflow-hidden hover:border-[#B8965A]/30 transition-all duration-300 group">
                 <div className={`h-1 ${role.color}`} />

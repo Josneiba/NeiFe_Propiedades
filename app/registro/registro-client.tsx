@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, type KeyboardEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -108,6 +108,13 @@ export default function RegistroClient() {
     }
   }
 
+  const handleRoleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, role: Role) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setSelectedRole(role)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#1C1917] flex">
       <div className="hidden lg:flex lg:w-1/2 relative">
@@ -171,105 +178,67 @@ export default function RegistroClient() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("landlord")}
-                  className={cn(
-                    "p-4 rounded-xl border-2 transition-all duration-300 text-left",
-                    selectedRole === "landlord"
-                      ? "border-[#75524C] bg-[#75524C]/20"
-                      : "border-[#D5C3B6]/10 hover:border-[#75524C]/50 bg-[#1C1917]/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center",
-                      selectedRole === "landlord" ? "bg-[#75524C]" : "bg-[#75524C]/20"
-                    )}>
-                      <Building2 className={cn(
-                        "h-5 w-5",
-                        selectedRole === "landlord" ? "text-[#FAF6F2]" : "text-[#75524C]"
-                      )} />
-                    </div>
-                    {selectedRole === "landlord" && (
-                      <div className="w-5 h-5 rounded-full bg-[#75524C] flex items-center justify-center">
-                        <Check className="h-3 w-3 text-[#FAF6F2]" />
+              <div className="grid grid-cols-1 gap-5 mb-6 sm:grid-cols-3">
+                {[
+                  {
+                    key: 'landlord',
+                    title: 'Arrendador',
+                    description: 'Gestiona propiedades',
+                    icon: Building2,
+                    selectedColor: 'border-[#75524C] bg-[#75524C]/20',
+                    defaultColor: 'border-[#D5C3B6]/10 bg-[#1C1917]/50',
+                  },
+                  {
+                    key: 'tenant',
+                    title: 'Arrendatario',
+                    description: 'Administra tus pagos y contratos',
+                    icon: Home,
+                    selectedColor: 'border-[#5E8B8C] bg-[#5E8B8C]/20',
+                    defaultColor: 'border-[#D5C3B6]/10 bg-[#1C1917]/50',
+                  },
+                  {
+                    key: 'broker',
+                    title: 'Corredor',
+                    description: 'Administro propiedades de mis clientes',
+                    icon: Briefcase,
+                    selectedColor: 'border-[#B8965A] bg-[#B8965A]/20',
+                    defaultColor: 'border-[#D5C3B6]/10 bg-[#1C1917]/50',
+                  },
+                ].map((option) => {
+                  const Icon = option.icon
+                  const isSelected = selectedRole === option.key
+                  return (
+                    <div
+                      key={option.key}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedRole(option.key as Role)}
+                      onKeyDown={(event) => handleRoleCardKeyDown(event, option.key as Role)}
+                      aria-pressed={isSelected}
+                      className={cn(
+                        'cursor-pointer flex flex-col justify-between min-h-[170px] rounded-3xl border-2 p-5 text-left transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] shadow-sm',
+                        isSelected ? `${option.selectedColor} shadow-[#D5C3B6]/10` : `${option.defaultColor} hover:border-current`
+                      )}
+                    >
+                      <div>
+                        <div className={cn(
+                          'inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-4',
+                          isSelected ? 'bg-current text-[#1C1917]' : 'bg-white/10 text-current'
+                        )}>
+                          <Icon className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-[#FAF6F2] mb-2">{option.title}</h3>
+                        <p className="text-sm leading-6 text-[#D5C3B6]">{option.description}</p>
                       </div>
-                    )}
-                  </div>
-                  <p className={cn(
-                    "font-semibold",
-                    selectedRole === "landlord" ? "text-[#D5C3B6]" : "text-[#FAF6F2]"
-                  )}>Arrendador</p>
-                  <p className="text-xs text-[#9C8578]">Gestiona propiedades</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("tenant")}
-                  className={cn(
-                    "p-4 rounded-xl border-2 transition-all duration-300 text-left",
-                    selectedRole === "tenant"
-                      ? "border-[#5E8B8C] bg-[#5E8B8C]/20"
-                      : "border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 bg-[#1C1917]/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center",
-                      selectedRole === "tenant" ? "bg-[#5E8B8C]" : "bg-[#5E8B8C]/20"
-                    )}>
-                      <Home className={cn(
-                        "h-5 w-5",
-                        selectedRole === "tenant" ? "text-[#FAF6F2]" : "text-[#5E8B8C]"
-                      )} />
+                      {isSelected && (
+                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#FAF6F2]">
+                          <Check className="h-4 w-4" />
+                          Seleccionado
+                        </div>
+                      )}
                     </div>
-                    {selectedRole === "tenant" && (
-                      <div className="w-5 h-5 rounded-full bg-[#5E8B8C] flex items-center justify-center">
-                        <Check className="h-3 w-3 text-[#FAF6F2]" />
-                      </div>
-                    )}
-                  </div>
-                  <p className={cn(
-                    "font-semibold",
-                    selectedRole === "tenant" ? "text-[#D5C3B6]" : "text-[#FAF6F2]"
-                  )}>Arrendatario</p>
-                  <p className="text-xs text-[#9C8578]">Administra tus pagos y contratos</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("broker")}
-                  className={cn(
-                    "p-4 rounded-xl border-2 transition-all duration-300 text-left",
-                    selectedRole === "broker"
-                      ? "border-[#B8965A] bg-[#B8965A]/20"
-                      : "border-[#D5C3B6]/10 hover:border-[#B8965A]/50 bg-[#1C1917]/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center",
-                      selectedRole === "broker" ? "bg-[#B8965A]" : "bg-[#B8965A]/20"
-                    )}>
-                      <Briefcase className={cn(
-                        "h-5 w-5",
-                        selectedRole === "broker" ? "text-[#1C1917]" : "text-[#B8965A]"
-                      )} />
-                    </div>
-                    {selectedRole === "broker" && (
-                      <div className="w-5 h-5 rounded-full bg-[#B8965A] flex items-center justify-center">
-                        <Check className="h-3 w-3 text-[#1C1917]" />
-                      </div>
-                    )}
-                  </div>
-                  <p className={cn(
-                    "font-semibold",
-                    selectedRole === "broker" ? "text-[#D5C3B6]" : "text-[#FAF6F2]"
-                  )}>Corredor</p>
-                  <p className="text-xs text-[#9C8578]">Administro propiedades de mis clientes</p>
-                </button>
+                  )
+                })}
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>

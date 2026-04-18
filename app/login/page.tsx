@@ -1,20 +1,21 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, ArrowLeft, Building2, Home } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check } from "lucide-react"
 import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedDemoRole, setSelectedDemoRole] = useState<'landlord' | 'tenant' | 'broker'>('landlord')
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -60,12 +61,18 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async (role: "landlord" | "tenant") => {
-    const email = role === "landlord" ? "owner@neife.cl" : "tenant1@neife.cl"
+  const handleDemoLogin = async () => {
+    const role = selectedDemoRole
+    const email =
+      role === "landlord"
+        ? "owner@neife.cl"
+        : role === "tenant"
+          ? "tenant1@neife.cl"
+          : "corredor@neife.cl"
     const password = "demo1234"
-    
+
     setIsLoading(true)
-    
+
     const result = await signIn('credentials', {
       email,
       password,
@@ -82,9 +89,18 @@ export default function LoginPage() {
       toast.success("Demo cargado correctamente")
       if (role === "landlord") {
         router.push("/dashboard")
+      } else if (role === "broker") {
+        router.push("/broker")
       } else {
         router.push("/mi-arriendo")
       }
+    }
+  }
+
+  const handleRoleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, role: 'landlord' | 'tenant' | 'broker') => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setSelectedDemoRole(role)
     }
   }
 
@@ -132,30 +148,76 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-2xl font-serif text-[#FAF6F2]">Iniciar Sesión</CardTitle>
               <CardDescription className="text-[#9C8578]">
-                Ingresa tus credenciales para acceder a tu cuenta
+                Selecciona tu rol y accede con demo o con tu cuenta
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Demo buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                {[
+                  {
+                    key: 'landlord',
+                    label: 'Arrendador',
+                    icon: Building2,
+                    color: 'border-[#75524C] bg-[#75524C]/10 text-[#D5C3B6] hover:bg-[#75524C]/15'
+                  },
+                  {
+                    key: 'tenant',
+                    label: 'Arrendatario',
+                    icon: Home,
+                    color: 'border-[#5E8B8C] bg-[#5E8B8C]/10 text-[#D5C3B6] hover:bg-[#5E8B8C]/15'
+                  },
+                  {
+                    key: 'broker',
+                    label: 'Corredor',
+                    icon: Briefcase,
+                    color: 'border-[#B8965A] bg-[#B8965A]/10 text-[#D5C3B6] hover:bg-[#B8965A]/15'
+                  },
+                ].map((roleOption) => {
+                  const Icon = roleOption.icon
+                  const isSelected = selectedDemoRole === roleOption.key
+                  return (
+                    <div
+                      key={roleOption.key}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedDemoRole(roleOption.key as 'landlord' | 'tenant' | 'broker')}
+                      onKeyDown={(event) => handleRoleCardKeyDown(event, roleOption.key as 'landlord' | 'tenant' | 'broker')}
+                      aria-pressed={isSelected}
+                      className={`cursor-pointer flex flex-col items-start justify-between rounded-3xl border p-4 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] ${roleOption.color} ${isSelected ? 'border-current bg-opacity-30 shadow-lg shadow-current/15' : 'border-[#D5C3B6]/20'}`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-current">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <span className="text-base font-semibold text-[#FAF6F2]">{roleOption.label}</span>
+                        </div>
+                        {isSelected ? <Check className="h-4 w-4 text-[#FAF6F2]" /> : null}
+                      </div>
+                      <p className="mt-3 text-sm text-[#D5C3B6]">
+                        {roleOption.key === 'landlord'
+                          ? 'Panel de gestión de propiedades'
+                          : roleOption.key === 'tenant'
+                            ? 'Administra tu pago y contrato'
+                            : 'Gestiona propiedades de tus clientes'}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => handleDemoLogin("landlord")}
+                  onClick={handleDemoLogin}
                   disabled={isLoading}
-                  className="flex items-center justify-center gap-2 p-3 rounded-lg bg-[#75524C]/20 border border-[#75524C]/30 hover:bg-[#75524C]/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-xl bg-[#5E8B8C] px-4 py-3 text-sm font-semibold text-[#FAF6F2] shadow-lg shadow-[#5E8B8C]/20 transition-colors duration-300 hover:bg-[#5E8B8C]/90 disabled:opacity-50"
                 >
-                  <Building2 className="h-4 w-4 text-[#75524C]" />
-                  <span className="text-sm text-[#D5C3B6]">Arrendador</span>
+                  {isLoading ? 'Cargando demo...' : `Iniciar demo ${selectedDemoRole === 'landlord' ? 'arrendador' : selectedDemoRole === 'tenant' ? 'arrendatario' : 'corredor'}`}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin("tenant")}
-                  disabled={isLoading}
-                  className="flex items-center justify-center gap-2 p-3 rounded-lg bg-[#5E8B8C]/20 border border-[#5E8B8C]/30 hover:bg-[#5E8B8C]/30 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Home className="h-4 w-4 text-[#5E8B8C]" />
-                  <span className="text-sm text-[#D5C3B6]">Arrendatario</span>
-                </button>
+                <div className="flex items-center justify-center text-xs text-[#9C8578] px-4">
+                  Usa el selector de arriba para ver un demo rápido de cada rol.
+                </div>
               </div>
 
               <div className="relative mb-6">
