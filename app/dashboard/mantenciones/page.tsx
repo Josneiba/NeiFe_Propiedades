@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
+import type { MaintenanceStatus, Prisma } from "@prisma/client"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,25 +16,28 @@ import {
   Image as ImageIcon
 } from "lucide-react"
 
-interface MaintenanceWithProperty {
-  id: string
-  category: string
-  description: string
-  status: string
-  isLandlordResp: boolean
-  createdAt: Date
-  photos: string[]
+const maintenanceInclude = {
   property: {
-    id: string
-    address: string
-    tenant: {
-      name: string | null
-    } | null
-  }
-  provider?: {
-    name: string
-  } | null
-}
+    select: {
+      id: true,
+      address: true,
+      tenant: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
+  provider: {
+    select: {
+      name: true,
+    },
+  },
+} satisfies Prisma.MaintenanceRequestInclude
+
+type MaintenanceWithProperty = Prisma.MaintenanceRequestGetPayload<{
+  include: typeof maintenanceInclude
+}>
 
 const statusConfig = {
   REQUESTED: { 
@@ -90,6 +94,9 @@ export default async function MantencionesPage({
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
+  if (session.user.role === "BROKER") {
+    redirect("/broker")
+  }
   if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
     redirect("/mi-arriendo")
   }
@@ -97,6 +104,8 @@ export default async function MantencionesPage({
   const sp = await searchParams
   const statusFilter = sp.status || "all"
   const filterPropertyId = sp.property?.trim() || undefined
+  const normalizedStatusFilter =
+    statusFilter !== "all" ? (statusFilter.toUpperCase() as MaintenanceStatus) : undefined
 
   const filterProperty =
     filterPropertyId != null && filterPropertyId !== ""
@@ -117,36 +126,19 @@ export default async function MantencionesPage({
   })
 
   // Get maintenance requests for all properties of current landlord
-  const requests = (await prisma.maintenanceRequest.findMany({
+  const requests: MaintenanceWithProperty[] = await prisma.maintenanceRequest.findMany({
     where: {
       property: {
         landlordId: session.user.id,
         ...(filterProperty ? { id: filterProperty.id } : {}),
       },
-      ...(statusFilter !== "all" && { status: statusFilter.toUpperCase() }),
+      ...(normalizedStatusFilter ? { status: normalizedStatusFilter } : {}),
     },
-    include: {
-      property: {
-        select: {
-          id: true,
-          address: true,
-          tenant: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-      provider: {
-        select: {
-          name: true,
-        },
-      },
-    },
+    include: maintenanceInclude,
     orderBy: {
       createdAt: "desc",
     },
-  })) as MaintenanceWithProperty[]
+  })
 
   return (
     <div className="space-y-6">

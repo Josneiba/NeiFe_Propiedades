@@ -38,6 +38,9 @@ export default async function PagosPage({
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
+  if (session.user.role === "BROKER") {
+    redirect("/broker")
+  }
   if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
     redirect("/mi-arriendo")
   }

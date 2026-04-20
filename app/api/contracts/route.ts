@@ -14,6 +14,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  if (session.user.role === 'BROKER') {
+    return NextResponse.json(
+      { error: 'Los corredores no acceden al módulo de contratos del arrendador' },
+      { status: 403 }
+    )
+  }
+
   const propertyId = req.nextUrl.searchParams.get('propertyId')
 
   const contracts = await prisma.contract.findMany({

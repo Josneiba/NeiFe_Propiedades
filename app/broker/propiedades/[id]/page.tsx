@@ -72,6 +72,12 @@ const inspectionStatusLabels: Record<string, string> = {
   RESCHEDULED: "Reagendada",
 }
 
+const brokerScopeBadgeClass: Record<"OPERATE" | "TRACK" | "READ_ONLY", string> = {
+  OPERATE: "bg-[#5E8B8C] text-white",
+  TRACK: "bg-[#F2C94C] text-[#1C1917]",
+  READ_ONLY: "bg-[#D5C3B6]/15 text-[#D5C3B6]",
+}
+
 function formatCurrency(value?: number | null) {
   if (value == null) return "No informado"
   return currencyFormatter.format(value)
@@ -261,6 +267,36 @@ export default async function BrokerPropertyDetailPage({
     property.inspections.find((inspection) => inspection.scheduledAt >= now) ??
     property.inspections[0] ??
     null
+  const summaryCards = [
+    {
+      label: "Arriendo",
+      value: formatCurrency(property.monthlyRentCLP),
+      detail: property.monthlyRentUF
+        ? `UF ${property.monthlyRentUF.toFixed(2)}`
+        : "Canon mensual vigente",
+    },
+    {
+      label: "Pago actual",
+      value: currentPayment ? formatCurrency(currentPayment.amountCLP) : "Sin registro",
+      detail: currentPayment
+        ? `${currentPaymentStatus.label} • ${formatMonth(currentPayment.month, currentPayment.year)}`
+        : "Aún no existe pago cargado",
+    },
+    {
+      label: "Mantenciones",
+      value: property.maintenance.length.toString(),
+      detail:
+        property.maintenance.length === 1
+          ? "Solicitud abierta"
+          : "Solicitudes abiertas",
+    },
+    {
+      label: "Proveedores",
+      value: property.providers.length.toString(),
+      detail:
+        property.providers.length === 1 ? "Proveedor vinculado" : "Proveedores vinculados",
+    },
+  ] as const
 
   return (
     <div className="space-y-6">
@@ -310,52 +346,72 @@ export default async function BrokerPropertyDetailPage({
       </div>
 
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-        <CardContent className="p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-[#5E8B8C]/15 p-2.5">
-                <ShieldCheck className="h-5 w-5 text-[#5E8B8C]" />
+        <CardContent className="p-6">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,420px)] xl:items-start">
+            <div className="space-y-4 xl:pr-6">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-[#5E8B8C]/15 p-2.5">
+                  <ShieldCheck className="h-5 w-5 text-[#5E8B8C]" />
+                </div>
+                <div>
+                  <p className="text-base font-medium text-[#FAF6F2]">
+                    Panel operativo del corredor
+                  </p>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-[#9C8578]">
+                    Aquí concentras seguimiento, coordinación y control operativo de la propiedad.
+                    La alta de propiedades, nuevas aprobaciones y decisiones reservadas siguen del lado del arrendador.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-[#FAF6F2]">
-                  Panel operativo del corredor
-                </p>
-                <p className="text-sm text-[#9C8578]">
-                  Aquí ves la operación diaria de la propiedad. Las altas de propiedades y nuevas aprobaciones siguen quedando del lado del arrendador.
-                </p>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/45 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">
+                    En este mandato sí operas
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge className={brokerScopeBadgeClass.OPERATE}>Inspecciones</Badge>
+                    <Badge className={brokerScopeBadgeClass.OPERATE}>Reajuste IPC</Badge>
+                    <Badge className={brokerScopeBadgeClass.TRACK}>Seguimiento operativo</Badge>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/45 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">
+                    Reservado al arrendador
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Confirmación de pagos</Badge>
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Carga y firma de contratos</Badge>
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Aprobaciones nuevas</Badge>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Arriendo</p>
-                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
-                  {formatCurrency(property.monthlyRentCLP)}
-                </p>
-              </div>
-              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Pago actual</p>
-                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
-                  {currentPaymentStatus.label}
-                </p>
-              </div>
-              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Mantenciones</p>
-                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
-                  {property.maintenance.length}
-                </p>
-              </div>
-              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Proveedores</p>
-                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
-                  {property.providers.length}
-                </p>
-              </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {summaryCards.map((card) => (
+                <div
+                  key={card.label}
+                  className="flex min-h-[120px] flex-col justify-between rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-4"
+                >
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#9C8578]">
+                    {card.label}
+                  </p>
+                  <div className="space-y-1">
+                    <p className="text-lg font-semibold leading-tight text-[#FAF6F2] xl:text-xl">
+                      {card.value}
+                    </p>
+                    <p className="text-xs leading-5 text-[#9C8578]">{card.detail}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_380px]">
         <div className="space-y-6">
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
             <CardHeader>
@@ -547,7 +603,7 @@ export default async function BrokerPropertyDetailPage({
             <CardHeader>
               <CardTitle className="text-[#FAF6F2]">Acciones del corredor</CardTitle>
               <CardDescription className="text-[#9C8578]">
-                Funciones operativas sin abrir el panel del arrendador.
+                Accesos que sí puedes operar desde tu mandato activo.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -578,6 +634,81 @@ export default async function BrokerPropertyDetailPage({
                   <ExternalLink className="h-4 w-4" />
                 </Link>
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="text-[#FAF6F2]">Alcance por módulo</CardTitle>
+              <CardDescription className="text-[#9C8578]">
+                Qué administras directamente y qué queda como consulta o seguimiento.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="mt-0.5 h-4 w-4 text-[#5E8B8C]" />
+                    <div>
+                      <p className="font-medium text-[#FAF6F2]">Inspecciones</p>
+                      <p className="text-sm text-[#9C8578]">Programas, confirmas y revisas la agenda operativa.</p>
+                    </div>
+                  </div>
+                  <Badge className={brokerScopeBadgeClass.OPERATE}>Opera</Badge>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <TrendingUp className="mt-0.5 h-4 w-4 text-[#5E8B8C]" />
+                    <div>
+                      <p className="font-medium text-[#FAF6F2]">Reajuste IPC</p>
+                      <p className="text-sm text-[#9C8578]">Gestionas el calendario y aplicación del reajuste del canon.</p>
+                    </div>
+                  </div>
+                  <Badge className={brokerScopeBadgeClass.OPERATE}>Opera</Badge>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <CreditCard className="mt-0.5 h-4 w-4 text-[#F2C94C]" />
+                    <div>
+                      <p className="font-medium text-[#FAF6F2]">Pagos</p>
+                      <p className="text-sm text-[#9C8578]">Ves el estado y el historial, pero la confirmación final queda en el panel del arrendador.</p>
+                    </div>
+                  </div>
+                  <Badge className={brokerScopeBadgeClass.READ_ONLY}>Consulta</Badge>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <Wrench className="mt-0.5 h-4 w-4 text-[#F2C94C]" />
+                    <div>
+                      <p className="font-medium text-[#FAF6F2]">Mantenciones</p>
+                      <p className="text-sm text-[#9C8578]">Haces seguimiento operativo, pero los cambios de estado y decisiones finales siguen acotados.</p>
+                    </div>
+                  </div>
+                  <Badge className={brokerScopeBadgeClass.TRACK}>Seguimiento</Badge>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 h-4 w-4 text-[#D5C3B6]" />
+                    <div>
+                      <p className="font-medium text-[#FAF6F2]">Contratos</p>
+                      <p className="text-sm text-[#9C8578]">Consultas vigencia y contexto del arriendo, sin cargar ni firmar documentos desde aquí.</p>
+                    </div>
+                  </div>
+                  <Badge className={brokerScopeBadgeClass.READ_ONLY}>Consulta</Badge>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

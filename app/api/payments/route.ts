@@ -31,6 +31,13 @@ export async function GET(req: NextRequest) {
     const month = searchParams.get('month')
     const year = searchParams.get('year')
 
+    if (session.user.role === 'BROKER' && !isTenantRequest) {
+      return NextResponse.json(
+        { error: 'Los corredores no acceden al módulo de pagos del arrendador' },
+        { status: 403 }
+      )
+    }
+
     // Tenant: devolver pagos de su propiedad con cargos de servicios
     if (isTenantRequest) {
       const property = await prisma.property.findFirst({
@@ -114,6 +121,13 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  if (session.user.role === 'BROKER') {
+    return NextResponse.json(
+      { error: 'Los corredores no crean pagos desde este endpoint' },
+      { status: 403 }
+    )
   }
 
   try {

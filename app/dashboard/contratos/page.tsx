@@ -23,6 +23,9 @@ export default async function ContratosPage({
 }) {
   const session = await auth()
   if (!session?.user) redirect('/login')
+  if (session.user.role === 'BROKER') {
+    redirect('/broker')
+  }
   if (session.user.role !== 'LANDLORD' && session.user.role !== 'OWNER') {
     redirect('/mi-arriendo')
   }

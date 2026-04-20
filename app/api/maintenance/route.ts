@@ -26,6 +26,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  if (session.user.role === 'BROKER') {
+    return NextResponse.json(
+      { error: 'Los corredores no gestionan mantenciones desde este endpoint' },
+      { status: 403 }
+    )
+  }
+
   try {
     const searchParams = req.nextUrl.searchParams
     const propertyId = searchParams.get('propertyId')
@@ -68,6 +75,13 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  if (session.user.role === 'BROKER') {
+    return NextResponse.json(
+      { error: 'Los corredores no pueden crear mantenciones desde este endpoint' },
+      { status: 403 }
+    )
   }
 
   try {
