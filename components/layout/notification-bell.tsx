@@ -75,15 +75,43 @@ export function NotificationBell() {
   const resolveNotificationLink = (link?: string | null, title?: string, message?: string) => {
     if (!link) return link
 
+    const lowerTitle = title?.toLowerCase() ?? ''
+    const lowerMessage = message?.toLowerCase() ?? ''
     const isBrokerPermissionNotification =
-      title?.toLowerCase().includes('corredor') ||
-      title?.toLowerCase().includes('permiso') ||
-      message?.toLowerCase().includes('administrar tus propiedades')
+      lowerTitle.includes('corredor') ||
+      lowerTitle.includes('permiso') ||
+      lowerMessage.includes('administrar tus propiedades')
+
+    const isPropertyAccessNotification =
+      lowerTitle.includes('acceso a propiedad') ||
+      lowerTitle.includes('propiedad específica') ||
+      lowerMessage.includes('administrar la propiedad')
+
+    const isMandateRequestNotification =
+      lowerTitle.includes('solicitud de administración') ||
+      lowerMessage.includes('solicita administrar tu propiedad') ||
+      lowerMessage.includes('esperando firma del propietario')
 
     // Compatibilidad con notificaciones antiguas que abrían propiedades
     // cuando en realidad debían abrir la sección para aprobar corredores.
     if (isBrokerPermissionNotification && link.startsWith('/dashboard/propiedades')) {
       return '/dashboard/solicitudes-corredores'
+    }
+
+    // Compatibilidad con notificaciones antiguas de acceso a propiedad:
+    // ahora todas deben abrir el panel de corredores, donde se aprueban/rechazan.
+    if (
+      isPropertyAccessNotification &&
+      (
+        link.startsWith('/dashboard/propiedades') ||
+        link.startsWith('/dashboard/solicitudes-acceso-propiedades')
+      )
+    ) {
+      return '/dashboard/solicitudes-corredores?tab=propiedades'
+    }
+
+    if (isMandateRequestNotification && link.startsWith('/dashboard/propiedades')) {
+      return '/dashboard/solicitudes-corredores?tab=propiedades'
     }
 
     return link

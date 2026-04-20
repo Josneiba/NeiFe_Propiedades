@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { assertPropertyAccess } from '@/lib/permissions'
+import type { Prisma } from '@prisma/client'
 
 const emptyToUndefined = (val: unknown) =>
   val === '' || val === null || typeof val === 'undefined' ? undefined : val
@@ -64,11 +66,40 @@ export async function GET(
 
   try {
     const { id } = await params
+    const propertyWhere: Prisma.PropertyWhereInput =
+      session.user.role === 'BROKER'
+        ? {
+            id,
+            isActive: true,
+            OR: [
+              { managedBy: session.user.id },
+              {
+                mandates: {
+                  some: {
+                    brokerId: session.user.id,
+                    status: 'ACTIVE',
+                  },
+                },
+              },
+              {
+                landlord: {
+                  landlordPermissions: {
+                    some: {
+                      brokerId: session.user.id,
+                      status: 'APPROVED',
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {
+            id,
+            landlordId: session.user.id,
+          }
+
     const property = await prisma.property.findFirst({
-      where: {
-        id,
-        landlordId: session.user.id,
-      },
+      where: propertyWhere,
       include: {
         tenant: {
           select: { id: true, name: true, email: true, phone: true, rut: true },
@@ -132,15 +163,9 @@ export async function PUT(
   try {
     const { id } = await params
 
-    // Verificar que el usuario es el propietario
-    const property = await prisma.property.findFirst({
-      where: {
-        id,
-        landlordId: session.user.id,
-      },
-    })
-
-    if (!property) {
+    try {
+      await assertPropertyAccess(id, session.user.id, session.user.role)
+    } catch {
       return NextResponse.json(
         { error: 'Propiedad no encontrada o sin permisos' },
         { status: 404 }

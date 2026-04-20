@@ -36,16 +36,13 @@ export function BrokerRequestButton({
     setIsSubmitting(true)
 
     try {
-      // Usar el sistema dual que siempre funciona
-      const response = await fetch("/api/broker-permissions/dual-request", {
+      const response = await fetch("/api/broker-permissions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           landlordId,
-          propertyId,
-          message: message.trim() || `Solicitud de acceso para administrar propiedades`
         }),
       })
 
@@ -54,12 +51,8 @@ export function BrokerRequestButton({
         throw new Error(error.error || "Error al enviar solicitud")
       }
 
-      const data = await response.json()
-      
       toast.success("Solicitud enviada exitosamente", {
-        description: propertyId 
-          ? "El propietario recibirá notificaciones en ambos sistemas para aprobar tu acceso."
-          : "El propietario recibirá una notificación para aprobar tu acceso."
+        description: "El propietario recibirá una notificación para revisar tu solicitud."
       })
       
       setIsOpen(false)

@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       'MANDATE_REQUESTED',
       'Solicitud de administración',
       `El corredor ${session.user.name || session.user.email} solicita administrar tu propiedad`,
-      `/dashboard/propiedades/${data.propertyId}`
+      '/dashboard/solicitudes-corredores?tab=propiedades'
     )
 
     await logActivity(

@@ -117,12 +117,32 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Get property info if propertyId is provided
+    let propertyInfo = null
+    if (body.propertyId) {
+      try {
+        propertyInfo = await prisma.property.findUnique({
+          where: { id: body.propertyId },
+          select: { id: true, name: true, address: true }
+        })
+      } catch (error) {
+        console.log('Error getting property info:', error)
+      }
+    }
+
+    // Todas las solicitudes del corredor se revisan desde el panel "Corredores".
+    const notificationLink = propertyInfo 
+      ? '/dashboard/solicitudes-corredores?tab=propiedades'
+      : '/dashboard/solicitudes-corredores'
+
     await createNotification(
       landlordId,
       'SYSTEM',
-      'Solicitud de corredor recibida',
-      `El corredor ${session.user.name || session.user.email} solicita administrar tus propiedades.`,
-      '/dashboard/solicitudes-corredores'
+      propertyInfo 
+        ? 'Solicitud de acceso a propiedad específica'
+        : 'Solicitud de corredor recibida',
+      `El corredor ${session.user.name || session.user.email} solicita administrar${propertyInfo ? ` la propiedad: ${propertyInfo.name || propertyInfo.address}` : ' tus propiedades'}.`,
+      notificationLink
     )
 
     await logActivity(

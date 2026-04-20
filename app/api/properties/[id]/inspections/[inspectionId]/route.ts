@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { assertPropertyAccess } from '@/lib/permissions'
 
 const updateInspectionSchema = z.object({
   status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED']),
@@ -26,9 +27,17 @@ export async function PATCH(
     const body = await req.json()
     const data = updateInspectionSchema.parse(body)
 
-    // Verificar que la propiedad pertenece al usuario
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada' },
+        { status: 404 }
+      )
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
       select: { id: true, tenant: { select: { id: true } } },
     })
 
@@ -68,7 +77,7 @@ export async function PATCH(
       await prisma.notification.create({
         data: {
           userId: property.tenant.id,
-          type: 'INSPECTION_CONFIRMED',
+          type: 'SYSTEM',
           title: 'Inspección confirmada',
           message: `Tu inspección para el ${new Date(
             inspection.scheduledAt
@@ -115,13 +124,9 @@ export async function DELETE(
   try {
     const { id: propertyId, inspectionId } = params
 
-    // Verificar que la propiedad pertenece al usuario
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
-      select: { id: true },
-    })
-
-    if (!property) {
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
       return NextResponse.json(
         { error: 'Propiedad no encontrada' },
         { status: 404 }

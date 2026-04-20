@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import 'leaflet/dist/leaflet.css'
 
 type Props = {
   lat: number
@@ -16,21 +17,18 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
     if (!ref.current) return
 
     let cancelled = false
+    let resizeObserver: ResizeObserver | null = null
+    let timeoutA: ReturnType<typeof setTimeout> | null = null
+    let timeoutB: ReturnType<typeof setTimeout> | null = null
 
     ;(async () => {
       const L = (await import('leaflet')).default
       if (cancelled || !ref.current) return
 
-      // Ensure Leaflet CSS is loaded
-      if (!document.querySelector('link[href*="leaflet"]')) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
-        document.head.appendChild(link)
-        
-        // Wait for CSS to load
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
+      // Pre-warm the container
+      const container = ref.current
+      container.style.visibility = 'hidden'
+      container.style.opacity = '0'
 
       // Fix default icon paths
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,22 +70,26 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
         marker.bindPopup(address).openPopup()
       }
 
-      // Ensure proper sizing and rendering
-      setTimeout(() => {
-        if (mapRef.current && !cancelled) {
-          mapRef.current.invalidateSize()
-        }
-      }, 50)
+      const syncSize = () => {
+        if (!mapRef.current || cancelled) return
+        mapRef.current.invalidateSize()
+        container.style.visibility = 'visible'
+        container.style.opacity = '1'
+      }
 
-      setTimeout(() => {
-        if (mapRef.current && !cancelled) {
-          mapRef.current.invalidateSize()
-        }
-      }, 200)
+      resizeObserver = new ResizeObserver(syncSize)
+      resizeObserver.observe(container)
+
+      requestAnimationFrame(syncSize)
+      timeoutA = setTimeout(syncSize, 120)
+      timeoutB = setTimeout(syncSize, 320)
     })()
 
     return () => {
       cancelled = true
+      resizeObserver?.disconnect()
+      if (timeoutA) clearTimeout(timeoutA)
+      if (timeoutB) clearTimeout(timeoutB)
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null

@@ -147,6 +147,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // A property-specific access request only makes sense after the
+    // landlord has approved the general broker relationship.
+    const permission = await prisma.brokerPermission.findUnique({
+      where: {
+        landlordId_brokerId: {
+          landlordId: property.landlordId,
+          brokerId: session.user.id,
+        },
+      },
+      select: { status: true },
+    })
+
+    if (!permission || permission.status !== 'APPROVED') {
+      return NextResponse.json(
+        { error: 'Primero necesitas permiso aprobado del arrendador para administrar sus propiedades' },
+        { status: 403 }
+      )
+    }
+
     // Check if broker already has an active mandate for this property
     const existingMandate = await prisma.mandate.findFirst({
       where: {
@@ -163,25 +182,37 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if there's already a pending request
-    const existingRequest = await prisma.propertyAccessRequest.findFirst({
+    const existingRequest = await prisma.propertyAccessRequest.findUnique({
       where: {
-        propertyId,
-        brokerId: session.user.id,
-        status: 'PENDING'
-      }
+        propertyId_brokerId: {
+          propertyId,
+          brokerId: session.user.id,
+        },
+      },
     })
 
-    if (existingRequest) {
+    if (existingRequest?.status === 'PENDING') {
       return NextResponse.json(
         { error: 'Ya tienes una solicitud pendiente para esta propiedad' },
         { status: 409 }
       )
     }
 
-    // Create the access request
-    const accessRequest = await prisma.propertyAccessRequest.create({
-      data: {
+    const accessRequest = await prisma.propertyAccessRequest.upsert({
+      where: {
+        propertyId_brokerId: {
+          propertyId,
+          brokerId: session.user.id,
+        },
+      },
+      update: {
+        landlordId: property.landlordId,
+        message: message || null,
+        status: 'PENDING',
+        approvedAt: null,
+        rejectedAt: null,
+      },
+      create: {
         propertyId,
         brokerId: session.user.id,
         landlordId: property.landlordId,
@@ -206,16 +237,7 @@ export async function POST(req: NextRequest) {
       'SYSTEM',
       'Nueva solicitud de acceso a propiedad',
       `El corredor ${session.user.name || session.user.email} solicita administrar la propiedad ${property.name || property.address}`,
-      `/dashboard/propiedades/${propertyId}?tab=solicitudes`
-    )
-
-    // Also send to the old system as backup
-    await createNotification(
-      property.landlordId,
-      'SYSTEM',
-      'Solicitud de corredor recibida',
-      `El corredor ${session.user.name || session.user.email} solicita administrar tus propiedades.`,
-      '/dashboard/solicitudes-corredores'
+      `/dashboard/solicitudes-corredores?tab=propiedades`
     )
 
     // Log activity

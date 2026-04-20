@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { addMonths } from 'date-fns'
+import { assertPropertyAccess } from '@/lib/permissions'
 
 const inspectionSchema = z.object({
   scheduledAt: z.string().datetime(),
@@ -22,14 +23,9 @@ export async function GET(
 
   try {
     const propertyId = params.id
-
-    // Verificar que la propiedad pertenece al usuario
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
-      select: { id: true },
-    })
-
-    if (!property) {
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
       return NextResponse.json(
         { error: 'Propiedad no encontrada' },
         { status: 404 }
@@ -66,9 +62,17 @@ export async function POST(
     const body = await req.json()
     const data = inspectionSchema.parse(body)
 
-    // Verificar que la propiedad pertenece al usuario
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada' },
+        { status: 404 }
+      )
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
       select: { id: true, tenant: { select: { id: true } } },
     })
 
@@ -94,7 +98,7 @@ export async function POST(
       await prisma.notification.create({
         data: {
           userId: property.tenant.id,
-          type: 'INSPECTION_SCHEDULED',
+          type: 'SYSTEM',
           title: 'Inspección programada',
           message: `Se ha programado una inspección para el ${new Date(
             data.scheduledAt

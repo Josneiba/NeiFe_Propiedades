@@ -93,6 +93,7 @@ export default function PropertyDetailPage() {
   const [showRevokeModal, setShowRevokeModal] = useState(false)
   const [savingAgent, setSavingAgent] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [brokerPermissionStatus, setBrokerPermissionStatus] = useState<'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NONE')
   const [hasPendingRequest, setHasPendingRequest] = useState(false)
   const [accessRequests, setAccessRequests] = useState<any[]>([])
   const [agentData, setAgentData] = useState({
@@ -109,11 +110,14 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     const loadPropertyData = async () => {
       try {
+        let currentRole: string | null = null
+
         // Get user session first
         const sessionRes = await fetch('/api/auth/session')
         if (sessionRes.ok) {
           const session = await sessionRes.json()
-          setUserRole(session?.user?.role || null)
+          currentRole = session?.user?.role || null
+          setUserRole(currentRole)
         }
 
         const [propertyRes, mandatesRes, accessRequestsRes] = await Promise.all([
@@ -127,6 +131,16 @@ export default function PropertyDetailPage() {
         const data = propertyJson.property as Property
         if (!data) throw new Error("Failed to load property")
         setProperty(data)
+
+        if (currentRole === 'BROKER') {
+          const permissionRes = await fetch(`/api/broker-permissions/check?landlordId=${data.landlordId}`)
+          if (permissionRes.ok) {
+            const permissionData = await permissionRes.json()
+            setBrokerPermissionStatus(permissionData.status || 'NONE')
+          }
+        } else {
+          setBrokerPermissionStatus('NONE')
+        }
         
         // Load mandates to check if property has active broker
         if (mandatesRes.ok) {
@@ -234,6 +248,14 @@ export default function PropertyDetailPage() {
     router.push(`?tab=${tab}`)
   }
 
+  const landlordDelegatedToBroker = userRole !== 'BROKER' && hasBroker
+  const brokerCanRequestPropertyAccess =
+    userRole === 'BROKER' && !hasBroker && brokerPermissionStatus === 'APPROVED'
+  const brokerNeedsLandlordPermission =
+    userRole === 'BROKER' && !hasBroker && brokerPermissionStatus !== 'APPROVED'
+  const canManageProperty = userRole === 'BROKER' ? hasBroker : !landlordDelegatedToBroker
+  const canEditProperty = userRole === 'BROKER' ? hasBroker : !landlordDelegatedToBroker
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -254,23 +276,30 @@ export default function PropertyDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          {!property.tenant && !hasBroker && (
+          {userRole !== 'BROKER' && !property.tenant && !hasBroker && (
             <InviteTenantButton
               propertyId={propertyId}
               propertyLabel={property.name || property.address}
             />
           )}
-          {userRole === 'BROKER' && !hasBroker && (
-            <BrokerRequestButton
-              landlordId={property.landlordId}
+          {brokerCanRequestPropertyAccess && (
+            <PropertyAccessRequestButton
               propertyId={propertyId}
               propertyName={property.name || property.address}
               propertyAddress={`${property.address}, ${property.commune}`}
-              hasActivePermission={hasBroker}
+              landlordId={property.landlordId}
+              hasActiveMandate={hasBroker}
               hasPendingRequest={hasPendingRequest}
             />
           )}
-          {!hasBroker ? (
+          {brokerNeedsLandlordPermission && (
+            <BrokerRequestButton
+              landlordId={property.landlordId}
+              hasActivePermission={false}
+              hasPendingRequest={brokerPermissionStatus === 'PENDING'}
+            />
+          )}
+          {canEditProperty ? (
             <Link href={`/dashboard/propiedades/${propertyId}/editar`}>
               <Button variant="outline" className="gap-2 text-foreground">
                 <Edit className="h-4 w-4" />
@@ -422,10 +451,12 @@ export default function PropertyDetailPage() {
                     <p className="text-sm text-muted-foreground text-center">
                       Invita por correo o comparte un enlace para que acepte la propiedad en NeiFe.
                     </p>
-                    <InviteTenantButton
-                      propertyId={propertyId}
-                      propertyLabel={property.name || property.address}
-                    />
+                    {userRole !== 'BROKER' && (
+                      <InviteTenantButton
+                        propertyId={propertyId}
+                        propertyLabel={property.name || property.address}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -478,7 +509,7 @@ export default function PropertyDetailPage() {
                   <CardTitle className="text-foreground">Acciones rápidas</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {!hasBroker ? (
+                  {canManageProperty ? (
                     <>
                       <Link href={`?tab=inspecciones`} className="block">
                         <Button size="sm" className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
@@ -499,7 +530,9 @@ export default function PropertyDetailPage() {
                         size="sm"
                         className="w-full text-muted-foreground cursor-not-allowed"
                         disabled
-                        title="Las acciones están deshabilitadas cuando la propiedad es administrada por un corredor"
+                        title={userRole === 'BROKER'
+                          ? "Primero necesitas acceso activo a esta propiedad"
+                          : "Las acciones están deshabilitadas cuando la propiedad es administrada por un corredor"}
                       >
                         <Calendar className="h-4 w-4 mr-2" />
                         Programar inspección
@@ -509,7 +542,9 @@ export default function PropertyDetailPage() {
                         variant="outline"
                         className="w-full text-muted-foreground cursor-not-allowed border-border"
                         disabled
-                        title="Las acciones están deshabilitadas cuando la propiedad es administrada por un corredor"
+                        title={userRole === 'BROKER'
+                          ? "Primero necesitas acceso activo a esta propiedad"
+                          : "Las acciones están deshabilitadas cuando la propiedad es administrada por un corredor"}
                       >
                         <TrendingUp className="h-4 w-4 mr-2" />
                         Aplicar IPC
@@ -524,17 +559,27 @@ export default function PropertyDetailPage() {
 
         {/* Administración Tab */}
         <TabsContent value="administracion" className="space-y-6">
-          {hasBroker ? (
+          {landlordDelegatedToBroker ? (
             <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
               <p className="text-sm text-[#5E8B8C]">
                 Tu corredor gestiona la administración de esta propiedad.
               </p>
             </div>
-          ) : (
+          ) : userRole !== 'BROKER' ? (
             <AdministrationSection propertyId={propertyId} />
+          ) : (
+            <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
+              <p className="text-sm text-[#5E8B8C]">
+                {hasBroker
+                  ? "Tienes acceso activo a esta propiedad y compartes la misma ficha con el arrendador y el arrendatario."
+                  : brokerPermissionStatus === 'APPROVED'
+                    ? "Ya tienes permiso del arrendador. Ahora puedes solicitar acceso específico a esta propiedad."
+                    : "Primero necesitas la aprobación general del arrendador antes de solicitar acceso a esta propiedad."}
+              </p>
+            </div>
           )}
 
-          {!hasBroker && (
+          {(userRole === 'BROKER' || !hasBroker) && (
             <Card className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -741,7 +786,7 @@ export default function PropertyDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {hasBroker ? (
+              {landlordDelegatedToBroker ? (
                 <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
                   <p className="text-sm text-[#5E8B8C]">
                     Tu corredor gestiona los servicios de esta propiedad.
@@ -769,7 +814,7 @@ export default function PropertyDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {hasBroker ? (
+              {landlordDelegatedToBroker ? (
                 <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
                   <p className="text-sm text-[#5E8B8C]">
                     Tu corredor gestiona las mantenciones de esta propiedad.
@@ -847,14 +892,7 @@ export default function PropertyDetailPage() {
                       setShowRevokeModal(false)
                       setHasBroker(false)
                       setBrokerInfo(null)
-                      
-                      // Auto-reload mandates after successful revocation
-                      const mandatesRes = await fetch(`/api/mandates?propertyId=${propertyId}`)
-                      if (mandatesRes.ok) {
-                        const mandatesData = await mandatesRes.json()
-                        setMandates(mandatesData.mandates || [])
-                      }
-                      
+
                       toast({
                         title: 'Mandato revocado',
                         description: 'Ahora tienes control total de la propiedad'

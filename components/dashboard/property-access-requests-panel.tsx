@@ -42,12 +42,14 @@ interface PropertyAccessRequestsPanelProps {
   landlordId?: string
   propertyId?: string
   showOnlyPending?: boolean
+  hideWhenEmpty?: boolean
 }
 
 export function PropertyAccessRequestsPanel({ 
   landlordId, 
   propertyId,
-  showOnlyPending = false 
+  showOnlyPending = false,
+  hideWhenEmpty = false,
 }: PropertyAccessRequestsPanelProps) {
   const [requests, setRequests] = useState<PropertyAccessRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,7 +65,7 @@ export function PropertyAccessRequestsPanel({
         ? `/api/property-access-requests?propertyId=${propertyId}`
         : "/api/property-access-requests"
       
-      const response = await fetch(url)
+      const response = await fetch(url, { cache: "no-store" })
       if (!response.ok) throw new Error("Error al cargar solicitudes")
       
       const data = await response.json()
@@ -163,6 +165,10 @@ export function PropertyAccessRequestsPanel({
         </CardContent>
       </Card>
     )
+  }
+
+  if (requests.length === 0 && hideWhenEmpty) {
+    return null
   }
 
   if (requests.length === 0) {

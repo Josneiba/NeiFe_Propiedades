@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { addMonths } from 'date-fns'
+import { assertPropertyAccess } from '@/lib/permissions'
 
 const ipcAdjustmentSchema = z.object({
   ipcRate: z.number().min(0).max(50),
@@ -25,14 +26,9 @@ export async function GET(
 
   try {
     const propertyId = params.id
-
-    // Verificar que la propiedad pertenece al usuario
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
-      select: { id: true, monthlyRentCLP: true },
-    })
-
-    if (!property) {
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
       return NextResponse.json(
         { error: 'Propiedad no encontrada' },
         { status: 404 }
@@ -69,9 +65,17 @@ export async function POST(
     const body = await req.json()
     const { ipcRate } = applyIpcSchema.parse(body)
 
-    // Obtener propiedad
-    const property = await prisma.property.findFirst({
-      where: { id: propertyId, landlordId: session.user.id },
+    try {
+      await assertPropertyAccess(propertyId, session.user.id, session.user.role)
+    } catch {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada' },
+        { status: 404 }
+      )
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
       select: {
         id: true,
         monthlyRentCLP: true,
@@ -128,7 +132,7 @@ export async function POST(
       await prisma.notification.create({
         data: {
           userId: property.tenant.id,
-          type: 'IPC_ADJUSTMENT_APPLIED',
+          type: 'SYSTEM',
           title: 'Reajuste IPC aplicado',
           message: `Tu arriendo ha sido reajustado según IPC (${ipcRate}%). Nuevo monto: $${newRentCLP.toLocaleString(
             'es-CL'

@@ -72,6 +72,23 @@ export async function PATCH(
     }
 
     if (action === 'approve') {
+      const permission = await prisma.brokerPermission.findUnique({
+        where: {
+          landlordId_brokerId: {
+            landlordId: accessRequest.landlordId,
+            brokerId: accessRequest.brokerId,
+          },
+        },
+        select: { status: true },
+      })
+
+      if (!permission || permission.status !== 'APPROVED') {
+        return NextResponse.json(
+          { error: 'Primero debes aprobar el permiso general del corredor' },
+          { status: 409 }
+        )
+      }
+
       updateData.approvedAt = new Date()
     } else {
       updateData.rejectedAt = new Date()
@@ -117,7 +134,9 @@ export async function PATCH(
             brokerId: accessRequest.brokerId,
             status: 'ACTIVE',
             signedByOwner: true,
+            signedByBroker: true,
             ownerSignedAt: new Date(),
+            brokerSignedAt: new Date(),
             startsAt: new Date(),
             expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
             notes: `Mandato creado automáticamente desde solicitud de acceso aprobada`
@@ -145,7 +164,7 @@ export async function PATCH(
       'SYSTEM',
       notificationTitle,
       notificationMessage,
-      action === 'approve' ? `/broker/propiedades/${accessRequest.propertyId}` : undefined
+      action === 'approve' ? `/dashboard/propiedades/${accessRequest.propertyId}` : undefined
     )
 
     // Log activity
