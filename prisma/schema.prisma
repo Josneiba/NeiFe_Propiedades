@@ -46,6 +46,8 @@ model User {
   calendarEvents         CalendarEvent[]
   landlordPermissions    BrokerPermission[]   @relation("LandlordPermissions")
   brokerPermissions      BrokerPermission[]   @relation("BrokerPermissions")
+  brokerAccessRequests   PropertyAccessRequest[] @relation("BrokerAccessRequests")
+  landlordAccessRequests PropertyAccessRequest[] @relation("LandlordAccessRequests")
 }
 
 model Account {
@@ -140,6 +142,7 @@ model Property {
   ipcAdjustments IpcAdjustment[]
   calendarEvents CalendarEvent[]
   mandates       Mandate[]
+  accessRequests PropertyAccessRequest[]
 }
 
 model Mandate {
@@ -585,4 +588,23 @@ model BrokerPermission {
   broker      User     @relation("BrokerPermissions", fields: [brokerId], references: [id])
 
   @@unique([landlordId, brokerId])
+}
+
+model PropertyAccessRequest {
+  id         String   @id @default(cuid())
+  propertyId String
+  brokerId   String
+  landlordId String
+  message    String?
+  status     PermissionStatus @default(PENDING)
+  approvedAt DateTime?
+  rejectedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property   Property @relation(fields: [propertyId], references: [id])
+  broker     User     @relation("BrokerAccessRequests", fields: [brokerId], references: [id])
+  landlord   User     @relation("LandlordAccessRequests", fields: [landlordId], references: [id])
+
+  @@unique([propertyId, brokerId])
 }

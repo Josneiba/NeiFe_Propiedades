@@ -13,7 +13,7 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
   const mapRef = useRef<import('leaflet').Map | null>(null)
 
   useEffect(() => {
-    if (!ref.current || mapRef.current) return
+    if (!ref.current) return
 
     let cancelled = false
 
@@ -21,13 +21,18 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
       const L = (await import('leaflet')).default
       if (cancelled || !ref.current) return
 
+      // Ensure Leaflet CSS is loaded
       if (!document.querySelector('link[href*="leaflet"]')) {
         const link = document.createElement('link')
         link.rel = 'stylesheet'
         link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
         document.head.appendChild(link)
+        
+        // Wait for CSS to load
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
 
+      // Fix default icon paths
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({
@@ -36,24 +41,49 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       })
 
+      // Clean up existing map if any
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+
       const map = L.map(ref.current, {
         zoomControl: false,
         dragging: true,
         scrollWheelZoom: false,
+        attributionControl: false,
+        fadeAnimation: true,
+        zoomAnimation: true,
+        markerZoomAnimation: true,
       }).setView([lat, lng], 15)
 
       mapRef.current = map
 
+      // Add tile layer with better error handling
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+        errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
       }).addTo(map)
 
-      L.marker([lat, lng]).addTo(map).bindPopup(address).openPopup()
+      // Add marker
+      const marker = L.marker([lat, lng]).addTo(map)
+      if (address) {
+        marker.bindPopup(address).openPopup()
+      }
 
-      requestAnimationFrame(() => {
-        map.invalidateSize()
-        setTimeout(() => map.invalidateSize(), 200)
-      })
+      // Ensure proper sizing and rendering
+      setTimeout(() => {
+        if (mapRef.current && !cancelled) {
+          mapRef.current.invalidateSize()
+        }
+      }, 50)
+
+      setTimeout(() => {
+        if (mapRef.current && !cancelled) {
+          mapRef.current.invalidateSize()
+        }
+      }, 200)
     })()
 
     return () => {
@@ -65,5 +95,14 @@ export default function MiniMapInner({ lat, lng, address }: Props) {
     }
   }, [lat, lng, address])
 
-  return <div ref={ref} className="w-full h-[220px] z-0" />
+  return (
+    <div 
+      ref={ref} 
+      className="w-full h-[220px] rounded-b-xl overflow-hidden"
+      style={{ 
+        zIndex: 0,
+        backgroundColor: '#f3f4f6'
+      }} 
+    />
+  )
 }

@@ -33,6 +33,9 @@ import { PropertyMiniMap } from "@/components/map/property-mini-map"
 import { InviteTenantButton } from "@/components/dashboard/invite-tenant-button"
 import { PropertyProvidersPanel } from "@/components/dashboard/property-providers-panel"
 import { AdministrationSection } from "@/components/dashboard/property-administration"
+import { PropertyAccessRequestButton } from "@/components/dashboard/property-access-request-button"
+import { PropertyAccessRequestsPanel } from "@/components/dashboard/property-access-requests-panel"
+import { BrokerRequestButton } from "@/components/dashboard/broker-request-button"
 
 interface Property {
   id: string
@@ -89,6 +92,9 @@ export default function PropertyDetailPage() {
   const [brokerInfo, setBrokerInfo] = useState<any>(null)
   const [showRevokeModal, setShowRevokeModal] = useState(false)
   const [savingAgent, setSavingAgent] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [hasPendingRequest, setHasPendingRequest] = useState(false)
+  const [accessRequests, setAccessRequests] = useState<any[]>([])
   const [agentData, setAgentData] = useState({
     agentName: "",
     agentRut: "",
@@ -103,9 +109,17 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     const loadPropertyData = async () => {
       try {
-        const [propertyRes, mandatesRes] = await Promise.all([
+        // Get user session first
+        const sessionRes = await fetch('/api/auth/session')
+        if (sessionRes.ok) {
+          const session = await sessionRes.json()
+          setUserRole(session?.user?.role || null)
+        }
+
+        const [propertyRes, mandatesRes, accessRequestsRes] = await Promise.all([
           fetch(`/api/properties/${propertyId}`),
-          fetch(`/api/mandates?propertyId=${propertyId}`)
+          fetch(`/api/mandates?propertyId=${propertyId}`),
+          fetch('/api/property-access-requests')
         ])
         
         if (!propertyRes.ok) throw new Error("Failed to load property")
@@ -123,6 +137,19 @@ export default function PropertyDetailPage() {
             setHasBroker(true)
             setBrokerInfo(activeMandate.broker)
           }
+        }
+
+        // Load access requests
+        if (accessRequestsRes.ok) {
+          const accessData = await accessRequestsRes.json()
+          const requests = accessData.requests || []
+          setAccessRequests(requests)
+          
+          // Check if current user has a pending request for this property
+          const pendingRequest = requests.find((req: any) => 
+            req.propertyId === propertyId && req.status === 'PENDING'
+          )
+          setHasPendingRequest(!!pendingRequest)
         }
         
         setAgentData({
@@ -233,6 +260,16 @@ export default function PropertyDetailPage() {
               propertyLabel={property.name || property.address}
             />
           )}
+          {userRole === 'BROKER' && !hasBroker && (
+            <BrokerRequestButton
+              landlordId={property.landlordId}
+              propertyId={propertyId}
+              propertyName={property.name || property.address}
+              propertyAddress={`${property.address}, ${property.commune}`}
+              hasActivePermission={hasBroker}
+              hasPendingRequest={hasPendingRequest}
+            />
+          )}
           {!hasBroker ? (
             <Link href={`/dashboard/propiedades/${propertyId}/editar`}>
               <Button variant="outline" className="gap-2 text-foreground">
@@ -260,6 +297,9 @@ export default function PropertyDetailPage() {
           <TabsList className="bg-muted w-full justify-start overflow-x-auto">
             <TabsTrigger value="resumen">Resumen</TabsTrigger>
             <TabsTrigger value="administracion">Administración</TabsTrigger>
+            {userRole === 'LANDLORD' && (
+              <TabsTrigger value="solicitudes">Solicitudes</TabsTrigger>
+            )}
             <TabsTrigger value="pagos">Pagos</TabsTrigger>
             <TabsTrigger value="servicios">Servicios</TabsTrigger>
             <TabsTrigger value="mantenciones">Mantenciones</TabsTrigger>
@@ -280,6 +320,9 @@ export default function PropertyDetailPage() {
             >
               <option value="resumen">Resumen</option>
               <option value="administracion">Administración</option>
+              {userRole === 'LANDLORD' && (
+                <option value="solicitudes">Solicitudes</option>
+              )}
               <option value="pagos">Pagos</option>
               <option value="servicios">Servicios</option>
               <option value="mantenciones">Mantenciones</option>
@@ -768,6 +811,12 @@ export default function PropertyDetailPage() {
         <TabsContent value="proveedores" className="space-y-6">
           <PropertyProvidersPanel propertyId={propertyId} />
         </TabsContent>
+
+        {userRole === 'LANDLORD' && (
+          <TabsContent value="solicitudes" className="space-y-6">
+            <PropertyAccessRequestsPanel propertyId={propertyId} showOnlyPending={false} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Revoke Mandate Modal */}
