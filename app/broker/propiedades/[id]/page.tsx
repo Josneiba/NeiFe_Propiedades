@@ -1,77 +1,123 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
+import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Building2, User, Mail, Phone, CreditCard, Wrench, FileText, Calendar, Users, TrendingUp, ExternalLink } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { PropertyMiniMap } from "@/components/map/property-mini-map"
-import Link from "next/link"
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  TrendingUp,
+  User,
+  Users,
+  Wrench,
+} from "lucide-react"
 
-interface Property {
-  id: string
-  name?: string
-  address: string
-  commune: string
-  lat?: number | null
-  lng?: number | null
-  description: string | null
-  monthlyRentCLP: number | null
-  monthlyRentUF: number | null
-  contractStart: string
-  contractEnd: string
-  landlordId: string
-  landlord?: {
-    name: string | null
-    email: string
-  } | null
-  tenant?: {
-    id: string
-    name: string
-    email: string
-    phone: string | null
-    rut: string | null
-  } | null
-  agentName: string | null
-  agentRut: string | null
-  agentEmail: string | null
-  agentPhone: string | null
-  agentCompany: string | null
-  commissionRate: number | null
-  commissionType: string | null
-  payments: any[]
-  mandates?: Array<{
-    id: string
-    status: string
-    broker: {
-      name: string | null
-      email: string
-      company?: string | null
-    }
-  }>
+const currencyFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  minimumFractionDigits: 0,
+})
+
+const dateFormatter = new Intl.DateTimeFormat("es-CL", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+})
+
+const monthFormatter = new Intl.DateTimeFormat("es-CL", {
+  month: "long",
+  year: "numeric",
+})
+
+const paymentStatusConfig: Record<string, { label: string; className: string }> = {
+  PAID: { label: "Pagado", className: "bg-[#5E8B8C] text-white" },
+  PENDING: { label: "Pendiente", className: "bg-[#C27F79] text-white" },
+  OVERDUE: { label: "Atrasado", className: "bg-red-600 text-white" },
+  PROCESSING: { label: "En revisión", className: "bg-[#F2C94C] text-[#1C1917]" },
+  CANCELLED: { label: "Cancelado", className: "bg-[#9C8578] text-white" },
 }
 
-interface PropertyWithPaymentStatus extends Property {
-  payments: Array<{
-    status: string
-    month: number
-    year: number
-  }>
+const maintenanceStatusConfig: Record<string, { label: string; className: string }> = {
+  REQUESTED: { label: "Solicitada", className: "bg-[#F2C94C]/15 text-[#F2C94C]" },
+  REVIEWING: { label: "En revisión", className: "bg-sky-500/15 text-sky-300" },
+  APPROVED: { label: "Aprobada", className: "bg-emerald-500/15 text-emerald-300" },
+  IN_PROGRESS: { label: "En curso", className: "bg-[#5E8B8C]/15 text-[#8FC4C5]" },
 }
 
-export default async function BrokerPropertyDetailPage({ params }: { params: { id: string } }) {
-  const propertyId = params.id
+const inspectionTypeLabels: Record<string, string> = {
+  ROUTINE: "Rutinaria",
+  CHECKIN: "Ingreso",
+  CHECKOUT: "Salida",
+  MAINTENANCE: "Mantención",
+  IPC_REVIEW: "Revisión IPC",
+}
 
-  // Get property with all related data for broker
+const inspectionStatusLabels: Record<string, string> = {
+  SCHEDULED: "Programada",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELLED: "Cancelada",
+  RESCHEDULED: "Reagendada",
+}
+
+function formatCurrency(value?: number | null) {
+  if (value == null) return "No informado"
+  return currencyFormatter.format(value)
+}
+
+function formatDate(value?: Date | null) {
+  if (!value) return "No definida"
+  return dateFormatter.format(value)
+}
+
+function formatMonth(month: number, year: number) {
+  return monthFormatter.format(new Date(year, month - 1, 1))
+}
+
+export default async function BrokerPropertyDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
+  if (session.user.role !== "BROKER" && session.user.role !== "OWNER") {
+    redirect("/dashboard")
+  }
+
+  const { id } = await params
+
   const property = await prisma.property.findFirst({
-    where: { 
-      id: propertyId,
-      mandates: {
-        some: {
-          brokerId: propertyId,
-          status: 'ACTIVE'
-        }
-      }
+    where: {
+      id,
+      isActive: true,
+      OR: [
+        { managedBy: session.user.id },
+        {
+          mandates: {
+            some: {
+              brokerId: session.user.id,
+              status: "ACTIVE",
+            },
+          },
+        },
+      ],
     },
     include: {
       landlord: {
@@ -83,41 +129,103 @@ export default async function BrokerPropertyDetailPage({ params }: { params: { i
       },
       tenant: {
         select: {
+          id: true,
           name: true,
           email: true,
           phone: true,
+          rut: true,
         },
       },
       payments: {
-        where: {
-          month: new Date().getMonth() + 1,
-          year: new Date().getFullYear(),
-        },
+        orderBy: [{ year: "desc" }, { month: "desc" }],
+        take: 6,
         select: {
+          id: true,
           status: true,
           month: true,
           year: true,
+          amountCLP: true,
         },
-        orderBy: {
-          month: 'desc',
-          year: 'desc',
-        },
-        take: 6,
       },
-      maintenanceRequests: {
+      services: {
+        orderBy: [{ year: "desc" }, { month: "desc" }],
+        take: 3,
+        select: {
+          id: true,
+          month: true,
+          year: true,
+          water: true,
+          electricity: true,
+          gas: true,
+          garbage: true,
+          commonExpenses: true,
+          other: true,
+          otherLabel: true,
+        },
+      },
+      maintenance: {
         where: {
-          status: 'REQUESTED'
+          status: {
+            in: ["REQUESTED", "REVIEWING", "APPROVED", "IN_PROGRESS"],
+          },
         },
         orderBy: {
-          createdAt: 'desc',
+          updatedAt: "desc",
         },
-        take: 10,
+        take: 5,
+        select: {
+          id: true,
+          category: true,
+          description: true,
+          status: true,
+          createdAt: true,
+        },
+      },
+      providers: {
+        include: {
+          provider: {
+            select: {
+              id: true,
+              name: true,
+              specialty: true,
+              phone: true,
+              email: true,
+            },
+          },
+        },
+      },
+      inspections: {
+        orderBy: {
+          scheduledAt: "asc",
+        },
+        take: 4,
+        select: {
+          id: true,
+          scheduledAt: true,
+          status: true,
+          type: true,
+        },
       },
       mandates: {
         where: {
-          status: 'ACTIVE'
+          brokerId: session.user.id,
+          status: "ACTIVE",
         },
-        include: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          startsAt: true,
+          expiresAt: true,
+          notes: true,
+          owner: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
           broker: {
             select: {
               name: true,
@@ -131,308 +239,499 @@ export default async function BrokerPropertyDetailPage({ params }: { params: { i
   })
 
   if (!property) {
-    redirect('/broker/propiedades')
+    redirect("/broker/propiedades")
   }
 
-  // Get current month payment status
-  const currentMonth = new Date().getMonth() + 1
-  const currentYear = new Date().getFullYear()
-  const currentPayment = property.payments?.find(
-    p => p.month === currentMonth && p.year === currentYear
-  )
-
-  const getPaymentStatus = (status: string) => {
-    switch (status) {
-      case 'PAID':
-        return { label: 'Pagado', className: 'bg-green-100 text-green-800 border-green-200' }
-      case 'PENDING':
-        return { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' }
-      case 'OVERDUE':
-        return { label: 'Atrasado', className: 'bg-red-100 text-red-800 border-red-200' }
-      default:
-        return { label: status, className: 'bg-gray-100 text-gray-800 border-gray-200' }
-    }
-  }
-
-  const paymentStatus = currentPayment ? getPaymentStatus(currentPayment.status) : null
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+  const currentPayment =
+    property.payments.find(
+      (payment) => payment.month === currentMonth && payment.year === currentYear
+    ) ?? property.payments[0] ?? null
+  const currentPaymentStatus = currentPayment
+    ? paymentStatusConfig[currentPayment.status] ?? {
+        label: currentPayment.status,
+        className: "bg-[#9C8578] text-white",
+      }
+    : { label: "Sin registro", className: "bg-[#9C8578] text-white" }
+  const activeMandate = property.mandates[0] ?? null
+  const latestService = property.services[0] ?? null
+  const nextInspection =
+    property.inspections.find((inspection) => inspection.scheduledAt >= now) ??
+    property.inspections[0] ??
+    null
 
   return (
-    <div className="min-h-screen bg-[#1C1917]">
-      {/* Header */}
-      <div className="bg-[#1C1917] border-b border-[#2D3C3C]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/broker/propiedades" className="text-[#FAF6F2] hover:text-[#D5C3B6] transition-colors">
-                <ArrowLeft className="h-6 w-6" />
-                Volver a propiedades
-              </Link>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-3">
+          <Link
+            href="/broker/propiedades"
+            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver a propiedades
+          </Link>
+
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold text-[#FAF6F2]">
+                {property.name || property.address}
+              </h1>
+              <Badge className="bg-[#5E8B8C] text-white">Vista corredor</Badge>
+              <Badge variant="outline" className="border-[#D5C3B6]/20 text-[#D5C3B6]">
+                Mandato activo
+              </Badge>
             </div>
-            <h1 className="text-xl font-semibold text-[#FAF6F2]">Detalles de Propiedad</h1>
+            <div className="mt-2 flex items-center gap-2 text-[#9C8578]">
+              <MapPin className="h-4 w-4" />
+              <span>
+                {property.address}, {property.commune}
+              </span>
+            </div>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button asChild className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+            <Link href={`/broker/propiedades/${property.id}/inspecciones`}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Inspecciones
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+            <Link href={`/broker/propiedades/${property.id}/reajustes`}>
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Reajuste IPC
+            </Link>
+          </Button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Property Card */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-[#5E8B8C]" />
-                  {property.name || property.address}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="w-full md:w-48 h-48 bg-[#2D3C3C] rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Building2 className="h-16 w-16 text-[#D5C3B6]/50" />
-                  </div>
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Descripción</p>
-                      <p className="text-foreground">{property.description}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Arriendo mensual (CLP)</p>
-                        <p className="text-2xl font-bold text-foreground">
-                          {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "No especificado"}
-                        </p>
-                      </div>
-                      {property.monthlyRentUF && (
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Arriendo en UF</p>
-                          <p className="text-2xl font-bold text-foreground">
-                            UF {property.monthlyRentUF?.toFixed(2)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-[#5E8B8C]/15 p-2.5">
+                <ShieldCheck className="h-5 w-5 text-[#5E8B8C]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#FAF6F2]">
+                  Panel operativo del corredor
+                </p>
+                <p className="text-sm text-[#9C8578]">
+                  Aquí ves la operación diaria de la propiedad. Las altas de propiedades y nuevas aprobaciones siguen quedando del lado del arrendador.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Arriendo</p>
+                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
+                  {formatCurrency(property.monthlyRentCLP)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Pago actual</p>
+                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
+                  {currentPaymentStatus.label}
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Mantenciones</p>
+                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
+                  {property.maintenance.length}
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#1C1917] px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Proveedores</p>
+                <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">
+                  {property.providers.length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_360px]">
+        <div className="space-y-6">
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FAF6F2]">
+                <Building2 className="h-5 w-5 text-[#5E8B8C]" />
+                Resumen de la propiedad
+              </CardTitle>
+              <CardDescription className="text-[#9C8578]">
+                Información compartida con el arrendador, enfocada en operación y seguimiento.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-sm text-[#9C8578]">Descripción</p>
+                  <p className="mt-1 text-[#FAF6F2]">
+                    {property.description || "Sin descripción registrada"}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Tenant Info */}
-            {property.tenant && (
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-                <CardHeader>
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <User className="h-5 w-5 text-[#5E8B8C]" />
-                    Arrendatario
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#5E8B8C] flex items-center justify-center">
-                      <span className="text-white font-semibold">
-                        {property.tenant.name?.substring(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-semibold text-foreground">{property.tenant.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                          {property.tenant.email}
-                        </div>
-                        {property.tenant.phone && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            {property.tenant.phone}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Contract Info */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
-                  Contrato
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Inicio del contrato</p>
-                      <p className="text-foreground">{property.contractStart}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Término del contrato</p>
-                      <p className="text-foreground">{property.contractEnd}</p>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <ContractProgressChart 
-                      startDate={new Date(property.contractStart)}
-                      endDate={new Date(property.contractEnd)}
-                      size="large"
-                    />
-                  </div>
+                <div>
+                  <p className="text-sm text-[#9C8578]">Contrato</p>
+                  <p className="mt-1 text-[#FAF6F2]">
+                    {formatDate(property.contractStart)} al {formatDate(property.contractEnd)}
+                  </p>
+                  {property.monthlyRentUF ? (
+                    <p className="mt-1 text-sm text-[#9C8578]">
+                      Canon en UF: UF {property.monthlyRentUF.toFixed(2)}
+                    </p>
+                  ) : null}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Landlord Info */}
-            {property.landlord && (
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-                <CardHeader>
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <User className="h-5 w-5 text-[#5E8B8C]" />
-                    Propietario
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-2">
-                    <div>
-                      <p className="font-semibold text-foreground">{property.landlord.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        {property.landlord.email}
-                      </div>
-                      {property.landlord.phone && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-4 w-4" />
-                          {property.landlord.phone}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+              {property.contractStart && property.contractEnd ? (
+                <ContractProgressChart
+                  startDate={property.contractStart}
+                  endDate={property.contractEnd}
+                  size="large"
+                />
+              ) : null}
 
-            {/* Current Month Payment Status */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
-                  Estado del Pago Actual
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {paymentStatus ? (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Pago del mes actual</p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "No especificado"}
+              {property.lat != null && property.lng != null ? (
+                <div className="overflow-hidden rounded-xl border border-[#D5C3B6]/10">
+                  <PropertyMiniMap
+                    lat={property.lat}
+                    lng={property.lng}
+                    address={`${property.address}, ${property.commune}`}
+                  />
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FAF6F2]">
+                <Users className="h-5 w-5 text-[#5E8B8C]" />
+                Personas clave
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Propietario</p>
+                <p className="mt-2 font-semibold text-[#FAF6F2]">
+                  {property.landlord?.name || "Sin nombre"}
+                </p>
+                <div className="mt-3 space-y-2 text-sm text-[#D5C3B6]">
+                  <p className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-[#5E8B8C]" />
+                    {property.landlord?.email || "Sin correo"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-[#5E8B8C]" />
+                    {property.landlord?.phone || "Sin teléfono"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Arrendatario</p>
+                {property.tenant ? (
+                  <>
+                    <p className="mt-2 font-semibold text-[#FAF6F2]">{property.tenant.name}</p>
+                    <div className="mt-3 space-y-2 text-sm text-[#D5C3B6]">
+                      <p className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-[#5E8B8C]" />
+                        {property.tenant.email}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-[#5E8B8C]" />
+                        {property.tenant.phone || "Sin teléfono"}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-[#5E8B8C]" />
+                        {property.tenant.rut || "Sin RUT"}
                       </p>
                     </div>
-                    <Badge className={paymentStatus.className}>
-                      {paymentStatus.label}
-                    </Badge>
-                  </div>
+                  </>
                 ) : (
-                  <p className="text-muted-foreground">Sin pagos registrados</p>
+                  <p className="mt-2 text-sm text-[#9C8578]">Sin arrendatario asignado</p>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Quick Actions */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground">Acciones Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href={`/broker/propiedades/${propertyId}/inspecciones`} className="block">
-                  <Button className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Programar inspección
-                  </Button>
-                </Link>
-                <Link href={`/broker/propiedades/${propertyId}/reajustes`} className="block">
-                  <Button variant="outline" className="w-full text-foreground border-border">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Aplicar IPC
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FAF6F2]">
+                <Wrench className="h-5 w-5 text-[#5E8B8C]" />
+                Mantenciones activas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {property.maintenance.length === 0 ? (
+                <p className="text-sm text-[#9C8578]">No hay mantenciones abiertas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {property.maintenance.map((maintenance) => {
+                    const status =
+                      maintenanceStatusConfig[maintenance.status] ?? {
+                        label: maintenance.status,
+                        className: "bg-[#9C8578]/15 text-[#D5C3B6]",
+                      }
 
-            {/* Recent Payments */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
-                  Pagos Recientes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {property.payments && property.payments.length > 0 ? (
-                  <div className="space-y-2">
-                    {property.payments.slice(0, 6).map((payment) => (
-                      <div key={`${payment.month}-${payment.year}`} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(payment.year, payment.month - 1).toLocaleDateString("es-CL", { 
-                              month: "long", 
-                              year: "numeric" 
-                            })}
-                          </p>
-                          <p className="font-semibold text-foreground">
-                            ${payment.amountCLP?.toLocaleString("es-CL")}
-                          </p>
-                        </div>
-                        <Badge className={getPaymentStatus(payment.status).className}>
-                          {getPaymentStatus(payment.status).label}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No hay pagos registrados</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Active Maintenance Requests */}
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-[#5E8B8C]" />
-                  Mantenciones Activas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {property.maintenanceRequests && property.maintenanceRequests.length > 0 ? (
-                  <div className="space-y-2">
-                    {property.maintenanceRequests.slice(0, 5).map((maintenance) => (
-                      <div key={maintenance.id} className="p-4 rounded-lg bg-muted/50">
-                        <div className="flex items-start justify-between">
+                    return (
+                      <div
+                        key={maintenance.id}
+                        className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4"
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
-                            <p className="font-medium text-foreground">{maintenance.description}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Categoría: {maintenance.category}
+                            <p className="font-medium text-[#FAF6F2]">
+                              {maintenance.description}
+                            </p>
+                            <p className="mt-1 text-sm text-[#9C8578]">
+                              {maintenance.category} • abierta desde {formatDate(maintenance.createdAt)}
                             </p>
                           </div>
-                          <Badge variant="outline">
-                            {maintenance.status}
-                          </Badge>
+                          <Badge className={status.className}>{status.label}</Badge>
                         </div>
                       </div>
-                    ))}
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FAF6F2]">
+                <Users className="h-5 w-5 text-[#5E8B8C]" />
+                Proveedores asignados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {property.providers.length === 0 ? (
+                <p className="text-sm text-[#9C8578]">
+                  Esta propiedad aún no tiene proveedores vinculados.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {property.providers.map(({ provider }) => (
+                    <div
+                      key={provider.id}
+                      className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4"
+                    >
+                      <p className="font-medium text-[#FAF6F2]">{provider.name}</p>
+                      <p className="mt-1 text-sm text-[#9C8578]">{provider.specialty}</p>
+                      <div className="mt-3 space-y-2 text-sm text-[#D5C3B6]">
+                        <p className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-[#5E8B8C]" />
+                          {provider.phone}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-[#5E8B8C]" />
+                          {provider.email || "Sin correo"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card id="gestion" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="text-[#FAF6F2]">Acciones del corredor</CardTitle>
+              <CardDescription className="text-[#9C8578]">
+                Funciones operativas sin abrir el panel del arrendador.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+                <Link href={`/broker/propiedades/${property.id}/inspecciones`}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Gestionar inspecciones
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+                <Link href={`/broker/propiedades/${property.id}/reajustes`}>
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Gestionar reajustes
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+                <Link href="/broker/calendario">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Abrir calendario del corredor
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="w-full justify-between text-[#D5C3B6] hover:bg-[#D5C3B6]/10">
+                <Link href="/broker/mandatos">
+                  <span className="inline-flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Ver mandato y relación
+                  </span>
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FAF6F2]">
+                <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
+                Estado financiero
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-[#9C8578]">
+                      {currentPayment ? formatMonth(currentPayment.month, currentPayment.year) : "Mes actual"}
+                    </p>
+                    <p className="mt-1 text-xl font-semibold text-[#FAF6F2]">
+                      {currentPayment ? formatCurrency(currentPayment.amountCLP) : "Sin registro"}
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground">No hay mantenciones activas</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  <Badge className={currentPaymentStatus.className}>
+                    {currentPaymentStatus.label}
+                  </Badge>
+                </div>
+              </div>
+
+              {property.payments.length > 0 ? (
+                <div className="space-y-2">
+                  {property.payments.map((payment) => {
+                    const status =
+                      paymentStatusConfig[payment.status] ?? {
+                        label: payment.status,
+                        className: "bg-[#9C8578] text-white",
+                      }
+
+                    return (
+                      <div
+                        key={payment.id}
+                        className="flex items-center justify-between rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-[#FAF6F2]">
+                            {formatMonth(payment.month, payment.year)}
+                          </p>
+                          <p className="text-sm text-[#9C8578]">
+                            {formatCurrency(payment.amountCLP)}
+                          </p>
+                        </div>
+                        <Badge className={status.className}>{status.label}</Badge>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-[#9C8578]">Aún no hay pagos cargados.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="text-[#FAF6F2]">Mandato y próximas fechas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#9C8578]">Mandato</p>
+                <p className="mt-2 font-semibold text-[#FAF6F2]">
+                  {activeMandate?.broker.name || session.user.name || session.user.email}
+                </p>
+                <p className="mt-1 text-sm text-[#9C8578]">
+                  Vigente desde {formatDate(activeMandate?.startsAt)} hasta {formatDate(activeMandate?.expiresAt)}
+                </p>
+                {activeMandate?.notes ? (
+                  <p className="mt-3 text-sm text-[#D5C3B6]">{activeMandate.notes}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#9C8578]">Próxima inspección</p>
+                  <p className="mt-2 text-sm font-medium text-[#FAF6F2]">
+                    {nextInspection
+                      ? `${inspectionTypeLabels[nextInspection.type] || nextInspection.type} • ${formatDate(nextInspection.scheduledAt)}`
+                      : "Sin inspecciones programadas"}
+                  </p>
+                  {nextInspection ? (
+                    <p className="mt-1 text-sm text-[#9C8578]">
+                      Estado: {inspectionStatusLabels[nextInspection.status] || nextInspection.status}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#9C8578]">Próximo IPC</p>
+                  <p className="mt-2 text-sm font-medium text-[#FAF6F2]">
+                    {formatDate(property.nextIpcDate)}
+                  </p>
+                  <p className="mt-1 text-sm text-[#9C8578]">
+                    Frecuencia configurada: {property.ipcAdjustmentMonths || "No definida"} meses
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardHeader>
+              <CardTitle className="text-[#FAF6F2]">Servicios del último período</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {latestService ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[#9C8578]">
+                    Último período cargado: {formatMonth(latestService.month, latestService.year)}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">Agua</p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">{formatCurrency(latestService.water)}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">Luz</p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">{formatCurrency(latestService.electricity)}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">Gas</p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">{formatCurrency(latestService.gas)}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">Gasto común</p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">
+                        {formatCurrency(latestService.commonExpenses)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">Basura</p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">{formatCurrency(latestService.garbage)}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#1C1917] p-3">
+                      <p className="text-xs text-[#9C8578]">
+                        {latestService.otherLabel || "Otro"}
+                      </p>
+                      <p className="mt-1 font-semibold text-[#FAF6F2]">{formatCurrency(latestService.other)}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-[#9C8578]">
+                  Aún no hay servicios mensuales registrados para esta propiedad.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

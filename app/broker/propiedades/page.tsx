@@ -211,16 +211,16 @@ export default async function BrokerPropiedadesPage() {
                         className="flex-1 lg:flex-none text-[#FAF6F2] border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/10"
                         asChild
                       >
-                        <Link href={`/dashboard/propiedades/${property.id}`}>
+                        <Link href={`/broker/propiedades/${property.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
-                          Ver detalle
+                          Ver ficha
                         </Link>
                       </Button>
                       <Button 
                         className="flex-1 lg:flex-none bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
                         asChild
                       >
-                        <Link href={`/dashboard/pagos?property=${property.id}`}>
+                        <Link href={`/broker/propiedades/${property.id}#gestion`}>
                           Gestionar
                         </Link>
                       </Button>

@@ -14,8 +14,8 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar
-        role="landlord"
-        userName={session.user.name ?? 'Arrendador'}
+        role={session.user.role === 'BROKER' ? 'broker' : 'landlord'}
+        userName={session.user.name ?? (session.user.role === 'BROKER' ? 'Corredor' : 'Arrendador')}
         userId={session.user.id}
       />
       <main className="flex-1 lg:ml-0 p-4 lg:p-8 pt-16 lg:pt-8">

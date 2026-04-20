@@ -30,10 +30,28 @@ export async function GET(req: NextRequest) {
   try {
     const ownerId = req.nextUrl.searchParams.get('ownerId')
 
-    // Si se especifica ownerId (para corredores buscando propiedades), permitir solo si es broker
+    // Si se especifica ownerId para consultar propiedades de otro propietario,
+    // el corredor debe tener permiso general aprobado.
     if (ownerId && ownerId !== session.user.id) {
       if (session.user.role !== 'BROKER') {
         return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+      }
+
+      const permission = await prisma.brokerPermission.findUnique({
+        where: {
+          landlordId_brokerId: {
+            landlordId: ownerId,
+            brokerId: session.user.id,
+          },
+        },
+        select: { status: true },
+      })
+
+      if (!permission || permission.status !== 'APPROVED') {
+        return NextResponse.json(
+          { error: 'Necesitas permiso aprobado del arrendador para ver sus propiedades' },
+          { status: 403 }
+        )
       }
     }
 

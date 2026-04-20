@@ -187,13 +187,17 @@ export async function signMandate({
   if (shouldActivate) {
     const recipientId =
       signerRole === 'owner' ? updated.brokerId : updated.ownerId
+    const link =
+      signerRole === 'owner'
+        ? `/broker/propiedades/${updated.propertyId}`
+        : `/dashboard/propiedades/${updated.propertyId}`
 
     await createNotification(
       recipientId,
       'MANDATE_SIGNED',
       'Mandato activado',
       `El mandato de ${propertyLabel} fue firmado por ambas partes`,
-      `/dashboard/propiedades/${updated.propertyId}`
+      link
     )
   }
 
@@ -261,7 +265,7 @@ export async function revokeMandate(mandateId: string, userId: string) {
     'MANDATE_REVOKED',
     'Mandato revocado',
     `El propietario revocó el mandato de ${propertyLabel}`,
-    `/dashboard/propiedades/${updated.propertyId}`
+    `/broker/propiedades/${updated.propertyId}`
   )
 
   await logActivity(

@@ -8,7 +8,11 @@ import { createPortal } from 'react-dom'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  userRole?: 'landlord' | 'tenant' | 'broker'
+}
+
+export function NotificationBell({ userRole }: NotificationBellProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -77,6 +81,11 @@ export function NotificationBell() {
 
     const lowerTitle = title?.toLowerCase() ?? ''
     const lowerMessage = message?.toLowerCase() ?? ''
+
+    if (userRole === 'broker' && link.startsWith('/dashboard/propiedades/')) {
+      return link.replace('/dashboard/propiedades/', '/broker/propiedades/')
+    }
+
     const isBrokerPermissionNotification =
       lowerTitle.includes('corredor') ||
       lowerTitle.includes('permiso') ||

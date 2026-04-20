@@ -83,6 +83,10 @@ export async function PATCH(
       if (result.activated) {
         const recipientId = role === 'owner' ? mandate.brokerId : mandate.ownerId
         const signerName = session.user.name || session.user.email
+        const link =
+          role === 'owner'
+            ? `/broker/propiedades/${mandate.propertyId}`
+            : `/dashboard/propiedades/${mandate.propertyId}`
 
         await createNotification(
           recipientId,
@@ -91,7 +95,7 @@ export async function PATCH(
           `El mandato fue firmado por ambas partes para ${
             mandate.property.name || mandate.property.address
           }`,
-          `/dashboard/propiedades/${mandate.propertyId}`
+          link
         )
 
         await logActivity(
@@ -130,13 +134,17 @@ export async function PATCH(
       const recipientId =
         session.user.role === 'BROKER' ? mandate.ownerId : mandate.brokerId
       const revokerName = session.user.name || session.user.email
+      const link =
+        session.user.role === 'BROKER'
+          ? `/dashboard/propiedades/${mandate.propertyId}`
+          : `/broker/propiedades/${mandate.propertyId}`
 
       await createNotification(
         recipientId,
         'MANDATE_REVOKED',
         'Mandato revocado',
         `El mandato para ${mandate.property.name || mandate.property.address} fue revocado por ${revokerName}`,
-        `/dashboard/propiedades/${mandate.propertyId}`
+        link
       )
 
       await logActivity(

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLoading from "./loading"
-import { OnboardingCard } from '@/components/dashboard/onboarding-card'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   PAID: { label: 'Pagado', className: 'bg-[#5E8B8C] text-[#FAF6F2]' },
@@ -55,6 +54,10 @@ export default async function DashboardPage() {
 
   if (!session?.user || session.user.role === 'TENANT') {
     redirect('/login')
+  }
+
+  if (session.user.role === 'BROKER') {
+    redirect('/broker')
   }
 
   return (
@@ -139,8 +142,6 @@ async function DashboardContent({ session }: { session: any }) {
 
     const totalRecaudadoCLP = paidPayments._sum.amountCLP || 0
     const pagosPendientesCLP = pendingPayments._sum.amountCLP || 0
-    const isNewLandlord = properties.length === 0 && !(session.user as any).onboardingDone
-
     const kpiStats = [
       {
         title: 'Total Recaudado',
@@ -182,9 +183,6 @@ async function DashboardContent({ session }: { session: any }) {
 
     return (
       <div className="space-y-8">
-        {/* Onboarding Welcome Card - Show for new landlords */}
-        {isNewLandlord && <OnboardingCard />}
-
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>

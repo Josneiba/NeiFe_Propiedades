@@ -81,16 +81,6 @@ export async function GET(
                   },
                 },
               },
-              {
-                landlord: {
-                  landlordPermissions: {
-                    some: {
-                      brokerId: session.user.id,
-                      status: 'APPROVED',
-                    },
-                  },
-                },
-              },
             ],
           }
         : {

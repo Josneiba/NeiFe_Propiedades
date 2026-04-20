@@ -99,7 +99,7 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         {/* Logo */}
         <div id="sidebar-logo" className="flex items-center justify-between px-6 py-6 border-b border-[#D5C3B6]/10">
           <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
-          <NotificationBell />
+          <NotificationBell userRole={role} />
         </div>
 
         {/* Navigation */}

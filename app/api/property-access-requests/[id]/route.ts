@@ -164,7 +164,7 @@ export async function PATCH(
       'SYSTEM',
       notificationTitle,
       notificationMessage,
-      action === 'approve' ? `/dashboard/propiedades/${accessRequest.propertyId}` : undefined
+      action === 'approve' ? `/broker/propiedades/${accessRequest.propertyId}` : undefined
     )
 
     // Log activity

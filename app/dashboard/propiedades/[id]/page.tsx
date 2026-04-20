@@ -118,6 +118,11 @@ export default function PropertyDetailPage() {
           const session = await sessionRes.json()
           currentRole = session?.user?.role || null
           setUserRole(currentRole)
+
+          if (currentRole === 'BROKER') {
+            router.replace(`/broker/propiedades/${propertyId}`)
+            return
+          }
         }
 
         const [propertyRes, mandatesRes, accessRequestsRes] = await Promise.all([
