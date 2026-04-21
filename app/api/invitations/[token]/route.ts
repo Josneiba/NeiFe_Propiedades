@@ -7,11 +7,12 @@ import { logActivity } from '@/lib/activity'
 // GET — verificar token
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await params
     const invitation = await prisma.invitation.findUnique({
-      where: { token: params.token },
+      where: { token },
       include: { property: true, sender: { select: { name: true, email: true } } },
     })
 
@@ -54,7 +55,7 @@ export async function GET(
 // POST — aceptar invitación
 export async function POST(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -69,9 +70,13 @@ export async function POST(
   }
 
   try {
+    const { token } = await params
+    const ownerEmailQuery = session.user.email
+      ? `?email=${encodeURIComponent(session.user.email)}`
+      : ''
     const result = await prisma.$transaction(async (tx) => {
       const invitation = await tx.invitation.findUnique({
-        where: { token: params.token },
+        where: { token },
         include: { property: true, sender: { select: { name: true, email: true } } },
       })
 
@@ -159,7 +164,7 @@ export async function POST(
         'SYSTEM',
         'Permiso aprobado por propietario',
         `${session.user.name || session.user.email} aceptó tu invitación y te autorizó para administrar sus propiedades.`,
-        `/broker/mandatos/nuevo?email=${encodeURIComponent(session.user.email)}`
+        `/broker/mandatos/nuevo${ownerEmailQuery}`
       )
 
       await logActivity(

@@ -15,7 +15,7 @@ const updateInspectionSchema = z.object({
 // PATCH — actualizar estado de inspección
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; inspectionId: string } }
+  { params }: { params: Promise<{ id: string; inspectionId: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -23,7 +23,7 @@ export async function PATCH(
   }
 
   try {
-    const { id: propertyId, inspectionId } = params
+    const { id: propertyId, inspectionId } = await params
     const body = await req.json()
     const data = updateInspectionSchema.parse(body)
 
@@ -114,7 +114,7 @@ export async function PATCH(
 // DELETE — eliminar inspección
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; inspectionId: string } }
+  { params }: { params: Promise<{ id: string; inspectionId: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -122,7 +122,7 @@ export async function DELETE(
   }
 
   try {
-    const { id: propertyId, inspectionId } = params
+    const { id: propertyId, inspectionId } = await params
 
     try {
       await assertPropertyAccess(propertyId, session.user.id, session.user.role)

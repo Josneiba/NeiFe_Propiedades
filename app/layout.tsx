@@ -96,7 +96,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning style={{ colorScheme: 'dark' }}>
-      <body className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable} font-sans antialiased`}>
+      <body suppressHydrationWarning className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable} font-sans antialiased`}>
         <Providers>
           {children}
         </Providers>

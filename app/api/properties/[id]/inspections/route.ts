@@ -14,7 +14,7 @@ const inspectionSchema = z.object({
 // GET — listar inspecciones de una propiedad
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -22,7 +22,7 @@ export async function GET(
   }
 
   try {
-    const propertyId = params.id
+    const { id: propertyId } = await params
     try {
       await assertPropertyAccess(propertyId, session.user.id, session.user.role)
     } catch {
@@ -50,7 +50,7 @@ export async function GET(
 // POST — crear nueva inspección
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -58,7 +58,7 @@ export async function POST(
   }
 
   try {
-    const propertyId = params.id
+    const { id: propertyId } = await params
     const body = await req.json()
     const data = inspectionSchema.parse(body)
 

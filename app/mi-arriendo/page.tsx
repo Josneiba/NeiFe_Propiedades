@@ -167,6 +167,13 @@ export default async function MiArriendoPage() {
   const electricity = currentServices?.electricity ?? 0
   const gas = currentServices?.gas ?? 0
   const currentTotal = (property.monthlyRentCLP || 0) + water + electricity + gas
+  const contractDates =
+    property.contractStart && property.contractEnd
+      ? {
+          start: property.contractStart,
+          end: property.contractEnd,
+        }
+      : null
 
   // Build activity items
   const activityItems = [
@@ -386,11 +393,17 @@ export default async function MiArriendoPage() {
               <CardTitle className="text-foreground text-lg">Mi Contrato</CardTitle>
             </CardHeader>
             <CardContent>
-              <ContractProgressChart 
-                startDate={property.contractStart}
-                endDate={property.contractEnd}
-                size="large"
-              />
+              {contractDates ? (
+                <ContractProgressChart 
+                  startDate={contractDates.start}
+                  endDate={contractDates.end}
+                  size="large"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Fechas de contrato no disponibles.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -420,11 +433,17 @@ export default async function MiArriendoPage() {
         <CardTitle className="text-foreground text-lg">Mi Contrato</CardTitle>
       </CardHeader>
       <CardContent>
-        <ContractProgressChart 
-          startDate={property.contractStart}
-          endDate={property.contractEnd}
-          size="large"
-        />
+        {contractDates ? (
+          <ContractProgressChart 
+            startDate={contractDates.start}
+            endDate={contractDates.end}
+            size="large"
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Fechas de contrato no disponibles.
+          </p>
+        )}
       </CardContent>
     </Card>
 

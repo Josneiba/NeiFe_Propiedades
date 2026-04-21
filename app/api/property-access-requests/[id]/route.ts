@@ -7,7 +7,7 @@ import { logActivity } from '@/lib/activity'
 // PATCH - aprobar o rechazar solicitud de acceso a propiedad
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -22,6 +22,7 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params
     const body = await req.json()
     const { action } = body
 
@@ -31,7 +32,7 @@ export async function PATCH(
 
     const accessRequest = await prisma.propertyAccessRequest.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
       include: {
@@ -95,7 +96,7 @@ export async function PATCH(
     }
 
     const updatedRequest = await prisma.propertyAccessRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         property: {
@@ -193,7 +194,7 @@ export async function PATCH(
 // DELETE - eliminar solicitud (solo el corredor que la envió)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -208,8 +209,9 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params
     const accessRequest = await prisma.propertyAccessRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         property: {
           select: {
@@ -243,7 +245,7 @@ export async function DELETE(
     }
 
     await prisma.propertyAccessRequest.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     // Log activity

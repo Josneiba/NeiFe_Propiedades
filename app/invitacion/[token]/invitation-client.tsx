@@ -173,7 +173,7 @@ export default function InvitationClient({
           <>
             <p className="text-[#9C8578] text-sm text-center">
               Sesión activa como{' '}
-              <strong className="text-[#D5C3B6]">{session.user.name}</strong>
+              <strong className="text-[#D5C3B6]">{session?.user.name ?? 'tu cuenta'}</strong>
             </p>
             <button
               onClick={handleAccept}

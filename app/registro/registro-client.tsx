@@ -33,7 +33,18 @@ export default function RegistroClient() {
     if (inviteToken && !inviteRole) {
       // Verificar el tipo de invitación
       fetch(`/api/invitations/${inviteToken}`)
-        .then(res => res.json())
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error('Invitation lookup failed')
+          }
+
+          const contentType = res.headers.get('content-type') || ''
+          if (!contentType.includes('application/json')) {
+            throw new Error('Invitation lookup did not return JSON')
+          }
+
+          return res.json()
+        })
         .then(data => {
           if (data.invitation) {
             setInviteType(data.invitation.type)

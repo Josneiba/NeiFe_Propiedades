@@ -35,6 +35,22 @@ export async function POST(req: NextRequest) {
       }, { status: 403 })
     }
 
+    const broker = await prisma.user.findUnique({
+      where: { id: brokerId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        company: true,
+        rut: true,
+      },
+    })
+
+    if (!broker) {
+      return NextResponse.json({ error: 'Corredor no encontrado' }, { status: 404 })
+    }
+
     // Crear mandatos para todas las propiedades especificadas
     const mandates = await Promise.all(
       propertyIds.map(async (propertyId: string) => {
@@ -48,50 +64,61 @@ export async function POST(req: NextRequest) {
           return null
         }
 
-        // Crear o actualizar mandato
-        return prisma.mandate.upsert({
+        const existingMandate = await prisma.mandate.findFirst({
           where: {
-            propertyId_brokerId: {
-              propertyId,
-              brokerId
-            }
-          },
-          update: {
-            status: 'ACTIVE',
-            startsAt: new Date(),
-            commissionRate: 0.05, // 5% por defecto
-            commissionType: 'MONTHLY'
-          },
-          create: {
             propertyId,
             brokerId,
-            status: 'ACTIVE',
-            startsAt: new Date(),
-            commissionRate: 0.05,
-            commissionType: 'MONTHLY'
-          }
+            ownerId: landlordId,
+          },
         })
+
+        if (existingMandate) {
+          await prisma.mandate.update({
+            where: { id: existingMandate.id },
+            data: {
+              status: 'ACTIVE',
+              startsAt: existingMandate.startsAt ?? new Date(),
+            },
+          })
+        } else {
+          await prisma.mandate.create({
+            data: {
+              propertyId,
+              ownerId: landlordId,
+              brokerId,
+              status: 'ACTIVE',
+              startsAt: new Date(),
+              signedByOwner: true,
+              signedByBroker: true,
+              ownerSignedAt: new Date(),
+              brokerSignedAt: new Date(),
+            },
+          })
+        }
+
+        await prisma.property.update({
+          where: { id: propertyId },
+          data: {
+            managedBy: brokerId,
+            agentId: broker.id,
+            agentName: broker.name,
+            agentEmail: broker.email,
+            agentPhone: broker.phone ?? '',
+            agentCompany: broker.company ?? '',
+            agentRut: broker.rut ?? '',
+            commissionRate: 0.05,
+            commissionType: 'MONTHLY',
+            updatedAt: new Date(),
+          },
+        })
+
+        return { propertyId }
       })
     )
 
     // Filtrar mandatos exitosos
-    const successfulMandates = mandates.filter(m => m !== null)
-
-    // Actualizar información del broker en las propiedades
-    await Promise.all(
-      successfulMandates.map(mandate => 
-        prisma.property.update({
-          where: { id: mandate.propertyId },
-          data: {
-            agentName: session.user.name,
-            agentEmail: session.user.email,
-            agentPhone: session.user.phone || '',
-            agentCompany: session.user.company || '',
-            agentRut: session.user.rut || '',
-            updatedAt: new Date()
-          }
-        })
-      )
+    const successfulMandates = mandates.filter(
+      (mandate): mandate is { propertyId: string } => mandate !== null
     )
 
     await logActivity(

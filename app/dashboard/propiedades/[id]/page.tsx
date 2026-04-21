@@ -2,6 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
+import { getSession } from "next-auth/react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -113,16 +114,13 @@ export default function PropertyDetailPage() {
         let currentRole: string | null = null
 
         // Get user session first
-        const sessionRes = await fetch('/api/auth/session')
-        if (sessionRes.ok) {
-          const session = await sessionRes.json()
-          currentRole = session?.user?.role || null
-          setUserRole(currentRole)
+        const session = await getSession()
+        currentRole = session?.user?.role || null
+        setUserRole(currentRole)
 
-          if (currentRole === 'BROKER') {
-            router.replace(`/broker/propiedades/${propertyId}`)
-            return
-          }
+        if (currentRole === 'BROKER') {
+          router.replace(`/broker/propiedades/${propertyId}`)
+          return
         }
 
         const [propertyRes, mandatesRes, accessRequestsRes] = await Promise.all([

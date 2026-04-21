@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { getSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -44,9 +44,7 @@ export default function LoginPage() {
 
     if (result?.ok) {
       toast.success("Sesión iniciada correctamente")
-      // Obtener sesión y redirigir según rol
-      const response = await fetch('/api/auth/session')
-      const session = await response.json()
+      const session = await getSession()
       
       const role = session?.user?.role || 'TENANT'
       if (role === 'TENANT') {
@@ -58,6 +56,8 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard")
       }
+
+      router.refresh()
     }
   }
 

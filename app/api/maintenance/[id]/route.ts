@@ -24,7 +24,7 @@ const updateSchema = z.object({
 // PATCH — actualizar estado de mantención
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -32,8 +32,9 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params
     const maintenance = await prisma.maintenanceRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         property: true,
         requester: true,
@@ -70,7 +71,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.maintenanceRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...updateData,
         timeline: {

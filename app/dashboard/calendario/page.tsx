@@ -781,7 +781,7 @@ export default function CalendarioPage() {
                   <Input
                     id="edit-date"
                     type="date"
-                    value={editingEvent.date instanceof Date ? editingEvent.date.toISOString().split('T')[0] : new Date(editingEvent.date).toISOString().split('T')[0]}
+                    value={new Date(editingEvent.date).toISOString().split('T')[0]}
                     onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
                     className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
                   />

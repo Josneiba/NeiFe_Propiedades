@@ -88,7 +88,9 @@ export async function GET(
       prisma.contract.findMany({
         where: { 
           propertyId,
-          isActive: true 
+          status: {
+            in: ['ACTIVE', 'EXPIRING_SOON']
+          }
         },
         take: 1,
         orderBy: { createdAt: 'desc' }

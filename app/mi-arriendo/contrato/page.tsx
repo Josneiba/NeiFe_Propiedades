@@ -91,6 +91,13 @@ export default async function ContratoPage() {
   const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
   const daysLeft = contractEnd ? Math.floor((contractEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0
   const isActive = daysLeft > 0
+  const contractDates =
+    contract.startDate && contract.endDate
+      ? {
+          start: contract.startDate,
+          end: contract.endDate,
+        }
+      : null
 
   return (
     <div className="space-y-6">
@@ -280,7 +287,7 @@ export default async function ContratoPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Contract Progress */}
-          {contract.endDate && (
+          {contractDates && (
             <Card className="bg-[#2A2520] border-border">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center gap-2">
@@ -290,8 +297,8 @@ export default async function ContratoPage() {
               </CardHeader>
               <CardContent>
                 <ContractProgressChart 
-                  startDate={contract.startDate}
-                  endDate={contract.endDate}
+                  startDate={contractDates.start}
+                  endDate={contractDates.end}
                   size="large"
                 />
               </CardContent>
@@ -319,8 +326,8 @@ export default async function ContratoPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Duración</span>
                 <span className="font-medium text-foreground">
-                  {contract.startDate && contract.endDate
-                    ? `${Math.round((contract.endDate.getTime() - contract.startDate.getTime()) / (1000 * 60 * 60 * 24 * 30))} meses`
+                  {contractDates
+                    ? `${Math.round((contractDates.end.getTime() - contractDates.start.getTime()) / (1000 * 60 * 60 * 24 * 30))} meses`
                     : "No disponible"}
                 </span>
               </div>

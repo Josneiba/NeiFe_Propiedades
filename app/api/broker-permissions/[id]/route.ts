@@ -8,7 +8,7 @@ import { endBrokerLandlordPartnership } from '@/lib/revoke-broker-partnership'
 // PATCH — aprobar o rechazar solicitud de corredor
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -20,6 +20,7 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params
     const body = await req.json()
     const { action } = body
 
@@ -29,7 +30,7 @@ export async function PATCH(
 
     const permission = await prisma.brokerPermission.findFirst({
       where: {
-        id: params.id,
+        id,
         landlordId: session.user.id,
       },
       include: {
@@ -85,7 +86,7 @@ export async function PATCH(
     }
 
     const updatedPermission = await prisma.brokerPermission.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -127,7 +128,7 @@ export async function PATCH(
 // DELETE — eliminar solicitud de corredor (solo el corredor que la envió)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -139,8 +140,9 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params
     const permission = await prisma.brokerPermission.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         landlord: { select: { name: true, id: true } },
       },
@@ -162,7 +164,7 @@ export async function DELETE(
     }
 
     await prisma.brokerPermission.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     // Log de actividad

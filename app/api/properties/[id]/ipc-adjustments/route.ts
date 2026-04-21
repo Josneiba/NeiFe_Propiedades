@@ -17,7 +17,7 @@ const applyIpcSchema = z.object({
 // GET — listar reajustes IPC de una propiedad
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -25,7 +25,7 @@ export async function GET(
   }
 
   try {
-    const propertyId = params.id
+    const { id: propertyId } = await params
     try {
       await assertPropertyAccess(propertyId, session.user.id, session.user.role)
     } catch {
@@ -53,7 +53,7 @@ export async function GET(
 // POST — aplicar reajuste IPC
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -61,7 +61,7 @@ export async function POST(
   }
 
   try {
-    const propertyId = params.id
+    const { id: propertyId } = await params
     const body = await req.json()
     const { ipcRate } = applyIpcSchema.parse(body)
 

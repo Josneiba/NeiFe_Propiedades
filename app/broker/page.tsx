@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye, FileText } from 'lucide-react'
-import { handleApiError } from '@/lib/error-handler'
+import { getErrorMessage } from '@/lib/error-handler'
 import Link from 'next/link'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -293,7 +293,7 @@ export default async function BrokerDashboardPage() {
     console.error('Broker dashboard error:', error)
     return (
       <div className="text-center py-12">
-        <p className="text-[#9C8578]">{handleApiError(error, "Error al cargar el dashboard")}</p>
+        <p className="text-[#9C8578]">{getErrorMessage(error, "Error al cargar el dashboard")}</p>
       </div>
     )
   }

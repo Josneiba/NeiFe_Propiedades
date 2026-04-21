@@ -158,9 +158,12 @@ export default function PropertyMapClient({ properties }: { properties: Property
   const renderMarkers = useCallback(
     (data: PropertyForMap[]) => {
       const L = leafletRef.current
-      if (!L || !mapInstanceRef.current || !markersLayerRef.current) return
+      const map = mapInstanceRef.current
+      const markersLayer = markersLayerRef.current
 
-      markersLayerRef.current.clearLayers()
+      if (!L || !map || !markersLayer) return
+
+      markersLayer.clearLayers()
 
       const coords = data
         .map((p) => ({
@@ -171,7 +174,7 @@ export default function PropertyMapClient({ properties }: { properties: Property
         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
 
       if (coords.length === 0) {
-        mapInstanceRef.current.setView(DEFAULT_CENTER, 11)
+        map.setView(DEFAULT_CENTER, 11)
         return
       }
 
@@ -221,14 +224,14 @@ export default function PropertyMapClient({ properties }: { properties: Property
 
         const marker = L.marker([property.lat!, property.lng!], { icon })
         marker.bindPopup(popupContent, { maxWidth: 260, className: 'neife-popup' })
-        markersLayerRef.current.addLayer(marker)
+        markersLayer.addLayer(marker)
       })
 
       if (coords.length > 1) {
         const bounds = L.latLngBounds(coords.map((p) => [p.lat!, p.lng!] as [number, number]))
-        mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] })
+        map.fitBounds(bounds, { padding: [50, 50] })
       } else {
-        mapInstanceRef.current.setView([coords[0].lat!, coords[0].lng!], 15)
+        map.setView([coords[0].lat!, coords[0].lng!], 15)
       }
     },
     []

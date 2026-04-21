@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+type PrismaErrorLike = {
+  code?: string
+  meta?: {
+    target?: string | string[]
+  }
+}
+
 const schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
@@ -53,8 +60,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
     }
     
-    // Handle Prisma unique constraint error (P2002)
-    if (typeof error === 'object' && error.code === 'P2002' && error.meta?.target?.includes('email')) {
+    const prismaError = error as PrismaErrorLike | null
+    const duplicateTarget = prismaError?.meta?.target
+    const duplicateEmail =
+      typeof duplicateTarget === 'string'
+        ? duplicateTarget.includes('email')
+        : Array.isArray(duplicateTarget)
+          ? duplicateTarget.includes('email')
+          : false
+
+    if (prismaError?.code === 'P2002' && duplicateEmail) {
       return NextResponse.json(
         { error: "Ya existe una cuenta con este email" },
         { status: 409 }

@@ -15,7 +15,7 @@ const updateSchema = z.object({
 // PATCH — actualizar estado de pago
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -23,8 +23,9 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params
     const payment = await prisma.payment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         property: {
           select: { landlordId: true, tenantId: true },
@@ -61,7 +62,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.payment.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         property: {
@@ -89,7 +90,7 @@ export async function PATCH(
         session.user.id,
         'PAYMENT_CONFIRMED',
         `Pago de ${updated.month}/${updated.year} confirmado`,
-        payment.property.id
+        updated.property.id
       )
     }
 
