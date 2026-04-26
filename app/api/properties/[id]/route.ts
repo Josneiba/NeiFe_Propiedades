@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { assertPropertyAccess } from '@/lib/permissions'
-import type { Prisma } from '@prisma/client'
+import { logUnauthorizedAccess } from '@/lib/activity'
 
 const emptyToUndefined = (val: unknown) =>
   val === '' || val === null || typeof val === 'undefined' ? undefined : val
@@ -66,33 +66,24 @@ export async function GET(
 
   try {
     const { id } = await params
-    const propertyWhere: Prisma.PropertyWhereInput =
-      session.user.role === 'BROKER'
-        ? {
-            id,
-            isActive: true,
-            OR: [
-              { managedBy: session.user.id },
-              {
-                mandates: {
-                  some: {
-                    brokerId: session.user.id,
-                    status: 'ACTIVE',
-                  },
-                },
-              },
-            ],
-          }
-        : {
-            id,
-            landlordId: session.user.id,
-          }
 
     const property = await prisma.property.findFirst({
-      where: propertyWhere,
+      where: {
+        id,
+        isActive: true,
+      },
       include: {
         tenant: {
-          select: { id: true, name: true, email: true, phone: true, rut: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            rut: true,
+            documentType: true,
+            documentNumber: true,
+            documentNumberNormalized: true,
+          },
         },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -120,6 +111,10 @@ export async function GET(
             },
           },
         },
+        mandates: {
+          where: { status: 'ACTIVE' },
+          select: { brokerId: true, status: true },
+        },
       },
     })
 
@@ -130,7 +125,23 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ property })
+    const canAccess =
+      property.landlordId === session.user.id ||
+      property.tenantId === session.user.id ||
+      (session.user.role === 'BROKER' &&
+        property.mandates.some(
+          (mandate) =>
+            mandate.brokerId === session.user.id && mandate.status === 'ACTIVE'
+        ))
+
+    if (!canAccess) {
+      logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
+      return NextResponse.json({ error: 'Sin acceso' }, { status: 403 })
+    }
+
+    const { mandates, ...propertyResponse } = property
+
+    return NextResponse.json({ property: propertyResponse })
   } catch (error) {
     console.error('Error fetching property:', error)
     return NextResponse.json(

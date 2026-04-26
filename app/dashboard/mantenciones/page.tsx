@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SearchFilter } from "@/components/ui/search-filter"
 import { 
   Wrench, 
   Building2,
@@ -90,7 +91,7 @@ function mantencionesQueryHref(status: string, propertyId?: string) {
 export default async function MantencionesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; property?: string }>
+  searchParams: Promise<{ status?: string; property?: string; q?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -104,6 +105,7 @@ export default async function MantencionesPage({
   const sp = await searchParams
   const statusFilter = sp.status || "all"
   const filterPropertyId = sp.property?.trim() || undefined
+  const q = sp.q?.trim()
   const normalizedStatusFilter =
     statusFilter !== "all" ? (statusFilter.toUpperCase() as MaintenanceStatus) : undefined
 
@@ -133,6 +135,15 @@ export default async function MantencionesPage({
         ...(filterProperty ? { id: filterProperty.id } : {}),
       },
       ...(normalizedStatusFilter ? { status: normalizedStatusFilter } : {}),
+      ...(q
+        ? {
+            OR: [
+              { description: { contains: q, mode: "insensitive" } },
+              { property: { address: { contains: q, mode: "insensitive" } } },
+              { property: { tenant: { name: { contains: q, mode: "insensitive" } } } },
+            ],
+          }
+        : {}),
     },
     include: maintenanceInclude,
     orderBy: {
@@ -165,7 +176,11 @@ export default async function MantencionesPage({
       {/* Filtros */}
       <Card className="bg-card border-border">
         <CardContent className="p-4">
+          <div className="mb-4">
+            <SearchFilter placeholder="Buscar por descripcion, propiedad o arrendatario..." />
+          </div>
           <form className="grid gap-4 md:grid-cols-3" action="/dashboard/mantenciones" method="GET">
+            {q ? <input type="hidden" name="q" value={q} /> : null}
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm text-muted-foreground" htmlFor="property">
                 Propiedad
@@ -206,7 +221,7 @@ export default async function MantencionesPage({
               <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
                 Aplicar filtros
               </Button>
-              {(filterPropertyId || statusFilter !== "all") && (
+              {(filterPropertyId || statusFilter !== "all" || q) && (
                 <Button variant="outline" className="border-border" asChild>
                   <a href="/dashboard/mantenciones">Limpiar</a>
                 </Button>

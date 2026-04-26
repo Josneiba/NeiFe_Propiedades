@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
-import { logActivity } from '@/lib/activity'
+import { logActivity, logUnauthorizedAccess } from '@/lib/activity'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get('year')
 
     if (session.user.role === 'BROKER' && !isTenantRequest) {
+      logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
       return NextResponse.json(
         { error: 'Los corredores no acceden al módulo de pagos del arrendador' },
         { status: 403 }
@@ -123,9 +124,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  if (session.user.role === 'BROKER') {
+  if (session.user.role === 'TENANT') {
+    logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
     return NextResponse.json(
-      { error: 'Los corredores no crean pagos desde este endpoint' },
+      { error: 'No autorizado' },
       { status: 403 }
     )
   }
@@ -134,18 +136,29 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = createSchema.parse(body)
 
-    // Verificar que el usuario es el propietario
     const property = await prisma.property.findFirst({
       where: {
         id: data.propertyId,
-        landlordId: session.user.id,
+        OR: [
+          { landlordId: session.user.id },
+          {
+            mandates: {
+              some: {
+                brokerId: session.user.id,
+                status: 'ACTIVE',
+              },
+            },
+          },
+        ],
       },
+      select: { id: true },
     })
 
     if (!property) {
+      logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
       return NextResponse.json(
-        { error: 'Propiedad no encontrada' },
-        { status: 404 }
+        { error: 'Sin acceso a esta propiedad' },
+        { status: 403 }
       )
     }
 

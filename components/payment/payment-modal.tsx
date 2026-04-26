@@ -23,7 +23,8 @@ interface PaymentModalProps {
     bank: string
     accountType: string
     accountNumber: string
-    rut: string
+    documentLabel: string
+    documentNumber: string
     ownerName: string
     email: string
   }
@@ -181,7 +182,7 @@ export function PaymentModal({
                 { label: 'Banco', value: bankDetails.bank },
                 { label: 'Tipo de cuenta', value: bankDetails.accountType },
                 { label: 'N° de cuenta', value: bankDetails.accountNumber },
-                { label: 'RUT', value: bankDetails.rut },
+                { label: bankDetails.documentLabel, value: bankDetails.documentNumber },
                 { label: 'Nombre', value: bankDetails.ownerName },
                 { label: 'Email', value: bankDetails.email },
               ].map(({ label, value }) => (
@@ -207,7 +208,7 @@ export function PaymentModal({
             <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-lg p-3">
               <p className="text-xs text-[#5E8B8C] leading-relaxed">
                 Transfiere exactamente <strong>${formattedTotal}</strong> e incluye
-                tu RUT en el mensaje/glosa de la transferencia.
+                tu documento de identificacion en el mensaje/glosa de la transferencia.
               </p>
             </div>
 

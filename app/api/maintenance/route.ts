@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
-import { logActivity } from '@/lib/activity'
+import { logActivity, logUnauthorizedAccess } from '@/lib/activity'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (session.user.role === 'BROKER') {
+    logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
     return NextResponse.json(
       { error: 'Los corredores no gestionan mantenciones desde este endpoint' },
       { status: 403 }
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.user.role === 'BROKER') {
+    logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
     return NextResponse.json(
       { error: 'Los corredores no pueden crear mantenciones desde este endpoint' },
       { status: 403 }
@@ -87,6 +89,37 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const data = createSchema.parse(body)
+
+    if (session.user.role === 'TENANT') {
+      const userProperty = await prisma.property.findFirst({
+        where: { tenantId: session.user.id, id: data.propertyId },
+        select: { id: true },
+      })
+
+      if (!userProperty) {
+        logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
+        return NextResponse.json(
+          { error: 'No eres arrendatario de esta propiedad' },
+          { status: 403 }
+        )
+      }
+    } else if (session.user.role === 'LANDLORD' || session.user.role === 'OWNER') {
+      const landlordProperty = await prisma.property.findFirst({
+        where: { landlordId: session.user.id, id: data.propertyId },
+        select: { id: true },
+      })
+
+      if (!landlordProperty) {
+        logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
+        return NextResponse.json(
+          { error: 'Sin acceso a esta propiedad' },
+          { status: 403 }
+        )
+      }
+    } else {
+      logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
 
     // Determinar responsabilidad según categoría (Ley 18.101)
     const landlordResponsible = ['PLUMBING', 'ELECTRICAL', 'STRUCTURAL'].includes(

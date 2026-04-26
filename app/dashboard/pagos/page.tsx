@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PaymentReceiptDownload } from "@/components/payments/payment-receipt-download"
 import { 
   Building2,
   Check,
@@ -20,10 +21,16 @@ interface PaymentWithProperty {
   year: number
   status: string
   amountCLP: number
+  amountUF: number
+  method: string | null
+  notes: string | null
+  paidAt: Date | null
+  createdAt: Date
   receipt: string | null
   property: {
     id: string
     address: string
+    commune: string
     tenant: {
       name: string | null
       email: string
@@ -87,6 +94,7 @@ export default async function PagosPage({
         select: {
           id: true,
           address: true,
+          commune: true,
           tenant: {
             select: {
               name: true,
@@ -375,6 +383,29 @@ export default async function PagosPage({
                               <Download className="h-4 w-4" />
                             </a>
                           </Button>
+                        )}
+                        {payment.status === "PAID" && (
+                          <PaymentReceiptDownload
+                            payment={{
+                              id: payment.id,
+                              month: payment.month,
+                              year: payment.year,
+                              amountCLP: payment.amountCLP,
+                              amountUF: payment.amountUF,
+                              paidAt: payment.paidAt?.toISOString() || null,
+                              createdAt: payment.createdAt.toISOString(),
+                              method: payment.method,
+                              notes: payment.notes,
+                              property: {
+                                address: payment.property.address,
+                                commune: payment.property.commune,
+                                tenant: payment.property.tenant
+                                  ? { name: payment.property.tenant.name }
+                                  : null,
+                              },
+                            }}
+                            landlordName={session.user.name || "Arrendador"}
+                          />
                         )}
                       </td>
                     </tr>

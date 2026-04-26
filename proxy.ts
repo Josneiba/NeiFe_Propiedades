@@ -15,6 +15,14 @@ export default auth((req) => {
   const session = req.auth
   const role = session?.user?.role
 
+  if (pathname.startsWith('/api/cron/')) {
+    const isCronCall = req.headers.get('authorization')?.startsWith('Bearer ')
+    if (!isCronCall) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+    }
+    return NextResponse.next()
+  }
+
   if (isPublicPath(pathname)) return NextResponse.next()
 
   if (!session?.user) {
@@ -41,5 +49,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/api/cron/:path*', '/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }

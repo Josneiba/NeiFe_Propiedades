@@ -40,6 +40,10 @@ export const authConfig = {
         token.role = user.role
         token.name = user.name
         token.rut = user.rut ?? null
+        token.documentCountry = user.documentCountry ?? null
+        token.documentType = user.documentType ?? null
+        token.documentNumber = user.documentNumber ?? null
+        token.documentNumberNormalized = user.documentNumberNormalized ?? null
         token.phone = user.phone ?? null
         token.company = user.company ?? null
       }
@@ -51,6 +55,10 @@ export const authConfig = {
         session.user.role = token.role as Role
         session.user.name = token.name as string
         session.user.rut = asNullableString(token.rut)
+        session.user.documentCountry = asNullableString(token.documentCountry)
+        session.user.documentType = asNullableString(token.documentType)
+        session.user.documentNumber = asNullableString(token.documentNumber)
+        session.user.documentNumberNormalized = asNullableString(token.documentNumberNormalized)
         session.user.phone = asNullableString(token.phone)
         session.user.company = asNullableString(token.company)
       }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SearchFilter } from "@/components/ui/search-filter"
 import { Building2, Eye, MapPin, User } from "lucide-react"
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
@@ -31,12 +32,17 @@ interface PropertyWithPaymentStatus {
   }>
 }
 
-export default async function BrokerPropiedadesPage() {
+export default async function BrokerPropiedadesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "BROKER" && session.user.role !== "OWNER") {
     redirect("/dashboard")
   }
+  const { q } = await searchParams
 
   // Get all properties of mandates where the current user is the broker
   const currentDate = new Date()
@@ -46,7 +52,20 @@ export default async function BrokerPropiedadesPage() {
   const mandates = await prisma.mandate.findMany({
     where: {
       brokerId: session.user.id,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      ...(q
+        ? {
+            property: {
+              OR: [
+                { address: { contains: q, mode: "insensitive" } },
+                { commune: { contains: q, mode: "insensitive" } },
+                { name: { contains: q, mode: "insensitive" } },
+                { tenant: { name: { contains: q, mode: "insensitive" } } },
+                { landlord: { name: { contains: q, mode: "insensitive" } } },
+              ],
+            },
+          }
+        : {}),
     },
     include: {
       property: {
@@ -113,6 +132,9 @@ export default async function BrokerPropiedadesPage() {
           <h1 className="text-3xl font-bold text-[#FAF6F2]">Propiedades</h1>
           <p className="text-[#9C8578]">Propiedades que administras</p>
         </div>
+      </div>
+      <div>
+        <SearchFilter placeholder="Buscar por direccion, comuna, propietario o arrendatario..." />
       </div>
 
       {/* Properties Grid */}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, Outfit, DM_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
 import { Providers } from '@/app/providers'
 import './globals.css'
 
@@ -97,6 +98,20 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark" suppressHydrationWarning style={{ colorScheme: 'dark' }}>
       <body suppressHydrationWarning className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable} font-sans antialiased`}>
+        <Script id="cleanup-extension-body-attrs" strategy="beforeInteractive">
+          {`(() => {
+            const extensionAttributes = ['data-new-gr-c-s-check-loaded', 'data-gr-ext-installed']
+            const cleanup = (element) => {
+              if (!element) return
+              for (const attr of extensionAttributes) {
+                element.removeAttribute(attr)
+              }
+            }
+
+            cleanup(document.documentElement)
+            cleanup(document.body)
+          })()`}
+        </Script>
         <Providers>
           {children}
         </Providers>

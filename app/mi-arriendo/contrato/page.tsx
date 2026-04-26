@@ -1,33 +1,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  FileText, 
+import {
+  FileText,
   Download,
   Eye,
   CheckCircle2,
   Camera,
   Image as ImageIcon,
   Calendar,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react"
 import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
+import { getUserIdentity } from "@/lib/identity-documents"
+
+function formatContractDate(date: Date | null | undefined) {
+  if (!date) return "No disponible"
+  return date.toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  })
+}
+
+function formatTimestamp(date: Date | null | undefined) {
+  if (!date) return "No disponible"
+  return date.toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
 
 export default async function ContratoPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "TENANT") redirect("/mi-arriendo")
 
-  // Get the property assigned to this tenant
   const property = await prisma.property.findFirst({
     where: { tenantId: session.user.id },
     select: {
       id: true,
       address: true,
+      commune: true,
       monthlyRentCLP: true,
       contractStart: true,
       contractEnd: true,
@@ -35,6 +54,39 @@ export default async function ContratoPage() {
         select: {
           name: true,
           rut: true,
+          documentType: true,
+          documentNumber: true,
+          documentNumberNormalized: true,
+          email: true,
+          phone: true,
+        },
+      },
+      contracts: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          pdfUrl: true,
+          status: true,
+          createdAt: true,
+          signedAt: true,
+          landlordSign: true,
+          tenantSign: true,
+        },
+      },
+      photos: {
+        where: {
+          type: {
+            in: ["CHECKIN", "CHECKOUT"],
+          },
+        },
+        orderBy: [{ type: "asc" }, { order: "asc" }, { takenAt: "desc" }],
+        select: {
+          id: true,
+          url: true,
+          room: true,
+          caption: true,
+          type: true,
+          takenAt: true,
         },
       },
     },
@@ -57,39 +109,47 @@ export default async function ContratoPage() {
     )
   }
 
+  const latestContract = property.contracts[0] ?? null
+  const pdfUrl = latestContract?.pdfUrl ?? null
+  const landlordSigned =
+    Boolean(latestContract?.landlordSign) ||
+    latestContract?.status === "ACTIVE" ||
+    latestContract?.status === "EXPIRING_SOON"
+  const tenantSigned =
+    Boolean(latestContract?.tenantSign) ||
+    latestContract?.status === "ACTIVE" ||
+    latestContract?.status === "EXPIRING_SOON"
+  const signedReferenceDate =
+    landlordSigned || tenantSigned
+      ? latestContract?.signedAt ?? latestContract?.createdAt ?? property.contractStart ?? null
+      : null
+  const checkInPhotos = property.photos.filter((photo) => photo.type === "CHECKIN")
+  const checkOutPhotos = property.photos.filter((photo) => photo.type === "CHECKOUT")
+
   const contract = {
     id: property.id,
-    property: property.address,
+    property: `${property.address}${property.commune ? `, ${property.commune}` : ""}`,
     landlord: property.landlord.name,
-    landlordRut: property.landlord.rut || "No especificado",
+    landlordIdentity: getUserIdentity(property.landlord),
     tenant: session.user.name || "Usuario",
-    tenantRut: session.user.rut || "No especificado",
+    tenantIdentity: getUserIdentity({
+      rut: session.user.rut,
+      documentType: session.user.documentType,
+      documentNumber: session.user.documentNumber,
+      documentNumberNormalized: session.user.documentNumberNormalized,
+    }),
     startDate: property.contractStart,
     endDate: property.contractEnd,
     monthlyRent: property.monthlyRentCLP || 0,
     deposit: property.monthlyRentCLP || 0,
-    landlordSigned: true,
-    tenantSigned: true,
-    signedAt: property.contractStart?.toLocaleDateString("es-CL") || "No disponible",
-    pdfUrl: "/contratos/contrato-1.pdf"
+    signedAt: formatTimestamp(signedReferenceDate),
   }
 
-  const propertyPhotos = {
-    checkin: [
-      { room: "Living", date: property.contractStart?.toLocaleDateString("es-CL") },
-      { room: "Dormitorio 1", date: property.contractStart?.toLocaleDateString("es-CL") },
-      { room: "Dormitorio 2", date: property.contractStart?.toLocaleDateString("es-CL") },
-      { room: "Cocina", date: property.contractStart?.toLocaleDateString("es-CL") },
-      { room: "Baño", date: property.contractStart?.toLocaleDateString("es-CL") },
-      { room: "Terraza", date: property.contractStart?.toLocaleDateString("es-CL") }
-    ],
-    checkout: []
-  }
-
-  // Calculate contract status
   const today = new Date()
   const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
-  const daysLeft = contractEnd ? Math.floor((contractEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0
+  const daysLeft = contractEnd
+    ? Math.floor((contractEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    : 0
   const isActive = daysLeft > 0
   const contractDates =
     contract.startDate && contract.endDate
@@ -101,14 +161,12 @@ export default async function ContratoPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Mi Contrato</h1>
         <p className="text-muted-foreground">Información de tu contrato de arriendo</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="contract" className="space-y-6">
             <TabsList className="bg-muted">
@@ -123,7 +181,6 @@ export default async function ContratoPage() {
             </TabsList>
 
             <TabsContent value="contract" className="space-y-6">
-              {/* Contract Card */}
               <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -135,21 +192,23 @@ export default async function ContratoPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Parties */}
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="p-4 rounded-lg bg-muted/50">
                       <p className="text-sm text-muted-foreground mb-1">Arrendador</p>
                       <p className="font-medium text-foreground">{contract.landlord}</p>
-                      <p className="text-sm text-muted-foreground">RUT: {contract.landlordRut}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {contract.landlordIdentity.label}: {contract.landlordIdentity.value || "No especificado"}
+                      </p>
                     </div>
                     <div className="p-4 rounded-lg bg-muted/50">
                       <p className="text-sm text-muted-foreground mb-1">Arrendatario</p>
                       <p className="font-medium text-foreground">{contract.tenant}</p>
-                      <p className="text-sm text-muted-foreground">RUT: {contract.tenantRut}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {contract.tenantIdentity.label}: {contract.tenantIdentity.value || "No especificado"}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Contract Details */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Propiedad</p>
@@ -173,54 +232,91 @@ export default async function ContratoPage() {
                     </div>
                   </div>
 
-                  {/* Signatures */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-3">Estado de firmas</p>
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-[#5E8B8C]/10">
-                        <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
+                      <div
+                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                          landlordSigned ? "bg-[#5E8B8C]/10" : "bg-[#F2C94C]/10"
+                        }`}
+                      >
+                        {landlordSigned ? (
+                          <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-[#F2C94C]" />
+                        )}
                         <div>
                           <p className="text-sm font-medium text-foreground">Firma Arrendador</p>
-                          <p className="text-xs text-muted-foreground">Firmado el {contract.signedAt}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {landlordSigned ? `Firmado el ${contract.signedAt}` : "Pendiente de firma"}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-[#5E8B8C]/10">
-                        <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
+                      <div
+                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                          tenantSigned ? "bg-[#5E8B8C]/10" : "bg-[#F2C94C]/10"
+                        }`}
+                      >
+                        {tenantSigned ? (
+                          <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-[#F2C94C]" />
+                        )}
                         <div>
                           <p className="text-sm font-medium text-foreground">Firma Arrendatario</p>
-                          <p className="text-xs text-muted-foreground">Firmado el {contract.signedAt}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {tenantSigned ? `Firmado el ${contract.signedAt}` : "Pendiente de firma"}
+                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" className="text-foreground border-border">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver contrato completo
-                    </Button>
-                    <Button variant="outline" className="text-foreground border-border">
-                      <Download className="h-4 w-4 mr-2" />
-                      Descargar PDF
-                    </Button>
-                  </div>
+                  {pdfUrl ? (
+                    <div className="flex gap-3 flex-wrap">
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Ver contrato
+                      </a>
+                      <a
+                        href={pdfUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 border border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        Descargar PDF
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F2C94C]/10 border border-[#F2C94C]/20">
+                      <AlertCircle className="h-4 w-4 text-[#F2C94C]" />
+                      <p className="text-sm text-[#D5C3B6]">
+                        El propietario aún no ha subido el contrato PDF.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Legal Info */}
               <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <CardTitle className="text-foreground text-lg">Información Legal</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
                   <p>
-                    Este contrato se rige por la <strong className="text-foreground">Ley 18.101</strong> sobre 
-                    arrendamiento de predios urbanos y la <strong className="text-foreground">Ley 21.461</strong> 
+                    Este contrato se rige por la <strong className="text-foreground">Ley 18.101</strong> sobre
+                    arrendamiento de predios urbanos y la <strong className="text-foreground">Ley 21.461</strong>
                     ("Devuélveme mi casa").
                   </p>
                   <p>
-                    El contrato incluye firma electrónica con validez legal según la 
+                    El contrato incluye firma electrónica con validez legal según la
                     <strong className="text-foreground"> Ley 19.799</strong> sobre documentos electrónicos.
                   </p>
                 </CardContent>
@@ -228,7 +324,6 @@ export default async function ContratoPage() {
             </TabsContent>
 
             <TabsContent value="photos" className="space-y-6">
-              {/* Check-in Photos */}
               <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -237,27 +332,48 @@ export default async function ContratoPage() {
                       Fotos de entrada
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      {propertyPhotos.checkin[0]?.date}
+                      {checkInPhotos[0] ? formatTimestamp(checkInPhotos[0].takenAt) : "Sin registro"}
                     </p>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {propertyPhotos.checkin.map((photo, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="aspect-square bg-[#2D3C3C] rounded-lg flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                          <ImageIcon className="h-10 w-10 text-[#D5C3B6]/50" />
-                        </div>
-                        <p className="text-sm font-medium text-foreground text-center">
-                          {photo.room}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  {checkInPhotos.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {checkInPhotos.map((photo) => (
+                        <a
+                          key={photo.id}
+                          href={photo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="space-y-2"
+                        >
+                          <div className="aspect-square bg-[#2D3C3C] rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
+                            <img
+                              src={photo.url}
+                              alt={photo.caption || `Registro de ${photo.room}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-foreground">{photo.room}</p>
+                            {photo.caption && (
+                              <p className="text-xs text-muted-foreground">{photo.caption}</p>
+                            )}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 rounded-lg border-2 border-dashed border-border text-center">
+                      <Camera className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">
+                        Aún no hay fotos de check-in registradas para esta propiedad
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Check-out Photos */}
               <Card className="bg-[#2A2520] border-border">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
@@ -266,15 +382,37 @@ export default async function ContratoPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {propertyPhotos.checkout.length > 0 ? (
+                  {checkOutPhotos.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {/* Photos would go here */}
+                      {checkOutPhotos.map((photo) => (
+                        <a
+                          key={photo.id}
+                          href={photo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="space-y-2"
+                        >
+                          <div className="aspect-square bg-[#2D3C3C] rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
+                            <img
+                              src={photo.url}
+                              alt={photo.caption || `Registro de ${photo.room}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-foreground">{photo.room}</p>
+                            {photo.caption && (
+                              <p className="text-xs text-muted-foreground">{photo.caption}</p>
+                            )}
+                          </div>
+                        </a>
+                      ))}
                     </div>
                   ) : (
                     <div className="p-8 rounded-lg border-2 border-dashed border-border text-center">
-                      <Camera className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                      <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                       <p className="text-muted-foreground">
-                        Las fotos de check-out se tomarán al finalizar el contrato
+                        Las fotos de check-out aparecerán aquí cuando exista un registro de salida
                       </p>
                     </div>
                   )}
@@ -284,9 +422,7 @@ export default async function ContratoPage() {
           </Tabs>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Contract Progress */}
           {contractDates && (
             <Card className="bg-[#2A2520] border-border">
               <CardHeader>
@@ -296,7 +432,7 @@ export default async function ContratoPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ContractProgressChart 
+                <ContractProgressChart
                   startDate={contractDates.start}
                   endDate={contractDates.end}
                   size="large"
@@ -305,7 +441,6 @@ export default async function ContratoPage() {
             </Card>
           )}
 
-          {/* Quick Info */}
           <Card className="bg-[#2A2520] border-border">
             <CardHeader>
               <CardTitle className="text-foreground text-lg">Resumen</CardTitle>
@@ -324,10 +459,25 @@ export default async function ContratoPage() {
                 </span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">Inicio</span>
+                <span className="font-medium text-foreground">
+                  {formatContractDate(contract.startDate)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Término</span>
+                <span className="font-medium text-foreground">
+                  {formatContractDate(contract.endDate)}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Duración</span>
                 <span className="font-medium text-foreground">
                   {contractDates
-                    ? `${Math.round((contractDates.end.getTime() - contractDates.start.getTime()) / (1000 * 60 * 60 * 24 * 30))} meses`
+                    ? `${Math.round(
+                        (contractDates.end.getTime() - contractDates.start.getTime()) /
+                          (1000 * 60 * 60 * 24 * 30)
+                      )} meses`
                     : "No disponible"}
                 </span>
               </div>

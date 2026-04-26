@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getResendFrom } from '@/lib/resend-from'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   console.log('\n=== DIAGNOSTICO DE RESEND ===\n')
 
   // Verificar variables de entorno
@@ -29,11 +29,13 @@ export async function GET() {
 
   try {
     const fromUsed = getResendFrom()
+    const toEmail = req.nextUrl.searchParams.get('to')?.trim() || 'delivered@resend.dev'
     console.log('\n📧 Intentando enviar correo de prueba...')
+    console.log(`  Destinatario: ${toEmail}`)
 
     const result = await resend.emails.send({
       from: fromUsed,
-      to: 'delivered@resend.dev',
+      to: toEmail,
       subject: 'Test de NeiFe - Verifica que Resend está funcionando',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -69,6 +71,8 @@ export async function GET() {
         status: 'SUCCESS',
         message: 'Resend está funcionando correctamente',
         emailId: result.data?.id,
+        to: toEmail,
+        from: fromUsed,
         configuration: {
           apiKeyConfigured: !!apiKey,
           fromEmailConfigured: !!fromEmail,

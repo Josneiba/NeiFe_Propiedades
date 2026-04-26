@@ -12,6 +12,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { PaymentModal } from '@/components/payment/payment-modal'
+import { getUserIdentity } from '@/lib/identity-documents'
 
 // Format Chilean pesos
 function formatCLP(amount: number) {
@@ -43,6 +44,9 @@ interface PropertyInfo {
     bankAccountType: string
     bankAccountNumber: string
     rut?: string
+    documentType?: string | null
+    documentNumber?: string | null
+    documentNumberNormalized?: string | null
     name?: string
     bankEmail?: string
   }
@@ -102,6 +106,7 @@ export default function TenantPagosPage() {
   }
 
   const pendingPayment = payments.find(p => p.status === 'PENDING' || p.status === 'OVERDUE')
+  const landlordIdentity = property ? getUserIdentity(property.landlord) : { label: 'Documento', value: '' }
 
   if (loading) {
     return (
@@ -282,7 +287,7 @@ export default function TenantPagosPage() {
               <div>
                 <h3 className="font-semibold text-foreground">Transferencia bancaria</h3>
                 <p className="text-sm text-muted-foreground">
-                  Realiza una transferencia bancaria e incluye tu RUT en el mensaje
+                  Realiza una transferencia bancaria e incluye tu documento en el mensaje
                 </p>
               </div>
             </div>
@@ -316,7 +321,8 @@ export default function TenantPagosPage() {
             bank: property.landlord.bankName,
             accountType: property.landlord.bankAccountType,
             accountNumber: property.landlord.bankAccountNumber,
-            rut: property.landlord.rut || '',
+            documentLabel: landlordIdentity.label,
+            documentNumber: landlordIdentity.value || '',
             ownerName: property.landlord.name || '',
             email: property.landlord.bankEmail || '',
           }}

@@ -40,7 +40,16 @@ export async function GET(
     const [tenant, payments, services, maintenance, mandates, contracts] = await Promise.all([
       property.tenantId ? prisma.user.findUnique({
         where: { id: property.tenantId },
-        select: { id: true, name: true, email: true, phone: true, rut: true }
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          rut: true,
+          documentType: true,
+          documentNumber: true,
+          documentNumberNormalized: true,
+        }
       }) : null,
       prisma.payment.findMany({
         where: {

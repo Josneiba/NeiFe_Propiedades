@@ -17,7 +17,11 @@ model User {
   avatar            String?
   phone             String?
   company           String?
-  rut               String?
+  rut               String?   @unique
+  documentCountry   DocumentCountry?
+  documentType      DocumentType?
+  documentNumber    String?
+  documentNumberNormalized String?
   isActive          Boolean   @default(true)
   emailVerified     DateTime?
   onboardingDone    Boolean   @default(false)
@@ -48,6 +52,8 @@ model User {
   brokerPermissions      BrokerPermission[]   @relation("BrokerPermissions")
   brokerAccessRequests   PropertyAccessRequest[] @relation("BrokerAccessRequests")
   landlordAccessRequests PropertyAccessRequest[] @relation("LandlordAccessRequests")
+
+  @@unique([documentCountry, documentType, documentNumberNormalized])
 }
 
 model Account {
@@ -140,9 +146,27 @@ model Property {
   activityLogs   ActivityLog[]
   inspections    PropertyInspection[]
   ipcAdjustments IpcAdjustment[]
+  rentAdjustments RentAdjustment[]
   calendarEvents CalendarEvent[]
   mandates       Mandate[]
   accessRequests PropertyAccessRequest[]
+}
+
+model RentAdjustment {
+  id            String   @id @default(cuid())
+  propertyId    String
+  previousCLP   Int
+  newCLP        Int
+  previousUF    Float?
+  newUF         Float?
+  reason        String
+  ipcRate       Float?
+  effectiveDate DateTime
+  createdBy     String
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  property      Property @relation(fields: [propertyId], references: [id])
 }
 
 model Mandate {
@@ -420,6 +444,28 @@ enum Role {
   BROKER
   TENANT
   PROVIDER
+}
+
+enum DocumentCountry {
+  CL
+  AR
+  PE
+  CO
+  MX
+  US
+  ES
+  OTHER
+}
+
+enum DocumentType {
+  RUT
+  DNI
+  CEDULA
+  PASSPORT
+  RFC
+  CURP
+  NIF_NIE
+  OTHER
 }
 
 enum MandateStatus {

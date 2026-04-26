@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SearchFilter } from "@/components/ui/search-filter"
 import { Building2, Plus, Eye, MapPin, User } from "lucide-react"
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
@@ -27,12 +28,17 @@ interface PropertyWithPaymentStatus {
   }>
 }
 
-export default async function PropiedadesPage() {
+export default async function PropiedadesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "LANDLORD" && session.user.role !== "OWNER") {
     redirect("/mi-arriendo")
   }
+  const { q } = await searchParams
 
   // Get all properties of the current landlord with tenant info and current month payment
   const currentDate = new Date()
@@ -43,6 +49,16 @@ export default async function PropiedadesPage() {
     where: {
       landlordId: session.user.id,
       isActive: true,
+      ...(q
+        ? {
+            OR: [
+              { address: { contains: q, mode: "insensitive" } },
+              { commune: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: "insensitive" } },
+              { tenant: { name: { contains: q, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
     },
     include: {
       tenant: {
@@ -90,17 +106,24 @@ export default async function PropiedadesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
           <h1 className="text-3xl font-bold text-foreground">Propiedades</h1>
           <p className="text-muted-foreground">Gestiona todas tus propiedades en arriendo</p>
+          </div>
         </div>
-        <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
-          <Link href="/dashboard/propiedades/nueva">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva propiedad
-          </Link>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <SearchFilter placeholder="Buscar por direccion, comuna o arrendatario..." />
+          </div>
+          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+            <Link href="/dashboard/propiedades/nueva">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva propiedad
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Properties Grid */}

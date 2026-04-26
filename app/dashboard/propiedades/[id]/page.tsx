@@ -37,6 +37,7 @@ import { AdministrationSection } from "@/components/dashboard/property-administr
 import { PropertyAccessRequestButton } from "@/components/dashboard/property-access-request-button"
 import { PropertyAccessRequestsPanel } from "@/components/dashboard/property-access-requests-panel"
 import { BrokerRequestButton } from "@/components/dashboard/broker-request-button"
+import { getUserIdentity } from "@/lib/identity-documents"
 
 interface Property {
   id: string
@@ -57,6 +58,9 @@ interface Property {
     email: string
     phone: string | null
     rut: string | null
+    documentType?: string | null
+    documentNumber?: string | null
+    documentNumberNormalized?: string | null
   } | null
   agentName: string | null
   agentRut: string | null
@@ -250,6 +254,7 @@ export default function PropertyDetailPage() {
   const handleTabChange = (tab: string) => {
     router.push(`?tab=${tab}`)
   }
+  const tenantIdentity = property.tenant ? getUserIdentity(property.tenant) : null
 
   const landlordDelegatedToBroker = userRole !== 'BROKER' && hasBroker
   const brokerCanRequestPropertyAccess =
@@ -338,6 +343,7 @@ export default function PropertyDetailPage() {
             <TabsTrigger value="contrato">Contrato</TabsTrigger>
             <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
             <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
+            <TabsTrigger value="historial-renta">Historial de renta</TabsTrigger>
             <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
           </TabsList>
         </div>
@@ -361,6 +367,7 @@ export default function PropertyDetailPage() {
               <option value="contrato">Contrato</option>
               <option value="inspecciones">Inspecciones</option>
               <option value="reajuste">Reajuste IPC</option>
+              <option value="historial-renta">Historial de renta</option>
               <option value="proveedores">Proveedores</option>
             </select>
           </div>
@@ -422,8 +429,10 @@ export default function PropertyDetailPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">{property.tenant.name}</p>
-                        {property.tenant.rut && (
-                          <p className="text-sm text-muted-foreground">RUT: {property.tenant.rut}</p>
+                        {tenantIdentity?.value && (
+                          <p className="text-sm text-muted-foreground">
+                            {tenantIdentity.label}: {tenantIdentity.value}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -617,7 +626,7 @@ export default function PropertyDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="agentRut" className="text-foreground">RUT</Label>
+                        <Label htmlFor="agentRut" className="text-foreground">Identificacion</Label>
                         <Input
                           id="agentRut"
                           value={agentData.agentRut}
@@ -696,7 +705,7 @@ export default function PropertyDetailPage() {
                           <p className="text-foreground font-semibold">{agentData.agentName}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">RUT</p>
+                          <p className="text-sm text-muted-foreground">Identificacion</p>
                           <p className="text-foreground font-semibold">{agentData.agentRut}</p>
                         </div>
                         <div>
@@ -754,6 +763,22 @@ export default function PropertyDetailPage() {
               <Link href={`/dashboard/propiedades/${propertyId}/reajustes`}>
                 <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
                   Ir a reajustes
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historial-renta">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">Historial de renta</CardTitle>
+              <CardDescription>Traza reajustes IPC, acuerdos y correcciones sobre la renta.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/dashboard/propiedades/${propertyId}/historial-renta`}>
+                <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+                  Ver historial completo
                 </Button>
               </Link>
             </CardContent>

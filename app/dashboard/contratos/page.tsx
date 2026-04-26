@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   FileText, 
-  Building2,
   Camera,
   CheckCircle2,
   AlertCircle
 } from "lucide-react"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { ContractPdfActions } from '@/components/dashboard/contract-pdf-actions'
+import { PropertyPhotosTab } from '@/components/dashboard/property-photos-tab'
 
 export default async function ContratosPage({
   searchParams,
@@ -216,12 +216,34 @@ export default async function ContratosPage({
         </TabsContent>
 
         <TabsContent value="photos" className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardContent className="p-12 text-center">
-              <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">El registro fotográfico estará disponible próximamente</p>
-            </CardContent>
-          </Card>
+          {properties.length === 0 ? (
+            <Card className="bg-card border-border">
+              <CardContent className="p-12 text-center">
+                <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground mb-4">No tienes propiedades registradas</p>
+                <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]" asChild>
+                  <Link href="/dashboard/propiedades/nueva">Agregar propiedad</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            properties.map((property) => (
+              <Card key={`photos-${property.id}`} className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <Camera className="h-5 w-5 text-[#75524C]" />
+                    {property.name || property.address}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {property.tenant?.name ?? 'Sin arrendatario asignado'}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <PropertyPhotosTab propertyId={property.id} />
+                </CardContent>
+              </Card>
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </div>

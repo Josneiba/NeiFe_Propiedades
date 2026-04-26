@@ -52,7 +52,7 @@ export default function PrivacidadPage() {
             <ul className="space-y-3 text-[#9C8578]">
               <li className="flex gap-3">
                 <span className="text-[#5E8B8C] font-bold">•</span>
-                <span><strong className="text-[#D5C3B6]">Datos de identificación:</strong> nombre completo, RUT, email, teléfono</span>
+                <span><strong className="text-[#D5C3B6]">Datos de identificación:</strong> nombre completo, documento de identidad, email, teléfono</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[#5E8B8C] font-bold">•</span>

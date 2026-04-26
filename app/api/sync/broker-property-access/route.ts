@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
         phone: true,
         company: true,
         rut: true,
+        documentNumberNormalized: true,
       },
     })
 
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
             agentEmail: broker.email,
             agentPhone: broker.phone ?? '',
             agentCompany: broker.company ?? '',
-            agentRut: broker.rut ?? '',
+            agentRut: broker.rut ?? broker.documentNumberNormalized ?? '',
             commissionRate: 0.05,
             commissionType: 'MONTHLY',
             updatedAt: new Date(),

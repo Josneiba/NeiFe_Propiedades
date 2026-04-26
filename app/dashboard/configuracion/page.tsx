@@ -4,6 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   User, 
   Shield,
@@ -18,6 +25,15 @@ import {
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
+  DOCUMENT_COUNTRIES,
+  getDefaultDocumentType,
+  getDocumentLabel,
+  getDocumentTypeOptions,
+  type DocumentCountryCode,
+  type DocumentTypeCode,
+  validateDocument,
+} from "@/lib/identity-documents"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -31,6 +47,9 @@ interface UserProfile {
   email: string | null
   phone: string | null
   rut: string | null
+  documentCountry: DocumentCountryCode | null
+  documentType: DocumentTypeCode | null
+  documentNumber: string | null
   bankName: string | null
   bankAccountType: string | null
   bankAccountNumber: string | null
@@ -44,6 +63,7 @@ export default function ConfiguracionPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileSaving, setProfileSaving] = useState(false)
+  const [documentError, setDocumentError] = useState<string | null>(null)
   
   // Bank data section
   const [bankData, setBankData] = useState<Partial<UserProfile> | null>(null)
@@ -93,20 +113,49 @@ export default function ConfiguracionPage() {
   // Handle profile save
   const handleProfileSave = async () => {
     if (!profile) return
+
+    const documentCountry = profile.documentCountry ?? "CL"
+    const documentType = profile.documentType ?? getDefaultDocumentType(documentCountry)
+    const documentNumber = profile.documentNumber ?? profile.rut ?? ""
+
+    const documentResult = validateDocument({
+      country: documentCountry,
+      type: documentType,
+      value: documentNumber,
+    })
+
+    if (!documentResult.isValid) {
+      setDocumentError(documentResult.message)
+      toast({
+        title: "Error",
+        description: documentResult.message || "Documento invalido",
+        variant: "destructive"
+      })
+      return
+    }
     
     try {
       setProfileSaving(true)
+      setDocumentError(null)
       const res = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: profile.name,
           phone: profile.phone,
-          rut: profile.rut
+          documentCountry,
+          documentType,
+          documentNumber,
         })
       })
 
-      if (!res.ok) throw new Error("Failed to update profile")
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to update profile")
+      }
+
+      const data = await res.json()
+      setProfile(data.user)
       
       toast({
         title: "Éxito",
@@ -115,13 +164,18 @@ export default function ConfiguracionPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo actualizar el perfil",
+        description: error instanceof Error ? error.message : "No se pudo actualizar el perfil",
         variant: "destructive"
       })
     } finally {
       setProfileSaving(false)
     }
   }
+
+  const profileCountry = profile?.documentCountry ?? "CL"
+  const profileType = profile?.documentType ?? getDefaultDocumentType(profileCountry)
+  const profileTypeOptions = getDocumentTypeOptions(profileCountry)
+  const profileDocumentLabel = getDocumentLabel(profileType)
 
   // Handle bank data save
   const handleBankDataSave = async () => {
@@ -271,13 +325,85 @@ export default function ConfiguracionPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rut" className="text-foreground">RUT</Label>
+              <Label htmlFor="documentCountry" className="text-foreground">Pais</Label>
+              <Select
+                value={profileCountry}
+                onValueChange={(value) =>
+                  setProfile(prev =>
+                    prev
+                      ? {
+                          ...prev,
+                          documentCountry: value as DocumentCountryCode,
+                          documentType: getDefaultDocumentType(value as DocumentCountryCode),
+                          documentNumber: "",
+                          rut: null,
+                        }
+                      : null
+                  )
+                }
+              >
+                <SelectTrigger className="w-full bg-background border-input text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {DOCUMENT_COUNTRIES.map((country) => (
+                    <SelectItem key={country.value} value={country.value}>
+                      {country.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="documentType" className="text-foreground">Tipo</Label>
+              <Select
+                value={profileType}
+                onValueChange={(value) =>
+                  setProfile(prev =>
+                    prev
+                      ? {
+                          ...prev,
+                          documentType: value as DocumentTypeCode,
+                          documentNumber: "",
+                          rut: null,
+                        }
+                      : null
+                  )
+                }
+              >
+                <SelectTrigger className="w-full bg-background border-input text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {profileTypeOptions.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="documentNumber" className="text-foreground">{profileDocumentLabel}</Label>
               <Input
-                id="rut"
-                value={profile?.rut || ""}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, rut: e.target.value } : null)}
+                id="documentNumber"
+                value={profile?.documentNumber || profile?.rut || ""}
+                onChange={(e) => {
+                  setDocumentError(null)
+                  setProfile(prev =>
+                    prev
+                      ? {
+                          ...prev,
+                          documentCountry: profileCountry,
+                          documentType: profileType,
+                          documentNumber: e.target.value.toUpperCase(),
+                        }
+                      : null
+                  )
+                }}
                 className="bg-background border-input text-foreground"
               />
+              {documentError && <p className="text-xs text-[#C27F79]">{documentError}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">

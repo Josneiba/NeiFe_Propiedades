@@ -23,6 +23,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react"
+import { getUserIdentity } from "@/lib/identity-documents"
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -140,6 +141,9 @@ export default async function BrokerPropertyDetailPage({
           email: true,
           phone: true,
           rut: true,
+          documentType: true,
+          documentNumber: true,
+          documentNumberNormalized: true,
         },
       },
       payments: {
@@ -263,6 +267,7 @@ export default async function BrokerPropertyDetailPage({
     : { label: "Sin registro", className: "bg-[#9C8578] text-white" }
   const activeMandate = property.mandates[0] ?? null
   const latestService = property.services[0] ?? null
+  const tenantIdentity = property.tenant ? getUserIdentity(property.tenant) : null
   const nextInspection =
     property.inspections.find((inspection) => inspection.scheduledAt >= now) ??
     property.inspections[0] ??
@@ -505,7 +510,7 @@ export default async function BrokerPropertyDetailPage({
                       </p>
                       <p className="flex items-center gap-2">
                         <User className="h-4 w-4 text-[#5E8B8C]" />
-                        {property.tenant.rut || "Sin RUT"}
+                        {tenantIdentity?.value || "Sin documento"}
                       </p>
                     </div>
                   </>

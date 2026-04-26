@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState, type KeyboardEvent } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, type KeyboardEvent } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { getSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedDemoRole, setSelectedDemoRole] = useState<'landlord' | 'tenant' | 'broker'>('landlord')
@@ -20,6 +21,16 @@ export default function LoginPage() {
     email: "",
     password: ""
   })
+
+  useEffect(() => {
+    if (searchParams.get("registered") === "true") {
+      toast.success(
+        searchParams.get("verified") === "true"
+          ? "Cuenta verificada. Ya puedes iniciar sesion."
+          : "Cuenta creada correctamente."
+      )
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +48,25 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
+      try {
+        const verificationRes = await fetch("/api/auth/verification-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        })
+
+        if (verificationRes.ok) {
+          const verification = await verificationRes.json()
+          if (verification.requiresVerification) {
+            toast.error("Debes verificar tu email antes de iniciar sesión")
+            setIsLoading(false)
+            return
+          }
+        }
+      } catch (verificationError) {
+        console.error("Verification status lookup failed:", verificationError)
+      }
+
       toast.error("Email o contraseña incorrectos")
       setIsLoading(false)
       return

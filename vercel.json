@@ -1,5 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "pnpm run build"
+  "buildCommand": "pnpm run build",
+  "crons": [
+    {
+      "path": "/api/cron/mark-overdue",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/contract-alerts",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-summary",
+      "schedule": "0 8 1 * *"
+    }
+  ]
 }

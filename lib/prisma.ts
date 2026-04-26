@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client'
+import { validateEnv } from './env'
+
+if (process.env.NODE_ENV === 'production') {
+  validateEnv()
+}
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 

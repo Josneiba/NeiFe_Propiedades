@@ -72,7 +72,15 @@ async function DashboardContent({ session }: { session: any }) {
     const currentMonth = new Date().getMonth() + 1
     const currentYear = new Date().getFullYear()
 
-    const [properties, stats, paidPayments, pendingPayments, activeMaintenances] =
+    const [
+      properties,
+      stats,
+      paidPayments,
+      pendingPayments,
+      activeMaintenances,
+      allPaymentsYear,
+      overdueCount,
+    ] =
       await Promise.all([
         prisma.property.findMany({
           where: { landlordId: session.user.id, isActive: true },
@@ -138,10 +146,36 @@ async function DashboardContent({ session }: { session: any }) {
             },
           },
         }),
+        prisma.payment.findMany({
+          where: {
+            property: { landlordId: session.user.id },
+            year: currentYear,
+            status: 'PAID',
+          },
+          select: { amountCLP: true, month: true },
+        }),
+        prisma.payment.count({
+          where: {
+            property: { landlordId: session.user.id },
+            status: 'OVERDUE',
+          },
+        }),
       ])
 
     const totalRecaudadoCLP = paidPayments._sum.amountCLP || 0
     const pagosPendientesCLP = pendingPayments._sum.amountCLP || 0
+    const rentedProperties = properties.filter((p) => p.tenant)
+    const totalCollectedYear = allPaymentsYear.reduce((sum, payment) => sum + payment.amountCLP, 0)
+    const occupancyRate =
+      properties.length > 0
+        ? Math.round((rentedProperties.length / properties.length) * 100)
+        : 0
+    const collectionRate =
+      rentedProperties.length > 0
+        ? Math.round(
+            (properties.filter((p) => p.payments[0]?.status === 'PAID').length / rentedProperties.length) * 100
+          ) || 0
+        : 0
     const kpiStats = [
       {
         title: 'Total Recaudado',
@@ -233,6 +267,82 @@ async function DashboardContent({ session }: { session: any }) {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-[#2A2520] border border-[#D5C3B6]/10 rounded-xl p-4">
+            <p className="text-xs text-[#9C8578] uppercase tracking-wider mb-2">Ocupacion</p>
+            <div className="flex items-end gap-2 mb-2">
+              <span className="text-3xl font-bold text-[#FAF6F2]">{occupancyRate}%</span>
+              <span className="text-sm text-[#9C8578] mb-1">de propiedades</span>
+            </div>
+            <div className="h-2 bg-[#1C1917] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#5E8B8C] rounded-full transition-all duration-500"
+                style={{ width: `${occupancyRate}%` }}
+              />
+            </div>
+            <p className="text-xs text-[#9C8578] mt-2">
+              {rentedProperties.length} de {properties.length} arrendadas
+            </p>
+          </div>
+
+          <div className="bg-[#2A2520] border border-[#D5C3B6]/10 rounded-xl p-4">
+            <p className="text-xs text-[#9C8578] uppercase tracking-wider mb-2">Cobro del mes</p>
+            <div className="flex items-end gap-2 mb-2">
+              <span
+                className={`text-3xl font-bold ${
+                  collectionRate >= 80
+                    ? 'text-[#5E8B8C]'
+                    : collectionRate >= 50
+                      ? 'text-[#F2C94C]'
+                      : 'text-[#C27F79]'
+                }`}
+              >
+                {collectionRate}%
+              </span>
+              <span className="text-sm text-[#9C8578] mb-1">pagado</span>
+            </div>
+            <div className="h-2 bg-[#1C1917] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  collectionRate >= 80
+                    ? 'bg-[#5E8B8C]'
+                    : collectionRate >= 50
+                      ? 'bg-[#F2C94C]'
+                      : 'bg-[#C27F79]'
+                }`}
+                style={{ width: `${collectionRate}%` }}
+              />
+            </div>
+            {overdueCount > 0 && (
+              <p className="text-xs text-[#C27F79] mt-2">
+                {overdueCount} pago{overdueCount > 1 ? 's' : ''} atrasado{overdueCount > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+
+          <div className="bg-[#2A2520] border border-[#D5C3B6]/10 rounded-xl p-4">
+            <p className="text-xs text-[#9C8578] uppercase tracking-wider mb-2">Cobrado en {currentYear}</p>
+            <p className="text-2xl font-bold text-[#FAF6F2] mb-1">{formatCLP(totalCollectedYear)}</p>
+            <p className="text-xs text-[#9C8578]">
+              {allPaymentsYear.length} pago{allPaymentsYear.length !== 1 ? 's' : ''} registrado
+              {allPaymentsYear.length !== 1 ? 's' : ''}
+            </p>
+            <div className="mt-2 flex gap-1">
+              {Array.from({ length: 12 }, (_, i) => {
+                const hasPayment = allPaymentsYear.some((payment) => payment.month === i + 1)
+                return (
+                  <div
+                    key={i}
+                    className={`flex-1 h-1.5 rounded-full ${hasPayment ? 'bg-[#B8965A]' : 'bg-[#1C1917]'}`}
+                    title={`${['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][i]}: ${hasPayment ? 'cobrado' : 'sin cobro'}`}
+                  />
+                )
+              })}
+            </div>
+            <p className="text-xs text-[#9C8578] mt-1">Meses con cobro en {currentYear}</p>
+          </div>
         </div>
 
         {/* Properties Grid - Separating Broker-Managed from Owner-Managed */}
