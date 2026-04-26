@@ -6,10 +6,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { authConfig } from './auth.config'
-
-function shouldRequireEmailVerification() {
-  return process.env.NODE_ENV === 'production' && Boolean(process.env.RESEND_API_KEY)
-}
+import { shouldRequireEmailVerificationForUser } from './email-verification'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -39,7 +36,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!passwordMatch) return null
 
-        if (user.emailVerified === null && shouldRequireEmailVerification()) {
+        if (
+          shouldRequireEmailVerificationForUser({
+            createdAt: user.createdAt,
+            emailVerified: user.emailVerified,
+          })
+        ) {
           throw new Error('EMAIL_NOT_VERIFIED')
         }
 

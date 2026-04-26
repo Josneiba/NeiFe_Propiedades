@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-function shouldRequireEmailVerification() {
-  return process.env.NODE_ENV === 'production' && Boolean(process.env.RESEND_API_KEY)
-}
+import { shouldRequireEmailVerificationForUser } from '@/lib/email-verification'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,12 +11,16 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { emailVerified: true },
+      select: { emailVerified: true, createdAt: true },
     })
 
     return NextResponse.json({
       requiresVerification:
-        shouldRequireEmailVerification() && !!user && user.emailVerified === null,
+        !!user &&
+        shouldRequireEmailVerificationForUser({
+          createdAt: user.createdAt,
+          emailVerified: user.emailVerified,
+        }),
     })
   } catch {
     return NextResponse.json({ requiresVerification: false })

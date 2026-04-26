@@ -17,6 +17,8 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedDemoRole, setSelectedDemoRole] = useState<'landlord' | 'tenant' | 'broker'>('landlord')
+  const [requiresVerification, setRequiresVerification] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -40,6 +42,7 @@ export default function LoginClient() {
     }
 
     setIsLoading(true)
+    setRequiresVerification(false)
 
     const result = await signIn('credentials', {
       email: formData.email,
@@ -58,6 +61,7 @@ export default function LoginClient() {
         if (verificationRes.ok) {
           const verification = await verificationRes.json()
           if (verification.requiresVerification) {
+            setRequiresVerification(true)
             toast.error("Debes verificar tu email antes de iniciar sesión")
             setIsLoading(false)
             return
@@ -88,6 +92,37 @@ export default function LoginClient() {
       }
 
       router.refresh()
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      toast.error("Ingresa tu correo para reenviar el codigo")
+      return
+    }
+
+    setIsResendingVerification(true)
+
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo reenviar el codigo")
+        return
+      }
+
+      toast.success(data.message || "Te enviamos un nuevo codigo")
+    } catch (error) {
+      console.error("Resend verification failed:", error)
+      toast.error("No se pudo reenviar el codigo")
+    } finally {
+      setIsResendingVerification(false)
     }
   }
 
@@ -302,6 +337,22 @@ export default function LoginClient() {
                   {isLoading ? "Ingresando..." : "Iniciar Sesión"}
                 </Button>
               </form>
+
+              {requiresVerification ? (
+                <div className="mt-4 rounded-xl border border-[#B8965A]/30 bg-[#1C1917] p-4">
+                  <p className="text-sm text-[#D5C3B6]">
+                    Esta cuenta necesita verificacion por email. Si no recibiste el codigo, puedes reenviarlo.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResendingVerification}
+                    className="mt-3 text-sm font-medium text-[#5E8B8C] hover:text-[#D5C3B6] disabled:opacity-50"
+                  >
+                    {isResendingVerification ? "Reenviando codigo..." : "Reenviar codigo de verificacion"}
+                  </button>
+                </div>
+              ) : null}
 
               <div className="mt-6 text-center text-sm">
                 <span className="text-[#9C8578]">¿No tienes cuenta? </span>

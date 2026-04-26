@@ -11,7 +11,10 @@ import {
   type DocumentTypeCode,
   validateDocument,
 } from '@/lib/identity-documents'
-import { getResendFrom } from '@/lib/resend-from'
+import {
+  generateVerificationCode,
+  sendVerificationEmail,
+} from '@/lib/email-verification'
 
 type PrismaErrorLike = {
   code?: string
@@ -134,7 +137,7 @@ export async function POST(req: NextRequest) {
       where: { identifier: data.email },
     })
 
-    const verifyToken = Math.floor(100000 + Math.random() * 900000).toString()
+    const verifyToken = generateVerificationCode()
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     await prisma.verificationToken.create({
@@ -146,24 +149,11 @@ export async function POST(req: NextRequest) {
     })
 
     if (resend) {
-      const emailResult = await resend.emails.send({
-        from: getResendFrom(),
-        to: data.email,
-        subject: `${verifyToken} - Codigo de verificacion NeiFe`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#1C1917;padding:32px;border-radius:12px;">
-            <div style="text-align:center;margin-bottom:24px;">
-              <span style="font-size:20px;font-weight:700;color:#D5C3B6;letter-spacing:0.05em;">NeiFe</span>
-            </div>
-            <h2 style="color:#FAF6F2;margin:0 0 8px;font-size:20px;">Verifica tu cuenta</h2>
-            <p style="color:#9C8578;margin:0 0 28px;font-size:14px;">Hola ${data.name}, usa este codigo para activar tu cuenta:</p>
-            <div style="background:#2D3C3C;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;border:1px solid rgba(213,195,182,0.15);">
-              <span style="font-size:40px;font-weight:700;color:#5E8B8C;letter-spacing:0.3em;">${verifyToken}</span>
-              <p style="color:#9C8578;font-size:12px;margin:8px 0 0;">Valido por 24 horas</p>
-            </div>
-            <p style="color:#9C8578;font-size:12px;text-align:center;">Si no creaste esta cuenta, ignora este email.</p>
-          </div>
-        `,
+      const emailResult = await sendVerificationEmail({
+        resend,
+        email: data.email,
+        name: data.name,
+        token: verifyToken,
       })
 
       if (emailResult.error) {
