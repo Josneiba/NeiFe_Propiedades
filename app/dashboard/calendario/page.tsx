@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,7 @@ interface CalendarEvent {
   icon: any
   color: string
   badgeColor: string
+  editable: boolean
 }
 
 const EVENT_STYLES = {
@@ -101,6 +102,19 @@ const getStyle = (type: string, variant?: StyleVariant) => {
   return (EVENT_STYLES as any)[type] || EVENT_STYLES.DEFAULT
 }
 
+const typeIcons: Record<string, any> = {
+  INSPECTION: Calendar,
+  PAYMENT: DollarSign,
+  PAYMENT_DUE: DollarSign,
+  PAYMENT_OVERDUE: DollarSign,
+  CONTRACT: FileText,
+  CONTRACT_RENEWAL: FileText,
+  IPC: TrendingUp,
+  IPC_ADJUSTMENT: TrendingUp,
+  MAINTENANCE: Wrench,
+  TENANT_REMINDER: Bell,
+}
+
 export default function CalendarioPage() {
   const { toast } = useToast()
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -122,169 +136,37 @@ export default function CalendarioPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [updatingEvent, setUpdatingEvent] = useState(false)
 
+  const decorateEvents = useCallback((rawEvents: any[]): CalendarEvent[] => {
+    return rawEvents.map((event) => ({
+      id: event.id,
+      type: event.type,
+      date: event.date,
+      title: event.title,
+      description: event.description || "",
+      propertyAddress: event.propertyAddress || "Propiedad",
+      icon: typeIcons[event.type] || Calendar,
+      color: getStyle(event.type).card,
+      badgeColor: getStyle(event.type).badge,
+      editable: Boolean(event.editable),
+    }))
+  }, [])
+
+  const loadSummary = useCallback(async () => {
+    const response = await fetch("/api/calendar/summary?scope=landlord", {
+      cache: "no-store",
+    })
+    if (!response.ok) throw new Error("Failed to load calendar summary")
+    const data = await response.json()
+    setProperties(Array.isArray(data.properties) ? data.properties : [])
+    setEvents(decorateEvents(Array.isArray(data.events) ? data.events : []))
+  }, [decorateEvents])
+
   useEffect(() => {
-    const loadEvents = async () => {
+    let isMounted = true
+
+    const load = async () => {
       try {
-        // Fetch properties first
-        const propertiesRes = await fetch("/api/properties")
-        if (!propertiesRes.ok) throw new Error("Failed to load properties")
-        const propertiesJson = await propertiesRes.json()
-        const propertiesData = Array.isArray(propertiesJson.properties)
-          ? propertiesJson.properties
-          : Array.isArray(propertiesJson)
-            ? propertiesJson
-            : []
-        setProperties(propertiesData)
-
-        const calendarEvents: CalendarEvent[] = []
-
-        // Fetch calendar events from API
-        try {
-          const calendarRes = await fetch("/api/calendar/events")
-          if (calendarRes.ok) {
-            const calendarPayload = await calendarRes.json()
-            const savedEvents = Array.isArray(calendarPayload.events) ? calendarPayload.events : []
-            savedEvents.forEach((event: any) => {
-              const typeIcons: Record<string, any> = {
-                INSPECTION: Calendar,
-                PAYMENT_DUE: DollarSign,
-                CONTRACT_RENEWAL: FileText,
-                IPC_ADJUSTMENT: TrendingUp,
-                MAINTENANCE: Wrench,
-                TENANT_REMINDER: Bell,
-              }
-              calendarEvents.push({
-                id: event.id,
-                type: event.type,
-                date: event.date,
-                title: event.title,
-                description: event.description || "",
-                propertyAddress: event.property?.address || "Propiedad",
-                icon: typeIcons[event.type] || Calendar,
-                color: getStyle(event.type).card,
-                badgeColor: getStyle(event.type).badge,
-              })
-            })
-          }
-        } catch (error) {
-          console.error("Error loading calendar events:", error)
-        }
-
-        // Process each property (resto de lógica)
-        for (const property of propertiesData) {
-          // Fetch inspections
-          try {
-            const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
-            if (inspectionsRes.ok) {
-              const inspectionsPayload = await inspectionsRes.json()
-              const inspections = Array.isArray(inspectionsPayload.inspections)
-                ? inspectionsPayload.inspections
-                : Array.isArray(inspectionsPayload)
-                  ? inspectionsPayload
-                  : []
-              inspections.forEach((inspection: any) => {
-                if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
-                  const style = getStyle("INSPECTION")
-                  calendarEvents.push({
-                    id: `inspection-${inspection.id}`,
-                    type: "INSPECTION",
-                    date: inspection.scheduledAt,
-                    title: `Inspección: ${getInspectionType(inspection.type)}`,
-                    description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
-                    propertyAddress: property.address || "Propiedad",
-                    icon: Calendar,
-                    color: style.card,
-                    badgeColor: style.badge
-                  })
-                }
-              })
-            }
-          } catch (error) {
-            console.error("Error loading inspections:", error)
-          }
-
-          // Fetch IPC adjustments
-          try {
-            const ipcRes = await fetch(`/api/properties/${property.id}/ipc-adjustments`)
-            if (ipcRes.ok) {
-              const ipcPayload = await ipcRes.json()
-              const adjustments = Array.isArray(ipcPayload.adjustments)
-                ? ipcPayload.adjustments
-                : Array.isArray(ipcPayload)
-                  ? ipcPayload
-                  : []
-              adjustments.forEach((adj: any) => {
-                if (adj.status === "PENDING") {
-                  const style = getStyle("IPC")
-                  calendarEvents.push({
-                    id: `ipc-${adj.id}`,
-                    type: "IPC",
-                    date: adj.scheduledDate,
-                    title: `Reajuste IPC ${adj.ipcRate}%`,
-                    description: adj.newRentCLP
-                      ? `Nuevo arriendo: $${adj.newRentCLP.toLocaleString("es-CL")}`
-                      : 'Reajuste IPC pendiente',
-                    propertyAddress: property.address || "Propiedad",
-                    icon: TrendingUp,
-                    color: style.card,
-                    badgeColor: style.badge
-                  })
-                }
-              })
-            }
-          } catch (error) {
-            console.error("Error loading IPC adjustments:", error)
-          }
-
-          // Check contract expiration (próximos 90 días)
-          if (property.contractEnd) {
-            const contractEndDate = new Date(property.contractEnd)
-            const today = new Date()
-            const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-            if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
-              const style = getStyle("CONTRACT")
-              calendarEvents.push({
-                id: `contract-${property.id}`,
-                type: "CONTRACT",
-                date: property.contractEnd,
-                title: "Contrato próximo a vencer",
-                description: `Vence en ${daysUntilEnd} días`,
-                propertyAddress: property.address || "Propiedad",
-                icon: FileText,
-                color: style.card,
-                badgeColor: style.badge
-              })
-            }
-          }
-
-          // Pago del mes actual pendiente o atrasado (datos reales del API)
-          const pay = property.payments?.[0]
-          if (pay && (pay.status === "PENDING" || pay.status === "OVERDUE")) {
-            const today = new Date()
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-            const iso = lastDay.toISOString()
-            const isOverdue = pay.status === "OVERDUE"
-            const style = getStyle("PAYMENT", isOverdue ? "OVERDUE" : undefined)
-            calendarEvents.push({
-              id: `payment-${property.id}-${pay.month}-${pay.year}`,
-              type: "PAYMENT",
-              date: iso,
-              title: isOverdue ? "Pago atrasado (mes actual)" : "Pago pendiente (mes actual)",
-              description: property.monthlyRentCLP
-                ? `Monto referencia: $${Number(property.monthlyRentCLP).toLocaleString("es-CL")}`
-                : "Revisa la sección Pagos",
-              propertyAddress: property.address || "Propiedad",
-              icon: DollarSign,
-              color: style.card,
-              badgeColor: style.badge
-            })
-          }
-        }
-
-        // Sort by date
-        calendarEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        setEvents(calendarEvents)
+        await loadSummary()
       } catch (error) {
         console.error("Error loading calendar events:", error)
         toast({
@@ -293,27 +175,46 @@ export default function CalendarioPage() {
           variant: "destructive"
         })
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
-    loadEvents()
-  }, [toast])
+    load()
 
-  const filteredEvents = filter === "ALL" 
-    ? events 
-    : events.filter(e => e.type === filter)
-
-  const getInspectionType = (type: string) => {
-    const types: Record<string, string> = {
-      ROUTINE: "Rutinaria",
-      CHECKIN: "Inicial",
-      CHECKOUT: "Final",
-      MAINTENANCE: "Mantención",
-      IPC_REVIEW: "Revisión IPC"
+    return () => {
+      isMounted = false
     }
-    return types[type] || type
-  }
+  }, [loadSummary, toast])
+
+  const filteredEvents = useMemo(() => (
+    filter === "ALL" ? events : events.filter((event) => event.type === filter)
+  ), [events, filter])
+
+  const next30Counts = useMemo(() => {
+    const now = Date.now()
+    const countWithin30 = (type: CalendarEvent["type"]) =>
+      filteredEvents.filter((event) => {
+        const daysFromNow = Math.floor((new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24))
+        return event.type === type && daysFromNow <= 30
+      }).length
+
+    return {
+      inspections: countWithin30("INSPECTION"),
+      ipc: countWithin30("IPC"),
+      contracts: countWithin30("CONTRACT"),
+      payments: countWithin30("PAYMENT"),
+    }
+  }, [filteredEvents])
+
+  const urgentEvents = useMemo(() => {
+    const now = Date.now()
+    return filteredEvents.filter((event) => {
+      const daysFromNow = Math.floor((new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24))
+      return daysFromNow < 7 || (event.type === "PAYMENT" && daysFromNow < 0)
+    })
+  }, [filteredEvents])
 
   const handleCreateEvent = async () => {
     if (!newEvent.propertyId || !newEvent.title || !newEvent.date) {
@@ -360,81 +261,7 @@ export default function CalendarioPage() {
       })
       setShowNewEventDialog(false)
 
-      // Reload events
-      const loadEvents = async () => {
-        try {
-          const propertiesRes = await fetch("/api/properties")
-          if (!propertiesRes.ok) throw new Error("Failed to load properties")
-          const propertiesJson = await propertiesRes.json()
-          const properties = Array.isArray(propertiesJson.properties)
-            ? propertiesJson.properties
-            : Array.isArray(propertiesJson)
-              ? propertiesJson
-              : []
-
-          const calendarEvents: CalendarEvent[] = []
-
-          for (const property of properties) {
-            try {
-              const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
-              if (inspectionsRes.ok) {
-                const inspectionsPayload = await inspectionsRes.json()
-                const inspections = Array.isArray(inspectionsPayload.inspections)
-                  ? inspectionsPayload.inspections
-                  : Array.isArray(inspectionsPayload)
-                    ? inspectionsPayload
-                    : []
-                inspections.forEach((inspection: any) => {
-                  if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
-                    const style = getStyle("INSPECTION")
-                    calendarEvents.push({
-                      id: `inspection-${inspection.id}`,
-                      type: "INSPECTION",
-                      date: inspection.scheduledAt,
-                      title: `Inspección: ${getInspectionType(inspection.type)}`,
-                      description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
-                      propertyAddress: property.address || "Propiedad",
-                      icon: Calendar,
-                      color: style.card,
-                      badgeColor: style.badge
-                    })
-                  }
-                })
-              }
-            } catch (error) {
-              console.error("Error loading inspections:", error)
-            }
-
-            if (property.contractEnd) {
-              const contractEndDate = new Date(property.contractEnd)
-              const today = new Date()
-              const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-              if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
-                const style = getStyle("CONTRACT")
-                calendarEvents.push({
-                  id: `contract-${property.id}`,
-                  type: "CONTRACT",
-                  date: property.contractEnd,
-                  title: "Contrato próximo a vencer",
-                  description: `Vence en ${daysUntilEnd} días`,
-                  propertyAddress: property.address || "Propiedad",
-                  icon: FileText,
-                  color: style.card,
-                  badgeColor: style.badge
-                })
-              }
-            }
-          }
-
-          calendarEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          setEvents(calendarEvents)
-        } catch (error) {
-          console.error("Error loading calendar events:", error)
-        }
-      }
-
-      await loadEvents()
+      await loadSummary()
     } catch (error) {
       console.error("Error creating event:", error)
       toast({
@@ -483,54 +310,8 @@ export default function CalendarioPage() {
       setShowEditModal(false)
       setEditingEvent(null)
 
-      // Reload events
       setLoading(true)
-      const eventsRes = await fetch("/api/calendar/events")
-      if (eventsRes.ok) {
-        const eventsPayload = await eventsRes.json()
-        const savedEvents = Array.isArray(eventsPayload.events) ? eventsPayload.events : []
-        const calendarEvents: CalendarEvent[] = []
-
-        const typeIcons: Record<string, any> = {
-          INSPECTION: Calendar,
-          PAYMENT_DUE: DollarSign,
-          CONTRACT_RENEWAL: FileText,
-          IPC_ADJUSTMENT: TrendingUp,
-          MAINTENANCE: Wrench,
-          TENANT_REMINDER: Bell,
-        }
-        const typeColors: Record<string, string> = {
-          INSPECTION: getStyle("INSPECTION").card,
-          PAYMENT_DUE: getStyle("PAYMENT_DUE").card,
-          CONTRACT_RENEWAL: getStyle("CONTRACT_RENEWAL").card,
-          IPC_ADJUSTMENT: getStyle("IPC_ADJUSTMENT").card,
-          MAINTENANCE: getStyle("MAINTENANCE").card,
-          TENANT_REMINDER: getStyle("TENANT_REMINDER").card,
-        }
-        const typeBadgeColors: Record<string, string> = {
-          INSPECTION: getStyle("INSPECTION").badge,
-          PAYMENT_DUE: getStyle("PAYMENT_DUE").badge,
-          CONTRACT_RENEWAL: getStyle("CONTRACT_RENEWAL").badge,
-          IPC_ADJUSTMENT: getStyle("IPC_ADJUSTMENT").badge,
-          MAINTENANCE: getStyle("MAINTENANCE").badge,
-          TENANT_REMINDER: getStyle("TENANT_REMINDER").badge,
-        }
-
-        savedEvents.forEach((event: any) => {
-          calendarEvents.push({
-            id: event.id,
-            type: event.type,
-            date: event.date,
-            title: event.title,
-            description: event.description || "",
-            propertyAddress: event.property?.address || "Propiedad",
-            icon: typeIcons[event.type] || Calendar,
-            color: typeColors[event.type] || EVENT_STYLES.DEFAULT.card,
-            badgeColor: typeBadgeColors[event.type] || EVENT_STYLES.DEFAULT.badge,
-          })
-        })
-        setEvents(calendarEvents)
-      }
+      await loadSummary()
       setLoading(false)
     } catch (error) {
       toast({
@@ -564,7 +345,7 @@ export default function CalendarioPage() {
       })
 
       // Remove from local state
-      setEvents(events.filter(e => e.id !== eventId))
+      setEvents((current) => current.filter((event) => event.id !== eventId))
     } catch (error) {
       toast({
         title: "Error",
@@ -929,7 +710,7 @@ export default function CalendarioPage() {
                         </div>
                       </div>
                       {/* Action buttons for custom calendar events */}
-                      {!event.id.includes("-") && (
+                      {event.editable && (
                         <div className="flex gap-2 ml-4">
                           <button
                             onClick={() => {
@@ -970,25 +751,25 @@ export default function CalendarioPage() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Inspecciones:</span>
               <span className="font-semibold text-foreground">
-                {filteredEvents.filter(e => e.type === "INSPECTION" && Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30).length}
+                {next30Counts.inspections}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Reajustes IPC:</span>
               <span className="font-semibold text-foreground">
-                {filteredEvents.filter(e => e.type === "IPC" && Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30).length}
+                {next30Counts.ipc}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Contratos por vencer:</span>
               <span className="font-semibold text-foreground">
-                {filteredEvents.filter(e => e.type === "CONTRACT" && Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30).length}
+                {next30Counts.contracts}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pagos:</span>
               <span className="font-semibold text-foreground">
-                {filteredEvents.filter(e => e.type === "PAYMENT" && Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30).length}
+                {next30Counts.payments}
               </span>
             </div>
           </CardContent>
@@ -999,11 +780,7 @@ export default function CalendarioPage() {
             <CardTitle className="text-foreground text-lg">Eventos urgentes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {filteredEvents
-              .filter(e => {
-                const daysFromNow = Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                return daysFromNow < 7 || (e.type === "PAYMENT" && daysFromNow < 0)
-              })
+            {urgentEvents
               .slice(0, 5)
               .map(event => {
                 const daysFromNow = Math.floor((new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
@@ -1015,10 +792,7 @@ export default function CalendarioPage() {
                 )
               })
             }
-            {filteredEvents.filter(e => {
-              const daysFromNow = Math.floor((new Date(e.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-              return daysFromNow < 7 || (e.type === "PAYMENT" && daysFromNow < 0)
-            }).length === 0 && (
+            {urgentEvents.length === 0 && (
               <p className="text-sm text-muted-foreground">No hay eventos urgentes</p>
             )}
           </CardContent>

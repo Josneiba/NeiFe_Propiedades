@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { getPublishedProperties } from "@/lib/public-listings"
 import {
   CreditCard,
   FileText,
@@ -18,7 +19,10 @@ import {
   Lock,
   BadgeCheck,
   FileSignature,
-  Database
+  Database,
+  Bath,
+  BedDouble,
+  Ruler,
 } from "lucide-react"
 
 const features = [
@@ -104,7 +108,15 @@ const roles = [
   }
 ]
 
-export default function LandingPage() {
+const currencyFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  minimumFractionDigits: 0,
+})
+
+export default async function LandingPage() {
+  const listings = await getPublishedProperties(6)
+
   return (
     <div className="min-h-screen bg-[#1C1917]">
       {/* Header */}
@@ -112,6 +124,9 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
           <nav className="hidden md:flex items-center gap-8">
+            <Link href="#arriendos" className="text-sm text-[#9C8578] hover:text-[#D5C3B6] transition-colors duration-300">
+              Arriendos
+            </Link>
             <Link href="#features" className="text-sm text-[#9C8578] hover:text-[#D5C3B6] transition-colors duration-300">
               Características
             </Link>
@@ -187,6 +202,118 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="arriendos" className="py-24 md:py-28 bg-[#1C1917]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-14">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Propiedades destacadas</p>
+              <h2 className="text-4xl md:text-5xl font-serif font-semibold text-[#FAF6F2] mb-4">
+                Arriendos publicados en NeiFe
+              </h2>
+              <p className="text-[#9C8578] max-w-2xl text-lg">
+                Además de administrar, ahora puedes publicar propiedades disponibles y mostrarlas desde la portada.
+              </p>
+            </div>
+            <Link href="/registro">
+              <Button variant="outline" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10">
+                Publicar mi propiedad
+              </Button>
+            </Link>
+          </div>
+
+          {listings.length === 0 ? (
+            <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] px-6 py-12 text-center">
+              <p className="text-lg font-medium text-[#FAF6F2]">Todavía no hay propiedades publicadas.</p>
+              <p className="mt-2 text-[#9C8578]">
+                Desde la ficha de cada propiedad puedes activar la vitrina pública cuando esté disponible para arriendo.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {listings.map((property) => {
+                const cover = property.photos[0]
+
+                return (
+                  <Card key={property.id} className="overflow-hidden bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#B8965A]/30 transition-colors">
+                    <div className="aspect-[4/3] bg-[#1C1917] border-b border-[#D5C3B6]/10 overflow-hidden">
+                      {cover?.url ? (
+                        <img
+                          src={cover.url}
+                          alt={cover.caption || property.name || property.address}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-[#1C1917] text-[#9C8578]">
+                          <Home className="h-10 w-10" />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-xl font-serif font-semibold text-[#FAF6F2]">
+                            {property.name || property.address}
+                          </h3>
+                          <p className="mt-1 text-sm text-[#9C8578]">
+                            {property.commune}, {property.region}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-[#5E8B8C]/15 px-2.5 py-1 text-xs font-medium text-[#5E8B8C]">
+                          Disponible
+                        </span>
+                      </div>
+
+                      <p className="mt-4 text-2xl font-semibold text-[#FAF6F2]">
+                        {property.monthlyRentCLP
+                          ? currencyFormatter.format(property.monthlyRentCLP)
+                          : property.monthlyRentUF
+                            ? `UF ${property.monthlyRentUF.toFixed(2)}`
+                            : "Precio a convenir"}
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-3 gap-3 text-sm text-[#D5C3B6]">
+                        <div className="rounded-xl bg-[#1C1917] px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <BedDouble className="h-4 w-4 text-[#5E8B8C]" />
+                            <span>{property.bedrooms ?? "-"}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-[#9C8578]">Dorm.</p>
+                        </div>
+                        <div className="rounded-xl bg-[#1C1917] px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <Bath className="h-4 w-4 text-[#5E8B8C]" />
+                            <span>{property.bathrooms ?? "-"}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-[#9C8578]">Baños</p>
+                        </div>
+                        <div className="rounded-xl bg-[#1C1917] px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <Ruler className="h-4 w-4 text-[#5E8B8C]" />
+                            <span>{property.squareMeters ? `${property.squareMeters} m²` : "-"}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-[#9C8578]">Superficie</p>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#9C8578]">
+                        {property.description || "Propiedad disponible para arriendo administrada desde NeiFe."}
+                      </p>
+
+                      <Button asChild className="mt-6 w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+                        <Link href={`/arriendos/${property.id}`}>
+                          Ver detalle del arriendo
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 

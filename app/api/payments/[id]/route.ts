@@ -5,10 +5,18 @@ import { createNotification } from '@/lib/notifications'
 import { logActivity } from '@/lib/activity'
 import { z } from 'zod'
 
-const updateSchema = z.object({
+const managerUpdateSchema = z.object({
   status: z.enum(['PENDING', 'PAID', 'OVERDUE', 'PROCESSING', 'CANCELLED']),
   method: z.string().optional(),
   receipt: z.string().optional(),
+  notes: z.string().optional(),
+  paidAt: z.coerce.date().optional(),
+})
+
+const tenantReceiptSchema = z.object({
+  receiptUrl: z.string().url().optional(),
+  receipt: z.string().url().optional(),
+  method: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -28,7 +36,17 @@ export async function PATCH(
       where: { id },
       include: {
         property: {
-          select: { landlordId: true, tenantId: true },
+          select: {
+            id: true,
+            address: true,
+            landlordId: true,
+            tenantId: true,
+            managedBy: true,
+            mandates: {
+              where: { status: 'ACTIVE' },
+              select: { brokerId: true },
+            },
+          },
         },
       },
     })
@@ -40,15 +58,68 @@ export async function PATCH(
       )
     }
 
-    if (payment.property.landlordId !== session.user.id) {
+    const body = await req.json()
+
+    if (session.user.role === 'TENANT') {
+      if (payment.property.tenantId !== session.user.id) {
+        return NextResponse.json(
+          { error: 'No tiene permisos para actualizar este pago' },
+          { status: 403 }
+        )
+      }
+
+      const data = tenantReceiptSchema.parse(body)
+      const receiptUrl = data.receiptUrl ?? data.receipt
+      if (!receiptUrl) {
+        return NextResponse.json(
+          { error: 'URL de comprobante requerida' },
+          { status: 400 }
+        )
+      }
+
+      const updated = await prisma.payment.update({
+        where: { id },
+        data: {
+          receipt: receiptUrl,
+          method: data.method ?? payment.method ?? 'transfer',
+          notes: data.notes ?? 'Comprobante de transferencia subido por arrendatario',
+          status: 'PROCESSING',
+        },
+      })
+
+      const notifyUserId =
+        payment.property.managedBy ?? payment.property.landlordId
+      const managerLink = payment.property.managedBy
+        ? `/broker/pagos?status=PROCESSING&property=${payment.property.id}`
+        : '/dashboard/pagos?status=PROCESSING'
+
+      await createNotification(
+        notifyUserId,
+        'PAYMENT_RECEIVED',
+        'Comprobante de pago recibido',
+        `El arrendatario subió un comprobante para ${payment.property.address}. Verifica y confirma el pago.`,
+        managerLink
+      )
+
+      return NextResponse.json({ payment: updated })
+    }
+
+    const hasActiveMandate = payment.property.mandates.some(
+      (mandate) => mandate.brokerId === session.user.id
+    )
+    const canManagePayment =
+      payment.property.landlordId === session.user.id ||
+      payment.property.managedBy === session.user.id ||
+      hasActiveMandate
+
+    if (!canManagePayment) {
       return NextResponse.json(
         { error: 'No tiene permisos para actualizar este pago' },
         { status: 403 }
       )
     }
 
-    const body = await req.json()
-    const data = updateSchema.parse(body)
+    const data = managerUpdateSchema.parse(body)
 
     const updateData: any = {
       status: data.status,
@@ -57,7 +128,7 @@ export async function PATCH(
     }
 
     if (data.status === 'PAID') {
-      updateData.paidAt = new Date()
+      updateData.paidAt = data.paidAt ?? new Date()
       if (data.receipt) updateData.receipt = data.receipt
     }
 

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SearchFilter } from "@/components/ui/search-filter"
+import { MaintenanceStatusActions } from "@/components/maintenance/maintenance-status-actions"
 import { 
   Wrench, 
   Building2,
@@ -27,6 +28,16 @@ const maintenanceInclude = {
           name: true,
         },
       },
+      providers: {
+        include: {
+          provider: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   },
   provider: {
@@ -46,8 +57,8 @@ const statusConfig = {
     className: "bg-[#D5C3B6] text-[#2D3C3C]",
     icon: Clock
   },
-  REQUESTED_INFO: { 
-    label: "Solicitar info", 
+  REVIEWING: { 
+    label: "En revisión", 
     className: "bg-[#F2C94C] text-[#2D3C3C]",
     icon: Clock
   },
@@ -73,11 +84,13 @@ const statusConfig = {
   }
 }
 
-const categoryIcons: Record<string, string> = {
-  "Plomería": "🔧",
-  "Electricidad": "⚡",
-  "Estructura": "🏠",
-  "Otro": "📋"
+const categoryConfig: Record<string, { icon: string; label: string }> = {
+  PLUMBING: { icon: "🔧", label: "Plomería" },
+  ELECTRICAL: { icon: "⚡", label: "Electricidad" },
+  STRUCTURAL: { icon: "🏠", label: "Estructura" },
+  APPLIANCES: { icon: "🧺", label: "Electrodomésticos" },
+  CLEANING: { icon: "🧼", label: "Limpieza" },
+  OTHER: { icon: "📋", label: "Otro" },
 }
 
 function mantencionesQueryHref(status: string, propertyId?: string) {
@@ -251,7 +264,7 @@ export default async function MantencionesPage({
           requests.map((request) => {
             const status = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.REQUESTED
             const StatusIcon = status.icon
-            const icon = categoryIcons[request.category] || "📋"
+            const category = categoryConfig[request.category] || categoryConfig.OTHER
 
             return (
               <Card key={request.id} className="bg-card border-border">
@@ -259,11 +272,11 @@ export default async function MantencionesPage({
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-lg bg-[#2D3C3C] flex items-center justify-center text-2xl">
-                        {icon}
+                        {category.icon}
                       </div>
                       <div>
                         <CardTitle className="text-lg text-foreground">
-                          {request.category}
+                          {category.label}
                         </CardTitle>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Building2 className="h-4 w-4" />
@@ -315,47 +328,11 @@ export default async function MantencionesPage({
                     </div>
                   )}
 
-                  {request.status === "REQUESTED" && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button 
-                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                        disabled
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Aprobar (pronto)
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="text-foreground border-border"
-                        disabled
-                      >
-                        Rechazar (pronto)
-                      </Button>
-                    </div>
-                  )}
-
-                  {request.status === "APPROVED" && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button 
-                        className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
-                        disabled
-                      >
-                        Asignar proveedor (pronto)
-                      </Button>
-                    </div>
-                  )}
-
-                  {request.status === "IN_PROGRESS" && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Button 
-                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                        disabled
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Marcar completado (pronto)
-                      </Button>
-                    </div>
-                  )}
+                  <MaintenanceStatusActions
+                    requestId={request.id}
+                    currentStatus={request.status}
+                    providers={request.property.providers.map((item) => item.provider)}
+                  />
                 </CardContent>
               </Card>
             )

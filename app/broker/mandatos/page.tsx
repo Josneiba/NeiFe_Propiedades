@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Plus, MapPin, User, Calendar, Trash2, UserX } from 'lucide-react'
+import { FileText, Plus, MapPin, User, Calendar, Trash2, UserX, ExternalLink, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 
@@ -15,6 +15,8 @@ interface Mandate {
   createdAt: string
   startsAt?: string
   expiresAt?: string
+  commissionRate?: number | null
+  commissionType?: 'MONTHLY' | 'ONE_TIME' | 'ANNUAL' | null
   property: {
     id: string
     name: string | null
@@ -408,6 +410,18 @@ export default function BrokerMandatosPage() {
                               </div>
                             </div>
                           )}
+                          <div>
+                            <p className="text-[#9C8578]">Comisión</p>
+                            <div className="mt-1 text-[#FAF6F2]">
+                              {mandate.commissionRate != null
+                                ? `${mandate.commissionRate}% (${mandate.commissionType === 'MONTHLY'
+                                    ? 'Mensual'
+                                    : mandate.commissionType === 'ONE_TIME'
+                                      ? 'Única vez'
+                                      : 'Anual'})`
+                                : 'No definida'}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
@@ -416,6 +430,44 @@ export default function BrokerMandatosPage() {
                         <Badge className={status.badge}>
                           {status.label}
                         </Badge>
+
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="text-[#FAF6F2] border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/10"
+                          >
+                            <Link href={`/mandatos/${mandate.id}/documento`}>
+                              <FileText className="w-4 h-4 mr-2" />
+                              Documento
+                            </Link>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="text-[#FAF6F2] border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/10"
+                          >
+                            <a href={`/api/mandates/${mandate.id}/document?download=1`}>
+                              <Download className="w-4 h-4 mr-2" />
+                              PDF
+                            </a>
+                          </Button>
+                          {mandate.status === 'ACTIVE' && (
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="text-[#FAF6F2] border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/10"
+                            >
+                              <Link href={`/mandatos/${mandate.id}/seguimiento`}>
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Seguimiento
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
 
                         {mandate.status === 'PENDING' && (
                           <Button

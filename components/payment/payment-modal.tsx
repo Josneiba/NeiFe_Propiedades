@@ -18,6 +18,10 @@ interface PaymentModalProps {
     water: number
     electricity: number
     gas?: number
+    serviceItems?: Array<{
+      label: string
+      amount: number
+    }>
   } | null
   bankDetails: {
     bank: string
@@ -47,7 +51,16 @@ export function PaymentModal({
 
   if (!payment) return null
 
-  const total = payment.amountCLP + payment.water + payment.electricity + (payment.gas ?? 0)
+  const serviceItems =
+    payment.serviceItems && payment.serviceItems.length > 0
+      ? payment.serviceItems
+      : [
+          { label: 'Agua', amount: payment.water },
+          { label: 'Luz', amount: payment.electricity },
+          { label: 'Gas', amount: payment.gas ?? 0 },
+        ].filter((item) => item.amount > 0)
+  const serviceTotal = serviceItems.reduce((sum, item) => sum + item.amount, 0)
+  const total = payment.amountCLP + serviceTotal
   const formattedTotal = total.toLocaleString('es-CL')
 
   const copyToClipboard = (text: string, label: string) => {
@@ -76,7 +89,7 @@ export function PaymentModal({
       // 1. Subir comprobante a Cloudinary
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', 'boletas')
+      formData.append('folder', 'receipts')
 
       const uploadRes = await fetch('/api/upload', {
         method: 'POST',
@@ -91,9 +104,8 @@ export function PaymentModal({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: 'PROCESSING',
+          receiptUrl: url,
           method: 'transfer',
-          receipt: url,
           notes: 'Comprobante de transferencia subido por arrendatario',
         }),
       })
@@ -101,7 +113,6 @@ export function PaymentModal({
       if (!paymentRes.ok) throw new Error('Error al registrar el pago')
 
       setStep('success')
-      onSuccess?.()
     } catch (err) {
       console.error(err)
       toast.error('Ocurrió un error. Intenta nuevamente.')
@@ -111,9 +122,13 @@ export function PaymentModal({
   }
 
   const handleClose = () => {
+    const shouldRefreshParent = step === 'success'
     setStep('details')
     setFile(null)
     onClose()
+    if (shouldRefreshParent) {
+      onSuccess?.()
+    }
   }
 
   return (
@@ -141,30 +156,14 @@ export function PaymentModal({
                   ${payment.amountCLP.toLocaleString('es-CL')}
                 </span>
               </div>
-              {payment.water > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#9C8578]">Agua</span>
+              {serviceItems.map((item) => (
+                <div key={item.label} className="flex justify-between text-sm">
+                  <span className="text-[#9C8578]">{item.label}</span>
                   <span className="font-mono text-[#1C1917]">
-                    ${payment.water.toLocaleString('es-CL')}
+                    ${item.amount.toLocaleString('es-CL')}
                   </span>
                 </div>
-              )}
-              {payment.electricity > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#9C8578]">Luz</span>
-                  <span className="font-mono text-[#1C1917]">
-                    ${payment.electricity.toLocaleString('es-CL')}
-                  </span>
-                </div>
-              )}
-              {(payment.gas ?? 0) > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#9C8578]">Gas</span>
-                  <span className="font-mono text-[#1C1917]">
-                    ${(payment.gas ?? 0).toLocaleString('es-CL')}
-                  </span>
-                </div>
-              )}
+              ))}
               <div className="border-t border-[#D5C3B6] pt-2 flex justify-between">
                 <span className="font-medium text-[#1C1917]">Total a transferir</span>
                 <span className="font-mono font-bold text-[#5E8B8C] text-lg">

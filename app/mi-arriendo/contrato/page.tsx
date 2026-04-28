@@ -3,8 +3,6 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   FileText,
-  Download,
-  Eye,
   CheckCircle2,
   Camera,
   Image as ImageIcon,
@@ -16,6 +14,7 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { getUserIdentity } from "@/lib/identity-documents"
+import { TenantContractSignActions } from "@/components/contracts/tenant-contract-sign-actions"
 
 function formatContractDate(date: Date | null | undefined) {
   if (!date) return "No disponible"
@@ -59,6 +58,12 @@ export default async function ContratoPage() {
           documentNumberNormalized: true,
           email: true,
           phone: true,
+        },
+      },
+      managedByUser: {
+        select: {
+          name: true,
+          email: true,
         },
       },
       contracts: {
@@ -246,7 +251,9 @@ export default async function ContratoPage() {
                           <AlertCircle className="h-5 w-5 text-[#F2C94C]" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-foreground">Firma Arrendador</p>
+                          <p className="text-sm font-medium text-foreground">
+                            {property.managedByUser?.name ? "Firma Arrendador / Corredor" : "Firma Arrendador"}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {landlordSigned ? `Firmado el ${contract.signedAt}` : "Pendiente de firma"}
                           </p>
@@ -273,27 +280,11 @@ export default async function ContratoPage() {
                   </div>
 
                   {pdfUrl ? (
-                    <div className="flex gap-3 flex-wrap">
-                      <a
-                        href={pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Ver contrato
-                      </a>
-                      <a
-                        href={pdfUrl}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 border border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Download className="h-4 w-4" />
-                        Descargar PDF
-                      </a>
-                    </div>
+                    <TenantContractSignActions
+                      propertyId={property.id}
+                      pdfUrl={pdfUrl}
+                      status={latestContract?.status ?? null}
+                    />
                   ) : (
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F2C94C]/10 border border-[#F2C94C]/20">
                       <AlertCircle className="h-4 w-4 text-[#F2C94C]" />

@@ -37,6 +37,11 @@ import { AdministrationSection } from "@/components/dashboard/property-administr
 import { PropertyAccessRequestButton } from "@/components/dashboard/property-access-request-button"
 import { PropertyAccessRequestsPanel } from "@/components/dashboard/property-access-requests-panel"
 import { BrokerRequestButton } from "@/components/dashboard/broker-request-button"
+import { PropertyPublicationToggle } from "@/components/properties/property-publication-toggle"
+import { ApplicationPortalManager } from "@/components/properties/application-portal-manager"
+import { PropertyChecklist } from "@/components/dashboard/property-checklist"
+import { SecurityDepositPanel } from "@/components/dashboard/security-deposit-panel"
+import { IpcAdjustmentDialog } from "@/components/dashboard/ipc-adjustment-dialog"
 import { getUserIdentity } from "@/lib/identity-documents"
 
 interface Property {
@@ -51,7 +56,12 @@ interface Property {
   monthlyRentUF: number | null
   contractStart: string
   contractEnd: string
+  nextIpcDate?: string | null
   landlordId: string
+  isPublished: boolean
+  publishedAt?: string | null
+  applicationOpen: boolean
+  applicationSlug?: string | null
   tenant?: {
     id: string
     name: string
@@ -70,15 +80,16 @@ interface Property {
   commissionRate: number | null
   commissionType: string | null
   payments: any[]
-  mandates?: Array<{
-    id: string
+  activeMandate?: {
+    brokerId: string
     status: string
     broker: {
       name: string | null
       email: string
       company?: string | null
     }
-  }>
+  } | null
+  hasActiveMandate?: boolean
 }
 
 export default function PropertyDetailPage() {
@@ -100,7 +111,6 @@ export default function PropertyDetailPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [brokerPermissionStatus, setBrokerPermissionStatus] = useState<'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NONE')
   const [hasPendingRequest, setHasPendingRequest] = useState(false)
-  const [accessRequests, setAccessRequests] = useState<any[]>([])
   const [agentData, setAgentData] = useState({
     agentName: "",
     agentRut: "",
@@ -113,6 +123,8 @@ export default function PropertyDetailPage() {
 
   // Load property data
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadPropertyData = async () => {
       try {
         let currentRole: string | null = null
@@ -127,52 +139,32 @@ export default function PropertyDetailPage() {
           return
         }
 
-        const [propertyRes, mandatesRes, accessRequestsRes] = await Promise.all([
-          fetch(`/api/properties/${propertyId}`),
-          fetch(`/api/mandates?propertyId=${propertyId}`),
-          fetch('/api/property-access-requests')
+        const [propertyRes, accessRequestsRes] = await Promise.all([
+          fetch(`/api/properties/${propertyId}`, { signal: controller.signal }),
+          fetch(`/api/property-access-requests?propertyId=${propertyId}`, {
+            signal: controller.signal,
+          }),
         ])
-        
+
         if (!propertyRes.ok) throw new Error("Failed to load property")
         const propertyJson = await propertyRes.json()
         const data = propertyJson.property as Property
         if (!data) throw new Error("Failed to load property")
         setProperty(data)
-
-        if (currentRole === 'BROKER') {
-          const permissionRes = await fetch(`/api/broker-permissions/check?landlordId=${data.landlordId}`)
-          if (permissionRes.ok) {
-            const permissionData = await permissionRes.json()
-            setBrokerPermissionStatus(permissionData.status || 'NONE')
-          }
-        } else {
-          setBrokerPermissionStatus('NONE')
-        }
-        
-        // Load mandates to check if property has active broker
-        if (mandatesRes.ok) {
-          const mandatesData = await mandatesRes.json()
-          const activeMandates = mandatesData.mandates || []
-          const activeMandate = activeMandates.find((m: any) => m.status === 'ACTIVE')
-          if (activeMandate) {
-            setHasBroker(true)
-            setBrokerInfo(activeMandate.broker)
-          }
-        }
+        setBrokerPermissionStatus('NONE')
+        setHasBroker(Boolean(data.hasActiveMandate || data.activeMandate))
+        setBrokerInfo(data.activeMandate?.broker ?? null)
 
         // Load access requests
         if (accessRequestsRes.ok) {
           const accessData = await accessRequestsRes.json()
           const requests = accessData.requests || []
-          setAccessRequests(requests)
-          
-          // Check if current user has a pending request for this property
-          const pendingRequest = requests.find((req: any) => 
-            req.propertyId === propertyId && req.status === 'PENDING'
-          )
+          const pendingRequest = requests.find((req: any) => req.status === 'PENDING')
           setHasPendingRequest(!!pendingRequest)
+        } else {
+          setHasPendingRequest(false)
         }
-        
+
         setAgentData({
           agentName: data.agentName || "",
           agentRut: data.agentRut || "",
@@ -183,6 +175,7 @@ export default function PropertyDetailPage() {
           commissionType: data.commissionType || "MONTHLY"
         })
       } catch (error) {
+        if (controller.signal.aborted) return
         toast({
           title: "Error",
           description: "No se pudo cargar la propiedad",
@@ -194,7 +187,9 @@ export default function PropertyDetailPage() {
     }
 
     loadPropertyData()
-  }, [propertyId, toast])
+
+    return () => controller.abort()
+  }, [propertyId, router, toast])
 
   // Handle agent save
   const handleSaveAgent = async () => {
@@ -252,7 +247,7 @@ export default function PropertyDetailPage() {
   }
 
   const handleTabChange = (tab: string) => {
-    router.push(`?tab=${tab}`)
+    router.replace(`?tab=${tab}`, { scroll: false })
   }
   const tenantIdentity = property.tenant ? getUserIdentity(property.tenant) : null
 
@@ -284,6 +279,25 @@ export default function PropertyDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
+          {canManageProperty && (
+            <PropertyPublicationToggle
+              propertyId={propertyId}
+              isPublished={property.isPublished}
+              publishedAt={property.publishedAt}
+              disabled={Boolean(property.tenant) && !property.isPublished}
+              onUpdated={(next) =>
+                setProperty((current) =>
+                  current
+                    ? {
+                        ...current,
+                        isPublished: next.isPublished,
+                        publishedAt: next.publishedAt,
+                      }
+                    : current
+                )
+              }
+            />
+          )}
           {userRole !== 'BROKER' && !property.tenant && !hasBroker && (
             <InviteTenantButton
               propertyId={propertyId}
@@ -344,6 +358,9 @@ export default function PropertyDetailPage() {
             <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
             <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
             <TabsTrigger value="historial-renta">Historial de renta</TabsTrigger>
+            <TabsTrigger value="checklist">Checklist</TabsTrigger>
+            <TabsTrigger value="garantia">Garantía</TabsTrigger>
+            <TabsTrigger value="postulaciones">Postulaciones</TabsTrigger>
             <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
           </TabsList>
         </div>
@@ -368,6 +385,9 @@ export default function PropertyDetailPage() {
               <option value="inspecciones">Inspecciones</option>
               <option value="reajuste">Reajuste IPC</option>
               <option value="historial-renta">Historial de renta</option>
+              <option value="checklist">Checklist</option>
+              <option value="garantia">Garantía</option>
+              <option value="postulaciones">Postulaciones</option>
               <option value="proveedores">Proveedores</option>
             </select>
           </div>
@@ -391,12 +411,25 @@ export default function PropertyDetailPage() {
                         <p className="text-foreground">{property.description}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Arriendo mensual (CLP)</p>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Arriendo mensual (CLP)</p>
+                        <div className="flex flex-wrap items-center gap-3">
                           <p className="text-2xl font-bold text-foreground">
                             {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "No especificado"}
                           </p>
+                          {property.tenant && property.contractEnd && new Date(property.contractEnd) > new Date() && property.monthlyRentCLP ? (
+                            <IpcAdjustmentDialog
+                              propertyId={propertyId}
+                              currentRentCLP={property.monthlyRentCLP}
+                              onSuccess={(newRent) =>
+                                setProperty((current) =>
+                                  current ? { ...current, monthlyRentCLP: newRent } : current
+                                )
+                              }
+                            />
+                          ) : null}
                         </div>
+                      </div>
                         {property.monthlyRentUF && (
                           <div>
                             <p className="text-sm text-muted-foreground">Arriendo en UF</p>
@@ -783,6 +816,24 @@ export default function PropertyDetailPage() {
               </Link>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="checklist" className="space-y-6">
+          <PropertyChecklist propertyId={propertyId} />
+        </TabsContent>
+
+        <TabsContent value="garantia" className="space-y-6">
+          <SecurityDepositPanel propertyId={propertyId} />
+        </TabsContent>
+
+        <TabsContent value="postulaciones" className="space-y-6">
+          <ApplicationPortalManager
+            propertyId={propertyId}
+            propertyAddress={`${property.address}, ${property.commune}`}
+            applicationOpen={property.applicationOpen}
+            applicationSlug={property.applicationSlug}
+            hasTenant={Boolean(property.tenant)}
+          />
         </TabsContent>
 
         <TabsContent value="pagos">

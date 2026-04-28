@@ -52,6 +52,7 @@ const updateSchema = z.object({
   // Inspecciones e IPC
   inspectionFrequencyMonths: optionalInt,
   ipcAdjustmentMonths: optionalInt,
+  isPublished: z.boolean().optional(),
 })
 
 // GET — detalle de propiedad
@@ -113,7 +114,18 @@ export async function GET(
         },
         mandates: {
           where: { status: 'ACTIVE' },
-          select: { brokerId: true, status: true },
+          select: {
+            brokerId: true,
+            status: true,
+            broker: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                company: true,
+              },
+            },
+          },
         },
       },
     })
@@ -139,9 +151,16 @@ export async function GET(
       return NextResponse.json({ error: 'Sin acceso' }, { status: 403 })
     }
 
+    const activeMandate = property.mandates[0] ?? null
     const { mandates, ...propertyResponse } = property
 
-    return NextResponse.json({ property: propertyResponse })
+    return NextResponse.json({
+      property: {
+        ...propertyResponse,
+        activeMandate,
+        hasActiveMandate: Boolean(activeMandate),
+      },
+    })
   } catch (error) {
     console.error('Error fetching property:', error)
     return NextResponse.json(
@@ -175,13 +194,48 @@ export async function PUT(
 
     const body = await req.json()
     const parsed = updateSchema.parse(body)
-    const data = Object.fromEntries(
+    const existingProperty = await prisma.property.findUnique({
+      where: { id },
+      select: {
+        tenantId: true,
+        isPublished: true,
+        publishedAt: true,
+      },
+    })
+
+    if (!existingProperty) {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada o sin permisos' },
+        { status: 404 }
+      )
+    }
+
+    if (parsed.isPublished === true && existingProperty.tenantId) {
+      return NextResponse.json(
+        {
+          error:
+            'Solo puedes publicar propiedades disponibles. Quita primero el arrendatario actual si quieres ofrecerla en arriendo.',
+        },
+        { status: 400 }
+      )
+    }
+
+    const data: Record<string, unknown> = Object.fromEntries(
       Object.entries(parsed).filter(
         ([, value]) =>
           value !== undefined &&
           !(typeof value === 'number' && Number.isNaN(value))
       )
     )
+
+    if (typeof parsed.isPublished === 'boolean') {
+      data.isPublished = parsed.isPublished
+      if (parsed.isPublished) {
+        data.publishedAt = existingProperty.publishedAt ?? new Date()
+      } else {
+        data.publishedAt = null
+      }
+    }
 
     console.log('Update payload:', JSON.stringify(data, null, 2))
 

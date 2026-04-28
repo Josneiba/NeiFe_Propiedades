@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -347,6 +348,11 @@ export default function SolicitudesCorredoresPage() {
                         Solicitado el {formatDate(mandate.createdAt)}
                       </p>
                       <div className="flex gap-2 flex-wrap justify-end">
+                        <Button asChild variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#FAF6F2]">
+                          <Link href={`/mandatos/${mandate.id}/documento`}>
+                            Ver documento
+                          </Link>
+                        </Button>
                         <Button
                           onClick={() => handleRejectMandate(mandate.id)}
                           disabled={processingMandateId === mandate.id}

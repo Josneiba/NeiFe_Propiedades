@@ -52,6 +52,10 @@ model User {
   brokerPermissions      BrokerPermission[]   @relation("BrokerPermissions")
   brokerAccessRequests   PropertyAccessRequest[] @relation("BrokerAccessRequests")
   landlordAccessRequests PropertyAccessRequest[] @relation("LandlordAccessRequests")
+  brokerStatementsSent   BrokerStatement[]    @relation("BrokerStatementBroker")
+  landlordStatementsReceived BrokerStatement[] @relation("BrokerStatementLandlord")
+  brokerMessagesSent     BrokerMessage[]      @relation("BrokerMessageSender")
+  brokerMessagesReceived BrokerMessage[]      @relation("BrokerMessageTenant")
 
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
@@ -106,6 +110,10 @@ model Property {
   managedBy      String?
   tenantId       String?   @unique
   isActive       Boolean   @default(true)
+  isPublished    Boolean   @default(false)
+  publishedAt    DateTime?
+  applicationOpen Boolean  @default(false)
+  applicationSlug String?  @unique
   contractStart  DateTime?
   contractEnd    DateTime?
   monthlyRentUF  Float?
@@ -150,6 +158,11 @@ model Property {
   calendarEvents CalendarEvent[]
   mandates       Mandate[]
   accessRequests PropertyAccessRequest[]
+  brokerStatements BrokerStatement[]
+  brokerMessages BrokerMessage[]
+  applications   TenantApplication[]
+  securityDeposit SecurityDeposit?
+  checklists     PropertyChecklist[]
 }
 
 model RentAdjustment {
@@ -181,6 +194,12 @@ model Mandate {
   brokerSignedAt  DateTime?
   startsAt        DateTime?
   expiresAt       DateTime?
+  commissionRate  Float?
+  commissionType  CommissionType? @default(MONTHLY)
+  documentNumber  String?
+  documentHash    String?
+  documentGeneratedAt DateTime?
+  documentSnapshot Json?
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -587,6 +606,24 @@ enum NotificationType {
   SYSTEM
 }
 
+enum BrokerStatementStatus {
+  DRAFT
+  SENT
+}
+
+enum BrokerStatementItemType {
+  COMMISSION
+  MAINTENANCE
+  DEDUCTION
+}
+
+enum BrokerMessageType {
+  GENERAL
+  PAYMENT_REMINDER
+  MAINTENANCE_VISIT
+  CONTRACT_NOTICE
+}
+
 enum CalendarEventType {
   INSPECTION
   PAYMENT_DUE
@@ -653,4 +690,137 @@ model PropertyAccessRequest {
   landlord   User     @relation("LandlordAccessRequests", fields: [landlordId], references: [id])
 
   @@unique([propertyId, brokerId])
+}
+
+model BrokerStatement {
+  id                  String                 @id @default(cuid())
+  brokerId            String
+  landlordId          String
+  propertyId          String
+  month               Int
+  year                Int
+  grossIncomeCLP      Int
+  brokerCommissionCLP Int
+  maintenanceCLP      Int                    @default(0)
+  otherDeductionsCLP  Int                    @default(0)
+  netTransferCLP      Int
+  notes               String?
+  transferReference   String?
+  transferDate        DateTime?
+  status              BrokerStatementStatus  @default(DRAFT)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  broker              User                   @relation("BrokerStatementBroker", fields: [brokerId], references: [id])
+  landlord            User                   @relation("BrokerStatementLandlord", fields: [landlordId], references: [id])
+  property            Property               @relation(fields: [propertyId], references: [id])
+  items               BrokerStatementItem[]
+
+  @@unique([propertyId, month, year])
+}
+
+model BrokerStatementItem {
+  id          String                  @id @default(cuid())
+  statementId String
+  label       String
+  amountCLP   Int
+  type        BrokerStatementItemType
+  notes       String?
+  createdAt   DateTime                @default(now())
+
+  statement   BrokerStatement         @relation(fields: [statementId], references: [id], onDelete: Cascade)
+}
+
+model BrokerMessage {
+  id          String            @id @default(cuid())
+  propertyId  String
+  senderId    String
+  tenantId    String
+  subject     String
+  message     String
+  type        BrokerMessageType @default(GENERAL)
+  sendEmail   Boolean           @default(false)
+  emailStatus EmailDeliveryStatus @default(NOT_REQUESTED)
+  emailProviderId String?
+  emailError  String?
+  createdAt   DateTime          @default(now())
+
+  property    Property          @relation(fields: [propertyId], references: [id])
+  sender      User              @relation("BrokerMessageSender", fields: [senderId], references: [id])
+  tenant      User              @relation("BrokerMessageTenant", fields: [tenantId], references: [id])
+}
+
+enum EmailDeliveryStatus {
+  NOT_REQUESTED
+  SENT
+  FAILED
+}
+
+model TenantApplication {
+  id              String            @id @default(cuid())
+  propertyId      String
+  name            String
+  email           String
+  phone           String
+  rut             String
+  monthlyIncome   Int
+  currentEmployer String?
+  message         String?
+  status          ApplicationStatus @default(PENDING)
+  documents       String[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  property        Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  APPROVED
+  REJECTED
+}
+
+model SecurityDeposit {
+  id                String        @id @default(cuid())
+  propertyId        String        @unique
+  amountCLP         Int
+  receivedAt        DateTime
+  receivedBy        String
+  status            DepositStatus @default(HELD)
+  returnedAt        DateTime?
+  returnedAmountCLP Int?
+  deductionsCLP     Int?
+  deductionNotes    String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  property          Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyChecklist {
+  id                String        @id @default(cuid())
+  propertyId        String
+  type              ChecklistType
+  completedAt       DateTime?
+  completedBy       String
+  rooms             Json
+  overallCondition  String?
+  tenantSignature   String?
+  landlordSignature String?
+  createdAt         DateTime      @default(now())
+
+  property          Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+enum DepositStatus {
+  HELD
+  RETURNED_FULL
+  RETURNED_PARTIAL
+  FORFEITED
+}
+
+enum ChecklistType {
+  CHECKIN
+  CHECKOUT
 }

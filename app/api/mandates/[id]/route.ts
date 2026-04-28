@@ -80,36 +80,6 @@ export async function PATCH(
         signerRole: role,
       })
 
-      if (result.activated) {
-        const recipientId = role === 'owner' ? mandate.brokerId : mandate.ownerId
-        const signerName = session.user.name || session.user.email
-        const link =
-          role === 'owner'
-            ? `/broker/propiedades/${mandate.propertyId}`
-            : `/dashboard/propiedades/${mandate.propertyId}`
-
-        await createNotification(
-          recipientId,
-          'MANDATE_SIGNED',
-          'Mandato activado',
-          `El mandato fue firmado por ambas partes para ${
-            mandate.property.name || mandate.property.address
-          }`,
-          link
-        )
-
-        await logActivity(
-          session.user.id,
-          'MANDATE_SIGNED',
-          `Mandato activado para ${mandate.property.name || mandate.property.address}`,
-          mandate.propertyId,
-          {
-            mandateId: id,
-            signerRole: role,
-          }
-        )
-      }
-
       return NextResponse.json({
         mandate: result.mandate,
         activated: result.activated,

@@ -86,28 +86,42 @@ export default function ConfiguracionPage() {
   // Sessions section
   const [sessionLoading, setSessionLoading] = useState(false)
 
+  const applyUserData = (user: UserProfile) => {
+    setProfile(user)
+    setBankData(user)
+  }
+
   // Load profile on mount
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadProfile = async () => {
       try {
-        const res = await fetch("/api/users/me")
+        const res = await fetch("/api/users/me", {
+          signal: controller.signal,
+        })
         if (!res.ok) throw new Error("Failed to load profile")
         const data = await res.json()
         const user = data.user ?? data
-        setProfile(user)
-        setBankData(user)
+        applyUserData(user)
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo cargar el perfil",
-          variant: "destructive"
-        })
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          toast({
+            title: "Error",
+            description: "No se pudo cargar el perfil",
+            variant: "destructive"
+          })
+        }
       } finally {
         setProfileLoading(false)
       }
     }
 
     loadProfile()
+
+    return () => {
+      controller.abort()
+    }
   }, [toast])
 
   // Handle profile save
@@ -155,7 +169,7 @@ export default function ConfiguracionPage() {
       }
 
       const data = await res.json()
-      setProfile(data.user)
+      applyUserData(data.user ?? data)
       
       toast({
         title: "Éxito",
@@ -195,6 +209,9 @@ export default function ConfiguracionPage() {
       })
 
       if (!res.ok) throw new Error("Failed to update bank data")
+
+      const data = await res.json()
+      applyUserData(data.user ?? data)
       
       toast({
         title: "Éxito",

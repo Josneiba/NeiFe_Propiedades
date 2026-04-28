@@ -43,6 +43,8 @@ export default function NuevoMandatoPage() {
     notes: '',
     startsAt: '',
     expiresAt: '',
+    commissionRate: '',
+    commissionType: 'MONTHLY',
   })
   const [submitting, setSubmitting] = useState(false)
   const [sendingInvite, setSendingInvite] = useState(false)
@@ -235,6 +237,8 @@ export default function NuevoMandatoPage() {
       notes: formData.notes || undefined,
       startsAt: formData.startsAt ? new Date(formData.startsAt) : undefined,
       expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+      commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
+      commissionType: formData.commissionType || undefined,
     }
 
     try {
@@ -603,6 +607,47 @@ export default function NuevoMandatoPage() {
                     }
                     className="bg-[#1C1917] border-[#D5C3B6]/10 text-[#FAF6F2] mt-2"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="commissionRate" className="text-[#FAF6F2]">
+                    Comisión del mandato (%)
+                  </Label>
+                  <Input
+                    id="commissionRate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="Ej: 8"
+                    value={formData.commissionRate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, commissionRate: e.target.value })
+                    }
+                    className="bg-[#1C1917] border-[#D5C3B6]/10 text-[#FAF6F2] mt-2"
+                  />
+                  <p className="mt-1 text-xs text-[#9C8578]">
+                    Se usará como base en las rendiciones mensuales del corredor.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="commissionType" className="text-[#FAF6F2]">
+                    Tipo de comisión
+                  </Label>
+                  <select
+                    id="commissionType"
+                    value={formData.commissionType}
+                    onChange={(e) =>
+                      setFormData({ ...formData, commissionType: e.target.value })
+                    }
+                    className="mt-2 w-full rounded-md border border-[#D5C3B6]/10 bg-[#1C1917] px-3 py-2 text-[#FAF6F2]"
+                  >
+                    <option value="MONTHLY">Mensual</option>
+                    <option value="ONE_TIME">Única vez</option>
+                    <option value="ANNUAL">Anual</option>
+                  </select>
                 </div>
               </div>
 

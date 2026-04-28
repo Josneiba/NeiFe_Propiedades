@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth-session'
+import { createNotification } from '@/lib/notifications'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -30,11 +31,43 @@ const createSchema = z.object({
   otherLabel: z.string().optional(),
 })
 
+function getServicePropertyWhere(userId: string, role: string) {
+  if (role === 'BROKER') {
+    return {
+      isActive: true,
+      OR: [
+        { managedBy: userId },
+        {
+          mandates: {
+            some: {
+              brokerId: userId,
+              status: 'ACTIVE' as const,
+            },
+          },
+        },
+      ],
+    }
+  }
+
+  return {
+    landlordId: userId,
+    isActive: true,
+  }
+}
+
 // GET — listar servicios con filtros
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  if (
+    session.user.role !== 'LANDLORD' &&
+    session.user.role !== 'OWNER' &&
+    session.user.role !== 'BROKER'
+  ) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
   }
 
   try {
@@ -43,9 +76,7 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get('year')
 
     const where: any = {
-      property: {
-        landlordId: session.user.id,
-      },
+      property: getServicePropertyWhere(session.user.id, session.user.role),
     }
 
     if (propertyId) where.propertyId = propertyId
@@ -82,11 +113,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = createSchema.parse(body)
 
-    // Verificar que el usuario es el propietario
+    if (
+      session.user.role !== 'LANDLORD' &&
+      session.user.role !== 'OWNER' &&
+      session.user.role !== 'BROKER'
+    ) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    // Verificar acceso a la propiedad
     const property = await prisma.property.findFirst({
       where: {
         id: data.propertyId,
-        landlordId: session.user.id,
+        ...getServicePropertyWhere(session.user.id, session.user.role),
       },
       select: { tenantId: true },
     })
@@ -109,6 +148,16 @@ export async function POST(req: NextRequest) {
       update: data,
       create: data,
     })
+
+    if (property.tenantId) {
+      await createNotification(
+        property.tenantId,
+        'SYSTEM',
+        'Servicios del mes actualizados',
+        `Ya puedes revisar los cargos y boletas de ${data.month}/${data.year} en tu panel.`,
+        '/mi-arriendo/servicios'
+      )
+    }
 
     return NextResponse.json({ service }, { status: 201 })
   } catch (error) {

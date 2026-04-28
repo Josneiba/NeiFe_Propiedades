@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { logActivity, logUnauthorizedAccess } from '@/lib/activity'
 import { z } from 'zod'
+import { assertBrokerAccess } from '@/lib/permissions'
 
 const createSchema = z.object({
   propertyId: z.string(),
@@ -26,25 +27,34 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  if (session.user.role === 'BROKER') {
-    logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
-    return NextResponse.json(
-      { error: 'Los corredores no gestionan mantenciones desde este endpoint' },
-      { status: 403 }
-    )
-  }
-
   try {
     const searchParams = req.nextUrl.searchParams
     const propertyId = searchParams.get('propertyId')
     const status = searchParams.get('status')
     const category = searchParams.get('category')
 
-    const where: any = {
-      property: {
-        landlordId: session.user.id,
-      },
-    }
+    const where: any =
+      session.user.role === 'BROKER'
+        ? {
+            property: {
+              OR: [
+                { managedBy: session.user.id },
+                {
+                  mandates: {
+                    some: {
+                      brokerId: session.user.id,
+                      status: 'ACTIVE',
+                    },
+                  },
+                },
+              ],
+            },
+          }
+        : {
+            property: {
+              landlordId: session.user.id,
+            },
+          }
 
     if (propertyId) where.propertyId = propertyId
     if (status) where.status = status
@@ -53,9 +63,30 @@ export async function GET(req: NextRequest) {
     const maintenance = await prisma.maintenanceRequest.findMany({
       where,
       include: {
-        property: { select: { name: true, address: true } },
         requester: { select: { name: true, email: true, phone: true } },
         provider: { select: { name: true, phone: true, email: true } },
+        property: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            tenant: {
+              select: {
+                name: true,
+              },
+            },
+            providers: {
+              include: {
+                provider: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         timeline: { orderBy: { createdAt: 'desc' } },
       },
       orderBy: { createdAt: 'desc' },
@@ -76,14 +107,6 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
-
-  if (session.user.role === 'BROKER') {
-    logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
-    return NextResponse.json(
-      { error: 'Los corredores no pueden crear mantenciones desde este endpoint' },
-      { status: 403 }
-    )
   }
 
   try {
@@ -110,6 +133,16 @@ export async function POST(req: NextRequest) {
       })
 
       if (!landlordProperty) {
+        logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
+        return NextResponse.json(
+          { error: 'Sin acceso a esta propiedad' },
+          { status: 403 }
+        )
+      }
+    } else if (session.user.role === 'BROKER') {
+      try {
+        await assertBrokerAccess(data.propertyId, session.user.id)
+      } catch {
         logUnauthorizedAccess(session.user.id, session.user.role, req.nextUrl.pathname)
         return NextResponse.json(
           { error: 'Sin acceso a esta propiedad' },
@@ -149,14 +182,16 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Notificar al arrendador
-    if (maintenance.property.landlordId) {
+    const notifyUserId = maintenance.property.managedBy || maintenance.property.landlordId
+    if (notifyUserId) {
       await createNotification(
-        maintenance.property.landlordId,
+        notifyUserId,
         'MAINTENANCE_NEW',
         'Nueva solicitud de mantención',
         `${data.category}: ${data.description}`,
-        '/dashboard/mantenciones'
+        maintenance.property.managedBy
+          ? `/broker/propiedades/${maintenance.propertyId}`
+          : '/dashboard/mantenciones'
       )
     }
 

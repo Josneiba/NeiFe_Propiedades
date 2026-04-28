@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye, FileText } from 'lucide-react'
+import { DollarSign, Building2, Wrench, AlertTriangle, TrendingUp, Plus, MapPin, Eye, FileText, BellRing, Receipt, CalendarClock } from 'lucide-react'
 import { getErrorMessage } from '@/lib/error-handler'
 import Link from 'next/link'
 
@@ -49,7 +49,7 @@ export default async function BrokerDashboardPage() {
   const currentYear = new Date().getFullYear()
 
   try {
-    const [mandates, mandateStats, paidPayments, pendingPayments, activeMaintenances] =
+    const [mandates, mandateStats, paidPayments, pendingPayments, activeMaintenances, recentStatements, recentMessages] =
       await Promise.all([
         prisma.mandate.findMany({
           where: { 
@@ -61,6 +61,17 @@ export default async function BrokerDashboardPage() {
               include: {
                 tenant: { select: { name: true } },
                 landlord: { select: { name: true, email: true } },
+                _count: {
+                  select: {
+                    maintenance: {
+                      where: {
+                        status: {
+                          in: ['REQUESTED', 'REVIEWING', 'APPROVED', 'IN_PROGRESS'],
+                        },
+                      },
+                    },
+                  },
+                },
                 payments: { 
                   where: { month: currentMonth, year: currentYear }, 
                   take: 1 
@@ -120,6 +131,46 @@ export default async function BrokerDashboardPage() {
               in: ['REQUESTED', 'REVIEWING', 'APPROVED', 'IN_PROGRESS'],
             },
           },
+        }),
+        prisma.brokerStatement.findMany({
+          where: { brokerId: session.user.id },
+          include: {
+            property: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+            landlord: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'desc' }],
+          take: 5,
+        }),
+        prisma.brokerMessage.findMany({
+          where: { senderId: session.user.id },
+          include: {
+            property: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+            tenant: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
         }),
       ])
 
@@ -185,6 +236,66 @@ export default async function BrokerDashboardPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-[#75524C]/20 p-3">
+                  <Receipt className="h-5 w-5 text-[#75524C]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#9C8578]">Rendiciones</p>
+                  <p className="text-lg font-semibold text-[#FAF6F2]">Cierre mensual al propietario</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-[#9C8578]">
+                Genera la rendición, descuenta comisión y mantenciones, y descarga el PDF final.
+              </p>
+              <Button className="mt-4 w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]" asChild>
+                <Link href="/broker/rendiciones">Abrir rendiciones</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-[#5E8B8C]/20 p-3">
+                  <BellRing className="h-5 w-5 text-[#5E8B8C]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#9C8578]">Avisos</p>
+                  <p className="text-lg font-semibold text-[#FAF6F2]">Mensajes al arrendatario</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-[#9C8578]">
+                Envía recordatorios de pago o coordinaciones técnicas con notificación y email.
+              </p>
+              <Button className="mt-4 w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]" asChild>
+                <Link href="/broker/avisos">Abrir avisos</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-[#B8965A]/20 p-3">
+                  <CalendarClock className="h-5 w-5 text-[#B8965A]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#9C8578]">Operación diaria</p>
+                  <p className="text-lg font-semibold text-[#FAF6F2]">Cartera consolidada</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-[#9C8578]">
+                Revisa pagos, mantenciones y contratos por vencer en una sola mirada.
+              </p>
+              <Button className="mt-4 w-full bg-[#B8965A] hover:bg-[#B8965A]/90 text-[#1C1917]" asChild>
+                <Link href="/broker/propiedades">Ver cartera</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stats Grid */}
         <div id="kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {kpiStats.map((stat, index) => (
@@ -216,51 +327,155 @@ export default async function BrokerDashboardPage() {
           ))}
         </div>
 
-        {/* Properties Grid */}
         {mandateStats > 0 && (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Propiedades que Administras</h2>
-              <div className="space-y-3">
-                {mandates.slice(0, 5).map((mandate) => {
-                  const currentPayment = mandate.property.payments[0]
-                  const paymentStatus = currentPayment?.status || 'PENDING'
-                  const statusLabel = statusConfig[paymentStatus]
+            <CardHeader>
+              <CardTitle className="text-[#FAF6F2]">Cartera consolidada</CardTitle>
+              <p className="text-sm text-[#9C8578]">
+                Estado operativo de cada propiedad en una sola pantalla.
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="border-y border-[#D5C3B6]/10 text-left text-[#9C8578]">
+                    <tr>
+                      <th className="px-6 py-3 font-medium">Propiedad</th>
+                      <th className="px-6 py-3 font-medium">Arrendatario</th>
+                      <th className="px-6 py-3 font-medium">Pago mes</th>
+                      <th className="px-6 py-3 font-medium">Mantenciones</th>
+                      <th className="px-6 py-3 font-medium">Contrato</th>
+                      <th className="px-6 py-3 font-medium">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mandates.map((mandate) => {
+                      const property = mandate.property
+                      const currentPayment = property.payments[0]
+                      const paymentStatus = currentPayment?.status || 'PENDING'
+                      const statusLabel = statusConfig[paymentStatus]
+                      const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
+                      const contractHint =
+                        contractEnd
+                          ? Math.ceil((contractEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                          : null
 
-                  return (
-                    <Link
-                      key={mandate.id}
-                      href={`/broker/propiedades/${mandate.property.id}`}
-                      className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917] hover:bg-[#1C1917]/80 transition-colors"
-                    >
-                      <div>
-                        <p className="text-[#FAF6F2] font-medium">{mandate.property.address}</p>
-                        <div className="flex items-center gap-2 text-sm text-[#9C8578]">
-                          <MapPin className="h-4 w-4" />
-                          {mandate.property.commune}
-                        </div>
-                        {mandate.property.landlord && (
-                          <p className="text-xs text-[#9C8578] mt-1">
-                            Propietario: {mandate.property.landlord.name}
-                          </p>
-                        )}
-                        {mandate.property.tenant && (
-                          <p className="text-xs text-[#9C8578]">
-                            Arrendatario: {mandate.property.tenant.name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <Badge className={statusLabel?.className || 'bg-gray-600'}>
-                          {statusLabel?.label || 'Sin estado'}
-                        </Badge>
-                      </div>
-                    </Link>
-                  )
-                })}
+                      return (
+                        <tr key={mandate.id} className="border-b border-[#D5C3B6]/10">
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-[#FAF6F2]">{property.name || property.address}</p>
+                            <p className="text-xs text-[#9C8578]">{property.address}</p>
+                          </td>
+                          <td className="px-6 py-4 text-[#D5C3B6]">
+                            {property.tenant?.name || 'Sin asignar'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge className={statusLabel?.className || 'bg-gray-600'}>
+                              {statusLabel?.label || 'Sin estado'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-[#D5C3B6]">
+                            {property._count?.maintenance ?? 0} abiertas
+                          </td>
+                          <td className="px-6 py-4 text-[#D5C3B6]">
+                            {contractHint === null
+                              ? 'Sin fecha'
+                              : contractHint < 0
+                                ? 'Vencido'
+                                : contractHint <= 90
+                                  ? `Vence en ${contractHint} días`
+                                  : 'Vigente'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Link href={`/broker/propiedades/${property.id}`} className="text-[#5E8B8C] hover:text-[#D5C3B6]">
+                              Abrir ficha
+                            </Link>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Properties Grid */}
+        {mandateStats > 0 && (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+              <CardHeader>
+                <CardTitle className="text-[#FAF6F2]">Rendiciones recientes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {recentStatements.length === 0 ? (
+                  <p className="text-sm text-[#9C8578]">Todavía no has generado rendiciones.</p>
+                ) : (
+                  recentStatements.map((statement) => (
+                    <div key={statement.id} className="rounded-lg bg-[#1C1917] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-[#FAF6F2]">
+                            {statement.property.name || statement.property.address}
+                          </p>
+                          <p className="text-xs text-[#9C8578]">
+                            {statement.month}/{statement.year} · {statement.landlord.name || statement.landlord.email}
+                          </p>
+                        </div>
+                        <Badge className={statement.status === 'SENT' ? 'bg-[#5E8B8C] text-white' : 'bg-[#B8965A] text-[#1C1917]'}>
+                          {statement.status === 'SENT' ? 'Enviada' : 'Borrador'}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-sm text-[#9C8578]">Neto a transferir</span>
+                        <span className="font-semibold text-[#FAF6F2]">
+                          ${statement.netTransferCLP.toLocaleString('es-CL')}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <Button variant="outline" className="w-full border-[#D5C3B6]/10 text-[#FAF6F2]" asChild>
+                  <Link href="/broker/rendiciones">Ver todas las rendiciones</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+              <CardHeader>
+                <CardTitle className="text-[#FAF6F2]">Avisos recientes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {recentMessages.length === 0 ? (
+                  <p className="text-sm text-[#9C8578]">Todavía no has enviado avisos a arrendatarios.</p>
+                ) : (
+                  recentMessages.map((message) => (
+                    <div key={message.id} className="rounded-lg bg-[#1C1917] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-[#FAF6F2]">{message.subject}</p>
+                          <p className="text-xs text-[#9C8578]">
+                            {message.tenant.name || message.tenant.email} · {message.property.name || message.property.address}
+                          </p>
+                        </div>
+                        <Badge className="bg-[#5E8B8C]/20 text-[#5E8B8C]">
+                          {message.sendEmail
+                            ? message.emailStatus === 'SENT'
+                              ? 'Email + app'
+                              : 'App + email fallido'
+                            : 'Solo app'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <Button variant="outline" className="w-full border-[#D5C3B6]/10 text-[#FAF6F2]" asChild>
+                  <Link href="/broker/avisos">Ver historial y enviar avisos</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {mandateStats === 0 && (

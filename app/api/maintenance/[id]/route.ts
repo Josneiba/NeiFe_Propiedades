@@ -48,8 +48,19 @@ export async function PATCH(
       )
     }
 
-    // Verificar permisos — solo el arrendador puede actualizar
-    if (maintenance.property.landlordId !== session.user.id) {
+    const hasBrokerAccess =
+      session.user.role === 'BROKER' &&
+      ((maintenance.property.managedBy && maintenance.property.managedBy === session.user.id) ||
+        (await prisma.mandate.findFirst({
+          where: {
+            propertyId: maintenance.propertyId,
+            brokerId: session.user.id,
+            status: 'ACTIVE',
+          },
+          select: { id: true },
+        })))
+
+    if (maintenance.property.landlordId !== session.user.id && !hasBrokerAccess) {
       return NextResponse.json(
         { error: 'No tiene permisos para actualizar esta mantención' },
         { status: 403 }

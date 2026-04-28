@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,6 @@ import {
   Loader2,
   Plus,
   Bell,
-  Edit2,
   Trash2,
 } from "lucide-react"
 
@@ -33,10 +32,7 @@ interface CalendarEvent {
   icon: any
   color: string
   badgeColor: string
-}
-
-interface BrokerCalendarClientProps {
-  propertyIds: string[]
+  editable?: boolean
 }
 
 const EVENT_STYLES = {
@@ -113,17 +109,20 @@ const getStyle = (type: string, variant?: StyleVariant) => {
   return EVENT_STYLES.DEFAULT
 }
 
-const getInspectionType = (type: string) => {
-  const types: Record<string, string> = {
-    ROUTINE: "Rutina",
-    MOVE_IN: "Entrada",
-    MOVE_OUT: "Salida",
-    EMERGENCY: "Emergencia",
-  }
-  return types[type] || type
+const typeIcons: Record<string, any> = {
+  INSPECTION: Calendar,
+  PAYMENT: DollarSign,
+  PAYMENT_DUE: DollarSign,
+  PAYMENT_OVERDUE: DollarSign,
+  CONTRACT: FileText,
+  CONTRACT_RENEWAL: FileText,
+  IPC_ADJUSTMENT: TrendingUp,
+  IPC: TrendingUp,
+  MAINTENANCE: Wrench,
+  TENANT_REMINDER: Bell,
 }
 
-export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClientProps) {
+export default function BrokerCalendarClient() {
   const { toast } = useToast()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [properties, setProperties] = useState<any[]>([])
@@ -140,176 +139,38 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
     reminder: 1,
     notifyType: "ME" as "ME" | "TENANT" | "BOTH",
   })
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [updatingEvent, setUpdatingEvent] = useState(false)
+
+  const decorateEvents = useCallback((rawEvents: any[]): CalendarEvent[] => {
+    return rawEvents.map((event) => ({
+      id: event.id,
+      type: event.type,
+      date: event.date,
+      title: event.title,
+      description: event.description || "",
+      propertyAddress: event.propertyAddress || "Propiedad",
+      icon: typeIcons[event.type] || Calendar,
+      color: getStyle(event.type).card,
+      badgeColor: getStyle(event.type).badge,
+      editable: Boolean(event.editable),
+    }))
+  }, [])
+
+  const loadSummary = useCallback(async () => {
+    const response = await fetch("/api/calendar/summary?scope=broker", {
+      cache: "no-store",
+    })
+    if (!response.ok) throw new Error("Failed to load calendar summary")
+    const data = await response.json()
+    setProperties(Array.isArray(data.properties) ? data.properties : [])
+    setEvents(decorateEvents(Array.isArray(data.events) ? data.events : []))
+  }, [decorateEvents])
 
   useEffect(() => {
-    const loadEvents = async () => {
+    let isMounted = true
+
+    const load = async () => {
       try {
-        // Fetch properties managed by broker
-        const propertiesRes = await fetch("/api/broker/properties")
-        if (!propertiesRes.ok) throw new Error("Failed to load properties")
-        const propertiesJson = await propertiesRes.json()
-        const propertiesData = Array.isArray(propertiesJson.properties)
-          ? propertiesJson.properties
-          : Array.isArray(propertiesJson)
-            ? propertiesJson
-            : []
-        setProperties(propertiesData)
-
-        const calendarEvents: CalendarEvent[] = []
-
-        // Fetch calendar events from API
-        try {
-          const calendarRes = await fetch("/api/calendar/events")
-          if (calendarRes.ok) {
-            const calendarPayload = await calendarRes.json()
-            const savedEvents = Array.isArray(calendarPayload.events) ? calendarPayload.events : []
-            savedEvents.forEach((event: any) => {
-              const typeIcons: Record<string, any> = {
-                INSPECTION: Calendar,
-                PAYMENT_DUE: DollarSign,
-                CONTRACT_RENEWAL: FileText,
-                IPC_ADJUSTMENT: TrendingUp,
-                MAINTENANCE: Wrench,
-                TENANT_REMINDER: Bell,
-              }
-              calendarEvents.push({
-                id: event.id,
-                type: event.type,
-                date: event.date,
-                title: event.title,
-                description: event.description || "",
-                propertyAddress: event.property?.address || "Propiedad",
-                icon: typeIcons[event.type] || Calendar,
-                color: getStyle(event.type).card,
-                badgeColor: getStyle(event.type).badge,
-              })
-            })
-          }
-        } catch (error) {
-          console.error("Error loading calendar events:", error)
-        }
-
-        // Process each broker-managed property
-        for (const property of propertiesData) {
-          // Skip if property is not in broker's managed properties
-          if (!propertyIds.includes(property.id)) continue
-
-          // Fetch inspections
-          try {
-            const inspectionsRes = await fetch(`/api/properties/${property.id}/inspections`)
-            if (inspectionsRes.ok) {
-              const inspectionsPayload = await inspectionsRes.json()
-              const inspections = Array.isArray(inspectionsPayload.inspections)
-                ? inspectionsPayload.inspections
-                : Array.isArray(inspectionsPayload)
-                  ? inspectionsPayload
-                  : []
-              inspections.forEach((inspection: any) => {
-                if (inspection.status === "SCHEDULED" || inspection.status === "CONFIRMED") {
-                  const style = getStyle("INSPECTION")
-                  calendarEvents.push({
-                    id: `inspection-${inspection.id}`,
-                    type: "INSPECTION",
-                    date: inspection.scheduledAt,
-                    title: `Inspección: ${getInspectionType(inspection.type)}`,
-                    description: `Estado: ${inspection.status === "CONFIRMED" ? "Confirmada" : "Programada"}`,
-                    propertyAddress: property.address || "Propiedad",
-                    icon: Calendar,
-                    color: style.card,
-                    badgeColor: style.badge
-                  })
-                }
-              })
-            }
-          } catch (error) {
-            console.error("Error loading inspections:", error)
-          }
-
-          // Fetch IPC adjustments
-          try {
-            const ipcRes = await fetch(`/api/properties/${property.id}/ipc-adjustments`)
-            if (ipcRes.ok) {
-              const ipcPayload = await ipcRes.json()
-              const adjustments = Array.isArray(ipcPayload.adjustments)
-                ? ipcPayload.adjustments
-                : Array.isArray(ipcPayload)
-                  ? ipcPayload
-                  : []
-              adjustments.forEach((adj: any) => {
-                if (adj.status === "PENDING") {
-                  const style = getStyle("IPC")
-                  calendarEvents.push({
-                    id: `ipc-${adj.id}`,
-                    type: "IPC",
-                    date: adj.scheduledDate,
-                    title: `Reajuste IPC ${adj.ipcRate}%`,
-                    description: adj.newRentCLP
-                      ? `Nuevo arriendo: $${adj.newRentCLP.toLocaleString("es-CL")}`
-                      : 'Reajuste IPC pendiente',
-                    propertyAddress: property.address || "Propiedad",
-                    icon: TrendingUp,
-                    color: style.card,
-                    badgeColor: style.badge
-                  })
-                }
-              })
-            }
-          } catch (error) {
-            console.error("Error loading IPC adjustments:", error)
-          }
-
-          // Check contract expiration (próximos 90 días)
-          if (property.contractEnd) {
-            const contractEndDate = new Date(property.contractEnd)
-            const today = new Date()
-            const daysUntilEnd = Math.floor((contractEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-            if (daysUntilEnd > 0 && daysUntilEnd <= 90) {
-              const style = getStyle("CONTRACT")
-              calendarEvents.push({
-                id: `contract-${property.id}`,
-                type: "CONTRACT",
-                date: property.contractEnd,
-                title: "Contrato próximo a vencer",
-                description: `Vence en ${daysUntilEnd} días`,
-                propertyAddress: property.address || "Propiedad",
-                icon: FileText,
-                color: style.card,
-                badgeColor: style.badge
-              })
-            }
-          }
-
-          // Pago del mes actual pendiente o atrasado (datos reales del API)
-          const pay = property.payments?.[0]
-          if (pay && (pay.status === "PENDING" || pay.status === "OVERDUE")) {
-            const today = new Date()
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-            const iso = lastDay.toISOString()
-            const isOverdue = pay.status === "OVERDUE"
-            const style = getStyle("PAYMENT", isOverdue ? "OVERDUE" : undefined)
-            calendarEvents.push({
-              id: `payment-${property.id}-${pay.month}-${pay.year}`,
-              type: "PAYMENT",
-              date: iso,
-              title: isOverdue ? "Pago atrasado (mes actual)" : "Pago pendiente (mes actual)",
-              description: property.monthlyRentCLP
-                ? `Monto referencia: $${Number(property.monthlyRentCLP).toLocaleString("es-CL")}`
-                : "Revisa la sección Pagos",
-              propertyAddress: property.address || "Propiedad",
-              icon: DollarSign,
-              color: style.card,
-              badgeColor: style.badge
-            })
-          }
-        }
-
-        // Sort by date
-        calendarEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        setEvents(calendarEvents)
+        await loadSummary()
       } catch (error) {
         console.error("Error loading calendar events:", error)
         toast({
@@ -318,16 +179,50 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
           variant: "destructive"
         })
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
-    loadEvents()
-  }, [propertyIds])
+    load()
 
-  const filteredEvents = events.filter(event => 
-    filter === "ALL" ? true : event.type === filter
-  )
+    return () => {
+      isMounted = false
+    }
+  }, [loadSummary, toast])
+
+  const filteredEvents = useMemo(() => (
+    filter === "ALL" ? events : events.filter((event) => event.type === filter)
+  ), [events, filter])
+
+  const next30Counts = useMemo(() => {
+    const now = Date.now()
+    const countWithin30 = (type: CalendarEvent["type"]) =>
+      filteredEvents.filter((event) => {
+        const daysFromNow = Math.floor(
+          (new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24)
+        )
+        return event.type === type && daysFromNow <= 30
+      }).length
+
+    return {
+      inspections: countWithin30("INSPECTION"),
+      ipc: countWithin30("IPC"),
+      contracts: countWithin30("CONTRACT"),
+      payments: countWithin30("PAYMENT"),
+    }
+  }, [filteredEvents])
+
+  const urgentEvents = useMemo(() => {
+    const now = Date.now()
+    return filteredEvents.filter((event) => {
+      const daysFromNow = Math.floor(
+        (new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24)
+      )
+      return daysFromNow < 7 || (event.type === "PAYMENT" && daysFromNow < 0)
+    })
+  }, [filteredEvents])
 
   const handleCreateEvent = async () => {
     try {
@@ -339,19 +234,6 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
       })
 
       if (!response.ok) throw new Error("Failed to create event")
-
-      const createdEvent = await response.json()
-      setEvents(prev => [...prev, {
-        id: createdEvent.id,
-        type: createdEvent.type,
-        date: createdEvent.date,
-        title: createdEvent.title,
-        description: createdEvent.description || "",
-        propertyAddress: properties.find(p => p.id === createdEvent.propertyId)?.address || "Propiedad",
-        icon: Calendar,
-        color: getStyle(createdEvent.type).card,
-        badgeColor: getStyle(createdEvent.type).badge,
-      }].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()))
 
       setShowNewEventDialog(false)
       setNewEvent({
@@ -368,6 +250,8 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
         title: "Evento creado",
         description: "El evento se ha agregado al calendario",
       })
+
+      await loadSummary()
     } catch (error) {
       console.error("Error creating event:", error)
       toast({
@@ -388,7 +272,7 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
 
       if (!response.ok) throw new Error("Failed to delete event")
 
-      setEvents(prev => prev.filter(e => e.id !== eventId))
+      setEvents((current) => current.filter((event) => event.id !== eventId))
       toast({
         title: "Evento eliminado",
         description: "El evento se ha eliminado del calendario"
@@ -443,7 +327,7 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
                   className="w-full p-2 rounded bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
                 >
                   <option value="">Selecciona una propiedad</option>
-                  {properties.filter(p => propertyIds.includes(p.id)).map(property => (
+                  {properties.map(property => (
                     <option key={property.id} value={property.id}>
                       {property.name || property.address}
                     </option>
@@ -597,14 +481,16 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
                         {event.type === "PAYMENT_DUE" && "Recordatorio de Pago"}
                         {event.type === "PAYMENT_OVERDUE" && "Pago Atrasado"}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="text-[#9C8578] hover:text-[#FAF6F2] hover:bg-[#D5C3B6]/20"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {event.editable && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="text-[#9C8578] hover:text-[#FAF6F2] hover:bg-[#D5C3B6]/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   {event.description && (
@@ -625,6 +511,60 @@ export default function BrokerCalendarClient({ propertyIds }: BrokerCalendarClie
               </Card>
           ))
         )}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardHeader>
+            <CardTitle className="text-[#FAF6F2] text-lg">Resumen de próximos 30 días</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-[#9C8578]">Inspecciones:</span>
+              <span className="font-semibold text-[#FAF6F2]">{next30Counts.inspections}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#9C8578]">Reajustes IPC:</span>
+              <span className="font-semibold text-[#FAF6F2]">{next30Counts.ipc}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#9C8578]">Contratos por vencer:</span>
+              <span className="font-semibold text-[#FAF6F2]">{next30Counts.contracts}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#9C8578]">Pagos:</span>
+              <span className="font-semibold text-[#FAF6F2]">{next30Counts.payments}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardHeader>
+            <CardTitle className="text-[#FAF6F2] text-lg">Eventos urgentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {urgentEvents.slice(0, 5).map((event) => {
+              const daysFromNow = Math.floor(
+                (new Date(event.date).getTime() - new Date().getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+
+              return (
+                <div key={event.id} className="flex items-center gap-2 text-sm">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      daysFromNow < 0 ? "bg-red-500" : "bg-yellow-500"
+                    }`}
+                  />
+                  <span className="text-[#9C8578]">{event.title}</span>
+                </div>
+              )
+            })}
+            {urgentEvents.length === 0 && (
+              <p className="text-sm text-[#9C8578]">No hay eventos urgentes</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

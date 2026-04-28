@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  ExternalLink,
+  FileText,
   Search,
   User,
   Loader2,
@@ -55,23 +58,37 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
   const [broker, setBroker] = useState<Broker | null>(null)
   const [searchingBroker, setSearchingBroker] = useState(false)
 
+  const loadMandates = useCallback(async (signal?: AbortSignal) => {
+    const response = await fetch(`/api/mandates?propertyId=${propertyId}`, { signal })
+    if (!response.ok) {
+      throw new Error('No se pudieron cargar los mandatos')
+    }
+
+    const data = await response.json()
+    setMandates(data.mandates || [])
+  }, [propertyId])
+
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchMandates = async () => {
       try {
-        const response = await fetch(`/api/mandates?propertyId=${propertyId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setMandates(data.mandates || [])
-        }
+        await loadMandates(controller.signal)
       } catch (err) {
-        console.error('Error fetching mandates:', err)
+        if (!(err instanceof Error && err.name === 'AbortError')) {
+          console.error('Error fetching mandates:', err)
+        }
       } finally {
         setLoading(false)
       }
     }
 
     fetchMandates()
-  }, [propertyId])
+
+    return () => {
+      controller.abort()
+    }
+  }, [loadMandates])
 
   const handleSearchBroker = async () => {
     if (!brokerEmail.trim()) return
@@ -125,15 +142,7 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
 
       setBroker(null)
       setBrokerEmail('')
-
-      // Refresh mandates
-      const mandatesRes = await fetch(
-        `/api/mandates?propertyId=${propertyId}`
-      )
-      if (mandatesRes.ok) {
-        const mandatesData = await mandatesRes.json()
-        setMandates(mandatesData.mandates || [])
-      }
+      await loadMandates()
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -163,15 +172,7 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
         title: 'Éxito',
         description: 'Mandato revocado.',
       })
-
-      // Refresh mandates
-      const mandatesRes = await fetch(
-        `/api/mandates?propertyId=${propertyId}`
-      )
-      if (mandatesRes.ok) {
-        const mandatesData = await mandatesRes.json()
-        setMandates(mandatesData.mandates || [])
-      }
+      await loadMandates()
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -198,15 +199,7 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
         title: 'Éxito',
         description: 'Mandato activado. El corredor ahora administra esta propiedad.',
       })
-
-      // Refresh mandates
-      const mandatesRes = await fetch(
-        `/api/mandates?propertyId=${propertyId}`
-      )
-      if (mandatesRes.ok) {
-        const mandatesData = await mandatesRes.json()
-        setMandates(mandatesData.mandates || [])
-      }
+      await loadMandates()
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -244,6 +237,14 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
                   El corredor <strong>{activateMandate.broker.name || activateMandate.broker.email}</strong> solicita
                   administrar esta propiedad.
                 </p>
+                <div className="mt-4">
+                  <Button asChild variant="outline" className="text-foreground border-border">
+                    <Link href={`/mandatos/${activateMandate.id}/documento`}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Revisar documento
+                    </Link>
+                  </Button>
+                </div>
                 <div className="flex gap-2 mt-4">
                   <Button
                     onClick={() => handleSignMandate(activateMandate.id)}
@@ -291,6 +292,22 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
                     Activo
                   </Badge>
                 </div>
+                {mandates[0] ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button asChild variant="outline" className="text-foreground border-border">
+                      <Link href={`/mandatos/${mandates[0].id}/documento`}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Ver mandato firmado
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="text-foreground border-border">
+                      <Link href={`/mandatos/${mandates[0].id}/seguimiento`}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Ver dashboard compartido
+                      </Link>
+                    </Button>
+                  </div>
+                ) : null}
               </div>
               <Button
                 onClick={() =>
@@ -403,6 +420,22 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
                         {mandate.broker.company && `${mandate.broker.company} - `}
                         Desde {new Date(mandate.createdAt).toLocaleDateString('es-CL')}
                       </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button asChild variant="outline" size="sm" className="border-border text-foreground">
+                          <Link href={`/mandatos/${mandate.id}/documento`}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Documento
+                          </Link>
+                        </Button>
+                        {mandate.status === 'ACTIVE' && (
+                          <Button asChild variant="outline" size="sm" className="border-border text-foreground">
+                            <Link href={`/mandatos/${mandate.id}/seguimiento`}>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Seguimiento
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <Badge
                       className={

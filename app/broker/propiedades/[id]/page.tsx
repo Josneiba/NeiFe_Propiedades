@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { PropertyMiniMap } from "@/components/map/property-mini-map"
+import { PropertyPublicationToggle } from "@/components/properties/property-publication-toggle"
+import { ApplicationPortalManager } from "@/components/properties/application-portal-manager"
+import { ConfirmPaymentButton } from "@/components/payments/confirm-payment-button"
 import {
   ArrowLeft,
   Building2,
   Calendar,
+  Download,
   CreditCard,
   ExternalLink,
   FileText,
@@ -155,6 +159,7 @@ export default async function BrokerPropertyDetailPage({
           month: true,
           year: true,
           amountCLP: true,
+          receipt: true,
         },
       },
       services: {
@@ -335,6 +340,12 @@ export default async function BrokerPropertyDetailPage({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <PropertyPublicationToggle
+            propertyId={property.id}
+            isPublished={property.isPublished}
+            publishedAt={property.publishedAt}
+            disabled={Boolean(property.tenant) && !property.isPublished}
+          />
           <Button asChild className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
             <Link href={`/broker/propiedades/${property.id}/inspecciones`}>
               <Calendar className="mr-2 h-4 w-4" />
@@ -377,6 +388,9 @@ export default async function BrokerPropertyDetailPage({
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge className={brokerScopeBadgeClass.OPERATE}>Inspecciones</Badge>
                     <Badge className={brokerScopeBadgeClass.OPERATE}>Reajuste IPC</Badge>
+                    <Badge className={brokerScopeBadgeClass.OPERATE}>Confirmación de pagos</Badge>
+                    <Badge className={brokerScopeBadgeClass.OPERATE}>Carga y firma de contratos</Badge>
+                    <Badge className={brokerScopeBadgeClass.OPERATE}>Servicios y boletas</Badge>
                     <Badge className={brokerScopeBadgeClass.TRACK}>Seguimiento operativo</Badge>
                   </div>
                 </div>
@@ -386,9 +400,9 @@ export default async function BrokerPropertyDetailPage({
                     Reservado al arrendador
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Confirmación de pagos</Badge>
-                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Carga y firma de contratos</Badge>
-                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Aprobaciones nuevas</Badge>
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Decisiones de cierre o devolución final</Badge>
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Revocación del mandato</Badge>
+                    <Badge className={brokerScopeBadgeClass.READ_ONLY}>Aprobaciones patrimoniales extraordinarias</Badge>
                   </div>
                 </div>
               </div>
@@ -630,6 +644,12 @@ export default async function BrokerPropertyDetailPage({
                   Abrir calendario del corredor
                 </Link>
               </Button>
+              <Button asChild variant="outline" className="w-full border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+                <Link href={`/broker/pagos?property=${property.id}`}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Revisar pagos de esta propiedad
+                </Link>
+              </Button>
               <Button asChild variant="ghost" className="w-full justify-between text-[#D5C3B6] hover:bg-[#D5C3B6]/10">
                 <Link href="/broker/mandatos">
                   <span className="inline-flex items-center gap-2">
@@ -639,6 +659,22 @@ export default async function BrokerPropertyDetailPage({
                   <ExternalLink className="h-4 w-4" />
                 </Link>
               </Button>
+              {activeMandate ? (
+                <>
+                  <Button asChild variant="outline" className="w-full border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+                    <Link href={`/mandatos/${activeMandate.id}/documento`}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Abrir mandato firmado
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="w-full border-[#D5C3B6]/20 text-[#FAF6F2] hover:bg-[#D5C3B6]/10">
+                    <Link href={`/mandatos/${activeMandate.id}/seguimiento`}>
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Ver dashboard compartido
+                    </Link>
+                  </Button>
+                </>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -682,7 +718,7 @@ export default async function BrokerPropertyDetailPage({
                     <CreditCard className="mt-0.5 h-4 w-4 text-[#F2C94C]" />
                     <div>
                       <p className="font-medium text-[#FAF6F2]">Pagos</p>
-                      <p className="text-sm text-[#9C8578]">Ves el estado y el historial, pero la confirmación final queda en el panel del arrendador.</p>
+                      <p className="text-sm text-[#9C8578]">Revisas comprobantes y confirmas pagos cuando la propiedad está bajo tu administración activa.</p>
                     </div>
                   </div>
                   <Badge className={brokerScopeBadgeClass.READ_ONLY}>Consulta</Badge>
@@ -695,7 +731,7 @@ export default async function BrokerPropertyDetailPage({
                     <Wrench className="mt-0.5 h-4 w-4 text-[#F2C94C]" />
                     <div>
                       <p className="font-medium text-[#FAF6F2]">Mantenciones</p>
-                      <p className="text-sm text-[#9C8578]">Haces seguimiento operativo, pero los cambios de estado y decisiones finales siguen acotados.</p>
+                      <p className="text-sm text-[#9C8578]">Apruebas, asignas proveedor y mueves el estado de la mantención según el trabajo en curso.</p>
                     </div>
                   </div>
                   <Badge className={brokerScopeBadgeClass.TRACK}>Seguimiento</Badge>
@@ -753,17 +789,41 @@ export default async function BrokerPropertyDetailPage({
                     return (
                       <div
                         key={payment.id}
-                        className="flex items-center justify-between rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-3"
+                        className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-3"
                       >
-                        <div>
-                          <p className="text-sm font-medium text-[#FAF6F2]">
-                            {formatMonth(payment.month, payment.year)}
-                          </p>
-                          <p className="text-sm text-[#9C8578]">
-                            {formatCurrency(payment.amountCLP)}
-                          </p>
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#FAF6F2]">
+                              {formatMonth(payment.month, payment.year)}
+                            </p>
+                            <p className="text-sm text-[#9C8578]">
+                              {formatCurrency(payment.amountCLP)}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {payment.receipt ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
+                                asChild
+                              >
+                                <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Comprobante
+                                </a>
+                              </Button>
+                            ) : null}
+                            {payment.status === "PROCESSING" && payment.receipt ? (
+                              <ConfirmPaymentButton
+                                paymentId={payment.id}
+                                label="Confirmar pago"
+                                className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+                              />
+                            ) : null}
+                            <Badge className={status.className}>{status.label}</Badge>
+                          </div>
                         </div>
-                        <Badge className={status.className}>{status.label}</Badge>
                       </div>
                     )
                   })}
@@ -820,6 +880,14 @@ export default async function BrokerPropertyDetailPage({
             </CardContent>
           </Card>
 
+          <ApplicationPortalManager
+            propertyId={property.id}
+            propertyAddress={`${property.address}, ${property.commune}`}
+            applicationOpen={property.applicationOpen}
+            applicationSlug={property.applicationSlug}
+            hasTenant={Boolean(property.tenant)}
+          />
+
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
             <CardHeader>
               <CardTitle className="text-[#FAF6F2]">Servicios del último período</CardTitle>
@@ -866,6 +934,15 @@ export default async function BrokerPropertyDetailPage({
                   Aún no hay servicios mensuales registrados para esta propiedad.
                 </p>
               )}
+              <div className="pt-2">
+                <Link
+                  href={`/broker/servicios?property=${property.id}`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#D5C3B6]/10 px-3 py-2 text-sm text-[#FAF6F2] hover:bg-[#D5C3B6]/5"
+                >
+                  Abrir servicios y boletas
+                  <ExternalLink className="h-4 w-4 opacity-80" />
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

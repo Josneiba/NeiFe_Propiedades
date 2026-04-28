@@ -18,7 +18,15 @@ interface MonthlyService {
   water: number
   electricity: number
   gas?: number
-  amountCLP: number
+  garbage?: number
+  commonExpenses?: number
+  other?: number
+  otherLabel?: string | null
+  waterBillUrl?: string | null
+  lightBillUrl?: string | null
+  gasBillUrl?: string | null
+  garbageBillUrl?: string | null
+  commonBillUrl?: string | null
 }
 
 export default async function ServiciosPage() {
@@ -58,9 +66,15 @@ export default async function ServiciosPage() {
       water: true,
       electricity: true,
       gas: true,
+      garbage: true,
+      commonExpenses: true,
+      other: true,
+      otherLabel: true,
       waterBillUrl: true,
       lightBillUrl: true,
       gasBillUrl: true,
+      garbageBillUrl: true,
+      commonBillUrl: true,
     },
     orderBy: [{ year: "asc" }, { month: "asc" }],
   })) as unknown as MonthlyService[]
@@ -113,7 +127,7 @@ export default async function ServiciosPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Servicios Básicos</h1>
-        <p className="text-muted-foreground">Consumo de agua y luz de tu arriendo</p>
+        <p className="text-muted-foreground">Consumo y boletas de agua, luz, gas y otros cargos del arriendo</p>
       </div>
 
       {/* Summary Cards */}
@@ -218,7 +232,11 @@ export default async function ServiciosPage() {
                     {services.some(s => s.gas && s.gas > 0) && (
                       <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gas</th>
                     )}
+                    {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gasto común</th>
+                    )}
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total servicios</th>
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Boletas</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -241,8 +259,52 @@ export default async function ServiciosPage() {
                           ${(service.gas || 0).toLocaleString("es-CL")}
                         </td>
                       )}
+                      {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
+                        <td className="py-4 px-4 text-right text-foreground">
+                          ${(service.commonExpenses || 0).toLocaleString("es-CL")}
+                        </td>
+                      )}
                       <td className="py-4 px-4 text-right font-semibold text-foreground">
-                        ${(service.water + service.electricity + (service.gas || 0)).toLocaleString("es-CL")}
+                        ${(
+                          service.water +
+                          service.electricity +
+                          (service.gas || 0) +
+                          (service.garbage || 0) +
+                          (service.commonExpenses || 0) +
+                          (service.other || 0)
+                        ).toLocaleString("es-CL")}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {service.waterBillUrl ? (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={service.waterBillUrl} target="_blank" rel="noopener noreferrer">
+                                Agua
+                              </a>
+                            </Button>
+                          ) : null}
+                          {service.lightBillUrl ? (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={service.lightBillUrl} target="_blank" rel="noopener noreferrer">
+                                Luz
+                              </a>
+                            </Button>
+                          ) : null}
+                          {service.gasBillUrl ? (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={service.gasBillUrl} target="_blank" rel="noopener noreferrer">
+                                Gas
+                              </a>
+                            </Button>
+                          ) : null}
+                          {service.commonBillUrl ? (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={service.commonBillUrl} target="_blank" rel="noopener noreferrer">
+                                GC
+                              </a>
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}

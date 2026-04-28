@@ -18,6 +18,8 @@ const createMandateSchema = z
     notes: z.string().trim().max(1000).optional(),
     startsAt: z.preprocess(emptyToUndefined, z.coerce.date()).optional(),
     expiresAt: z.preprocess(emptyToUndefined, z.coerce.date()).optional(),
+    commissionRate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(100)).optional(),
+    commissionType: z.enum(['MONTHLY', 'ONE_TIME', 'ANNUAL']).optional(),
   })
   .refine(
     (data) =>
@@ -132,6 +134,8 @@ export async function POST(req: NextRequest) {
         brokerSignedAt: new Date(),
         startsAt: data.startsAt,
         expiresAt: data.expiresAt,
+        commissionRate: data.commissionRate,
+        commissionType: data.commissionType,
         notes: data.notes,
       },
       include: mandateInclude,

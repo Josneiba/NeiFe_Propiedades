@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { logActivity, logUnauthorizedAccess } from '@/lib/activity'
+import { buildServiceChargeItems, getServiceChargesTotal } from '@/lib/service-charges'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -39,15 +40,29 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Tenant: devolver pagos de su propiedad con cargos de servicios
+    // Tenant: devolver pagos de su propiedad con cargos de servicios y garantía
     if (isTenantRequest) {
       const property = await prisma.property.findFirst({
         where: { tenantId: session.user.id },
-        select: { id: true, monthlyRentCLP: true },
+        select: {
+          id: true,
+          monthlyRentCLP: true,
+          securityDeposit: {
+            select: {
+              amountCLP: true,
+              status: true,
+              receivedAt: true,
+              returnedAt: true,
+              returnedAmountCLP: true,
+              deductionsCLP: true,
+              deductionNotes: true,
+            },
+          },
+        },
       })
 
       if (!property) {
-        return NextResponse.json([])
+        return NextResponse.json({ payments: [], summary: null, securityDeposit: null })
       }
 
       const [payments, services] = await Promise.all([
@@ -64,6 +79,8 @@ export async function GET(req: NextRequest) {
         const svc = services.find(
           (s) => s.month === payment.month && s.year === payment.year
         )
+        const serviceItems = buildServiceChargeItems(svc)
+        const serviceTotalCLP = getServiceChargesTotal(svc)
         const water = svc?.water ?? 0
         const electricity = svc?.electricity ?? 0
         const gas = svc?.gas ?? 0
@@ -71,14 +88,50 @@ export async function GET(req: NextRequest) {
         return {
           ...payment,
           amountCLP: payment.amountCLP,
-          totalCLP: payment.amountCLP + water + electricity + gas,
+          serviceItems,
+          serviceTotalCLP,
+          totalCLP: payment.amountCLP + serviceTotalCLP,
           water,
           electricity,
           gas,
+          garbage: svc?.garbage ?? 0,
+          commonExpenses: svc?.commonExpenses ?? 0,
+          other: svc?.other ?? 0,
+          otherLabel: svc?.otherLabel ?? null,
         }
       })
 
-      return NextResponse.json(enriched)
+      const payableStatuses = new Set(['PENDING', 'OVERDUE'])
+      const processingStatuses = new Set(['PROCESSING'])
+      const payablePayments = enriched.filter((payment) =>
+        payableStatuses.has(payment.status)
+      )
+      const processingPayments = enriched.filter((payment) =>
+        processingStatuses.has(payment.status)
+      )
+      const nextPayment = payablePayments[0] ?? null
+
+      const summary = {
+        currentMonthDueCLP: nextPayment?.totalCLP ?? 0,
+        currentMonthLabel: nextPayment
+          ? `${nextPayment.month}/${nextPayment.year}`
+          : null,
+        totalOutstandingCLP: payablePayments.reduce(
+          (sum, payment) => sum + payment.totalCLP,
+          0
+        ),
+        overdueBalanceCLP: enriched
+          .filter((payment) => payment.status === 'OVERDUE')
+          .reduce((sum, payment) => sum + payment.totalCLP, 0),
+        paymentsPendingCount: payablePayments.length,
+        paymentsProcessingCount: processingPayments.length,
+      }
+
+      return NextResponse.json({
+        payments: enriched,
+        summary,
+        securityDeposit: property.securityDeposit,
+      })
     }
 
     const where: any = {

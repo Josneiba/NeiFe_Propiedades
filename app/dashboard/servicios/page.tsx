@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { MonthlyServiceManager } from "@/components/services/monthly-service-manager"
 import { Droplets, Zap, Flame } from "lucide-react"
 
 const monthNames = [
@@ -167,6 +168,13 @@ export default async function DashboardServiciosPage({
           </form>
         </CardContent>
       </Card>
+
+      {properties.length > 0 && (
+        <MonthlyServiceManager
+          properties={properties}
+          defaultPropertyId={filterProperty?.id ?? filterPropertyId ?? null}
+        />
+      )}
 
       <Card className="bg-card border-border">
         <CardHeader>

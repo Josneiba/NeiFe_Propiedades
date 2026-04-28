@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PaymentReceiptDownload } from "@/components/payments/payment-receipt-download"
+import { ConfirmPaymentButton } from "@/components/payments/confirm-payment-button"
+import { GenerateMonthlyPaymentsButton } from "@/components/payments/generate-monthly-payments-button"
 import { 
   Building2,
   Check,
@@ -55,22 +57,22 @@ export default async function PagosPage({
   const { property: filterPropertyId, status: statusFilter = "ALL", behavior: behaviorFilter = "ALL" } =
     await searchParams
 
-  const properties = await prisma.property.findMany({
-    where: { landlordId: session.user.id, isActive: true },
-    select: { id: true, name: true, address: true },
-    orderBy: { createdAt: "desc" },
-  })
-
-  const filterProperty =
+  const [properties, filterProperty] = await Promise.all([
+    prisma.property.findMany({
+      where: { landlordId: session.user.id, isActive: true },
+      select: { id: true, name: true, address: true },
+      orderBy: { createdAt: "desc" },
+    }),
     filterPropertyId != null && filterPropertyId !== ""
-      ? await prisma.property.findFirst({
+      ? prisma.property.findFirst({
           where: {
             id: filterPropertyId,
             landlordId: session.user.id,
           },
           select: { id: true, name: true, address: true },
         })
-      : null
+      : Promise.resolve(null),
+  ])
 
   if (filterPropertyId && !filterProperty) {
     redirect("/dashboard/pagos")
@@ -108,20 +110,6 @@ export default async function PagosPage({
     take: 50,
     skip: (page - 1) * 50,
   })) as PaymentWithProperty[]
-
-  // Check if there are more payments to load
-  const totalPayments = await prisma.payment.count({
-    where: {
-      property: {
-        landlordId: session.user.id,
-        ...(filterProperty ? { id: filterProperty.id } : {}),
-      },
-      ...(statusFilter !== "ALL" && {
-        status: statusFilter as any,
-      }),
-    },
-  })
-  // const hasMorePayments = page * 50 < totalPayments
 
   payments =
     behaviorFilter === "ONTIME"
@@ -166,6 +154,20 @@ export default async function PagosPage({
         <h1 className="text-3xl font-bold text-foreground">Gestión de Pagos</h1>
         <p className="text-muted-foreground">Monitorea y confirma pagos de tus arrendatarios</p>
       </div>
+
+      {session.user.role === "OWNER" && (
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-medium text-foreground">Generación manual de pagos</p>
+              <p className="text-sm text-muted-foreground">
+                Úsalo para crear los pagos del mes sin esperar al cron del día 1.
+              </p>
+            </div>
+            <GenerateMonthlyPaymentsButton />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtros */}
       <Card className="bg-card border-border">
@@ -361,15 +363,7 @@ export default async function PagosPage({
                                 <Download className="h-4 w-4" />
                               </a>
                             </Button>
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              asChild
-                            >
-                              <Link href={`/api/payments/${payment.id}/confirm`}>
-                                Confirmar
-                              </Link>
-                            </Button>
+                            <ConfirmPaymentButton paymentId={payment.id} />
                           </>
                         )}
                         {payment.status === "PAID" && payment.receipt && (

@@ -28,12 +28,41 @@ interface Payment {
   year: number
   amountCLP: number
   totalCLP?: number
+  serviceTotalCLP?: number
+  serviceItems?: Array<{
+    label: string
+    amount: number
+    billUrl?: string | null
+  }>
   water: number
   electricity: number
   gas?: number
+  garbage?: number
+  commonExpenses?: number
+  other?: number
+  otherLabel?: string | null
   status: string
   receipt?: string | null
   createdAt?: string
+}
+
+interface PaymentSummary {
+  currentMonthDueCLP: number
+  currentMonthLabel: string | null
+  totalOutstandingCLP: number
+  overdueBalanceCLP: number
+  paymentsPendingCount: number
+  paymentsProcessingCount: number
+}
+
+interface SecurityDeposit {
+  amountCLP: number
+  status: string
+  receivedAt?: string | null
+  returnedAt?: string | null
+  returnedAmountCLP?: number | null
+  deductionsCLP?: number | null
+  deductionNotes?: string | null
 }
 
 interface PropertyInfo {
@@ -55,6 +84,8 @@ interface PropertyInfo {
 export default function TenantPagosPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [property, setProperty] = useState<PropertyInfo | null>(null)
+  const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null)
+  const [securityDeposit, setSecurityDeposit] = useState<SecurityDeposit | null>(null)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [loading, setLoading] = useState(true)
@@ -70,7 +101,13 @@ export default function TenantPagosPage() {
 
         if (paymentsRes.ok) {
           const data = await paymentsRes.json()
-          setPayments(Array.isArray(data) ? data : data.payments || [])
+          if (Array.isArray(data)) {
+            setPayments(data)
+          } else {
+            setPayments(Array.isArray(data.payments) ? data.payments : [])
+            setPaymentSummary(data.summary ?? null)
+            setSecurityDeposit(data.securityDeposit ?? null)
+          }
         }
 
         if (propertyRes.ok) {
@@ -101,12 +138,24 @@ export default function TenantPagosPage() {
   }
 
   const getTotal = (payment: Payment) => {
-    const charges = (payment.water || 0) + (payment.electricity || 0) + (payment.gas ?? 0)
-    return payment.totalCLP ?? payment.amountCLP + charges
+    return payment.totalCLP ?? payment.amountCLP + (payment.serviceTotalCLP ?? 0)
   }
 
-  const pendingPayment = payments.find(p => p.status === 'PENDING' || p.status === 'OVERDUE')
+  const payablePayments = payments.filter(
+    (payment) => payment.status === 'PENDING' || payment.status === 'OVERDUE'
+  )
+  const pendingPayment = payablePayments[0] ?? null
   const landlordIdentity = property ? getUserIdentity(property.landlord) : { label: 'Documento', value: '' }
+  const securityDepositBalance = securityDeposit
+    ? securityDeposit.status === 'RETURNED_FULL'
+      ? 0
+      : Math.max(
+          0,
+          securityDeposit.amountCLP -
+            (securityDeposit.returnedAmountCLP ?? 0) -
+            (securityDeposit.deductionsCLP ?? 0)
+        )
+    : 0
 
   if (loading) {
     return (
@@ -153,30 +202,14 @@ export default function TenantPagosPage() {
                   {formatCLP(property?.monthlyRent || 0)}
                 </p>
               </div>
-              {pendingPayment.water > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Agua</p>
+              {(pendingPayment.serviceItems || []).slice(0, 3).map((item) => (
+                <div key={item.label}>
+                  <p className="text-sm text-muted-foreground">{item.label}</p>
                   <p className="font-semibold text-foreground font-mono">
-                    {formatCLP(pendingPayment.water)}
+                    {formatCLP(item.amount)}
                   </p>
                 </div>
-              )}
-              {pendingPayment.electricity > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Luz</p>
-                  <p className="font-semibold text-foreground font-mono">
-                    {formatCLP(pendingPayment.electricity)}
-                  </p>
-                </div>
-              )}
-              {(pendingPayment.gas ?? 0) > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Gas</p>
-                  <p className="font-semibold text-foreground font-mono">
-                    {formatCLP(pendingPayment.gas ?? 0)}
-                  </p>
-                </div>
-              )}
+              ))}
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-xl font-bold text-[#5E8B8C]">
@@ -184,19 +217,94 @@ export default function TenantPagosPage() {
                 </p>
               </div>
             </div>
-            <Button 
-              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
-              onClick={() => {
-                setSelectedPayment(pendingPayment)
-                setIsPaymentOpen(true)
-              }}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Pagar ahora
-            </Button>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                {paymentSummary?.totalOutstandingCLP ? (
+                  <p className="text-sm text-muted-foreground">
+                    Total pendiente acumulado:{" "}
+                    <span className="font-semibold text-foreground">
+                      {formatCLP(paymentSummary.totalOutstandingCLP)}
+                    </span>
+                  </p>
+                ) : null}
+                {paymentSummary?.paymentsPendingCount && paymentSummary.paymentsPendingCount > 1 ? (
+                  <p className="text-xs text-[#C27F79]">
+                    Tienes {paymentSummary.paymentsPendingCount} meses pendientes. Puedes ir regularizándolos uno por uno.
+                  </p>
+                ) : null}
+              </div>
+              <Button
+                className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+                onClick={() => {
+                  setSelectedPayment(pendingPayment)
+                  setIsPaymentOpen(true)
+                }}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Pagar {getMonthName(pendingPayment.month)} {pendingPayment.year}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="bg-card border-border">
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Pagar este mes</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {formatCLP(paymentSummary?.currentMonthDueCLP ?? 0)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {paymentSummary?.currentMonthLabel
+                ? `Corresponde a ${paymentSummary.currentMonthLabel}`
+                : 'Sin cargo pendiente actual'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Total pendiente</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {formatCLP(paymentSummary?.totalOutstandingCLP ?? 0)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {paymentSummary?.paymentsPendingCount
+                ? `${paymentSummary.paymentsPendingCount} mes(es) por regularizar`
+                : 'Sin deuda acumulada'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Pagos en revisión</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {paymentSummary?.paymentsProcessingCount ?? 0}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Comprobantes enviados pendientes de confirmación
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Saldo de garantía</p>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {formatCLP(securityDepositBalance)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {securityDeposit
+                ? securityDeposit.status === 'HELD'
+                  ? 'Garantía retenida vigente'
+                  : `Estado: ${securityDeposit.status}`
+                : 'Aún no hay garantía registrada'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Payment History */}
       <Card className="bg-card border-border">
@@ -214,9 +322,12 @@ export default function TenantPagosPage() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Mes</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Monto</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Arriendo</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Servicios</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total</th>
                     <th className="text-center py-3 px-4 font-medium text-muted-foreground">Estado</th>
                     <th className="text-center py-3 px-4 font-medium text-muted-foreground">Comprobante</th>
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,6 +351,12 @@ export default function TenantPagosPage() {
                             </p>
                           )}
                         </td>
+                        <td className="py-4 px-4 text-right text-foreground">
+                          {formatCLP(payment.amountCLP)}
+                        </td>
+                        <td className="py-4 px-4 text-right text-foreground">
+                          {formatCLP(payment.serviceTotalCLP ?? 0)}
+                        </td>
                         <td className="py-4 px-4 text-right font-semibold text-foreground">
                           {formatCLP(getTotal(payment))}
                         </td>
@@ -261,6 +378,22 @@ export default function TenantPagosPage() {
                                 <Download className="h-4 w-4 mr-1" />
                                 PDF
                               </a>
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          {(payment.status === 'PENDING' || payment.status === 'OVERDUE') ? (
+                            <Button
+                              size="sm"
+                              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
+                              onClick={() => {
+                                setSelectedPayment(payment)
+                                setIsPaymentOpen(true)
+                              }}
+                            >
+                              Pagar {getMonthName(payment.month)}
                             </Button>
                           ) : (
                             <span className="text-muted-foreground text-sm">—</span>
@@ -316,6 +449,7 @@ export default function TenantPagosPage() {
             water: selectedPayment.water,
             electricity: selectedPayment.electricity,
             gas: selectedPayment.gas,
+            serviceItems: selectedPayment.serviceItems,
           }}
           bankDetails={{
             bank: property.landlord.bankName,

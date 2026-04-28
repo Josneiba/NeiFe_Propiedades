@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
       'maintenance',
       'contracts',
       'avatars',
+      'receipts',
+      'boletas',
     ]
     if (!allowedFolders.includes(folder)) {
       return NextResponse.json(

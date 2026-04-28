@@ -107,8 +107,8 @@ export async function POST(req: NextRequest) {
             agentPhone: broker.phone ?? '',
             agentCompany: broker.company ?? '',
             agentRut: broker.rut ?? broker.documentNumberNormalized ?? '',
-            commissionRate: 0.05,
-            commissionType: 'MONTHLY',
+            commissionRate: null,
+            commissionType: null,
             updatedAt: new Date(),
           },
         })

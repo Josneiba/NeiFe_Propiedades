@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
     const propertyId = formData.get('propertyId') as string
     const month = formData.get('month') as string
     const year = formData.get('year') as string
-    const type = formData.get('type') as 'water' | 'electricity' | 'gas'
+    const type = formData.get('type') as
+      | 'water'
+      | 'electricity'
+      | 'gas'
+      | 'garbage'
+      | 'commonExpenses'
 
     if (!file || !propertyId || !month || !year || !type) {
       return NextResponse.json(
@@ -27,11 +32,33 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validar que el usuario es propietario
+    if (
+      session.user.role !== 'LANDLORD' &&
+      session.user.role !== 'OWNER' &&
+      session.user.role !== 'BROKER'
+    ) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    // Validar acceso a la propiedad
     const property = await prisma.property.findFirst({
       where: {
         id: propertyId,
-        landlordId: session.user.id,
+        isActive: true,
+        OR:
+          session.user.role === 'BROKER'
+            ? [
+                { managedBy: session.user.id },
+                {
+                  mandates: {
+                    some: {
+                      brokerId: session.user.id,
+                      status: 'ACTIVE',
+                    },
+                  },
+                },
+              ]
+            : [{ landlordId: session.user.id }],
       },
     })
 
@@ -72,6 +99,8 @@ export async function POST(req: NextRequest) {
       water: 'waterBillUrl',
       electricity: 'lightBillUrl',
       gas: 'gasBillUrl',
+      garbage: 'garbageBillUrl',
+      commonExpenses: 'commonBillUrl',
     }
 
     const updateData: any = {}

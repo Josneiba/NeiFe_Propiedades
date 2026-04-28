@@ -5,6 +5,7 @@
  * Variables de entorno requeridas:
  * - RESEND_API_KEY: Clave API de Resend (https://resend.com)
  */
+import { getResendFrom } from '@/lib/resend-from'
 
 interface PaymentReminderParams {
   tenantEmail: string
@@ -195,7 +196,7 @@ export async function sendPaymentReminder(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: 'NeiFe <pagos@neife.cl>',
+        from: getResendFrom(),
         to: params.tenantEmail,
         subject: `Recordatorio: Tu pago de arriendo vence pronto — ${params.month}`,
         html: generatePaymentReminderEmailHTML(params),
@@ -237,7 +238,7 @@ export async function sendLandlordNotification(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: 'NeiFe <notificaciones@neife.cl>',
+        from: getResendFrom(),
         to: params.landlordEmail,
         subject: `Alerta: ${params.pendingCount} pago(s) pendiente(s) en NeiFe`,
         html: generateLandlordNotificationHTML(params),

@@ -80,6 +80,7 @@ async function DashboardContent({ session }: { session: any }) {
       activeMaintenances,
       allPaymentsYear,
       overdueCount,
+      brokerStatements,
     ] =
       await Promise.all([
         prisma.property.findMany({
@@ -159,6 +160,29 @@ async function DashboardContent({ session }: { session: any }) {
             property: { landlordId: session.user.id },
             status: 'OVERDUE',
           },
+        }),
+        prisma.brokerStatement.findMany({
+          where: {
+            landlordId: session.user.id,
+            status: 'SENT',
+          },
+          include: {
+            broker: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+            property: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+          },
+          orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'desc' }],
+          take: 4,
         }),
       ])
 
@@ -348,6 +372,50 @@ async function DashboardContent({ session }: { session: any }) {
         {/* Properties Grid - Separating Broker-Managed from Owner-Managed */}
         {properties.length > 0 && (
           <div className="space-y-6">
+            {brokerStatements.length > 0 && (
+              <Card id="rendiciones-recibidas" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold text-[#5E8B8C] mb-4 flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Rendiciones recibidas de corredores
+                  </h2>
+                  <div className="space-y-3">
+                    {brokerStatements.map((statement) => (
+                      <div
+                        key={statement.id}
+                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg bg-[#1C1917] p-4"
+                      >
+                        <div>
+                          <p className="text-[#FAF6F2] font-medium">
+                            {statement.property.name || statement.property.address}
+                          </p>
+                          <p className="text-xs text-[#9C8578]">
+                            {statement.month}/{statement.year} · {statement.broker.name || statement.broker.email}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-xs text-[#9C8578]">Neto a transferir</p>
+                            <p className="font-semibold text-[#FAF6F2]">
+                              ${statement.netTransferCLP.toLocaleString('es-CL')}
+                            </p>
+                          </div>
+                          <a
+                            href={`/api/broker/statements/${statement.id}/pdf`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-md border border-[#D5C3B6]/10 px-3 py-2 text-sm text-[#FAF6F2] hover:bg-[#2D3C3C]"
+                          >
+                            Ver PDF
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Broker-Managed Properties */}
             {properties.some((p) => p.mandates.length > 0) && (
               <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">

@@ -1,3 +1,4 @@
+import { buildMandateDocumentHash, buildMandateDocumentNumber, buildMandateDocumentSnapshot } from '@/lib/mandate-document'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
@@ -9,6 +10,8 @@ export const mandateInclude = {
       id: true,
       name: true,
       address: true,
+      commune: true,
+      region: true,
       managedBy: true,
       landlordId: true,
     },
@@ -160,6 +163,22 @@ export async function signMandate({
 
     if (shouldActivate) {
       data.status = 'ACTIVE'
+      const snapshot = buildMandateDocumentSnapshot({
+        ...current,
+        status: 'ACTIVE',
+        signedByOwner: nextSignedByOwner,
+        signedByBroker: nextSignedByBroker,
+        ownerSignedAt:
+          signerRole === 'owner' && !current.ownerSignedAt ? now : current.ownerSignedAt,
+        brokerSignedAt:
+          signerRole === 'broker' && !current.brokerSignedAt ? now : current.brokerSignedAt,
+        documentNumber:
+          current.documentNumber || buildMandateDocumentNumber(current.id, current.createdAt),
+      })
+      data.documentNumber = snapshot.documentNumber
+      data.documentSnapshot = snapshot as Prisma.InputJsonValue
+      data.documentHash = buildMandateDocumentHash(snapshot)
+      data.documentGeneratedAt = now
     }
 
     if (Object.keys(data).length > 0) {
@@ -172,7 +191,11 @@ export async function signMandate({
     if (shouldSyncManagedBy) {
       await tx.property.update({
         where: { id: current.propertyId },
-        data: { managedBy: current.brokerId },
+        data: {
+          managedBy: current.brokerId,
+          commissionRate: current.commissionRate,
+          commissionType: current.commissionType,
+        },
       })
     }
 
