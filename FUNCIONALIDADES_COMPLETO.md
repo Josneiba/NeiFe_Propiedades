@@ -1,7 +1,7 @@
 # 📋 FUNCIONALIDADES COMPLETAS - NeiFe Propiedades
 
 **Documento de Análisis Técnico Profesional**  
-*Última actualización: Abril 2026*
+_Última actualización: Abril 2026_
 
 ---
 
@@ -28,16 +28,17 @@ Landing page pública que presenta la plataforma NeiFe para gestión de arriendo
 
 ### Elementos Visuales
 
-| Componente | Descripción |
-|-----------|-----------|
-| **Header Navegable** | Logo NeiFe, links a secciones (Arriendos, Características, Para quién, Mapa, Privacidad) |
-| **CTA Principal** | Botones "Iniciar Sesión" y "Registrarse" con rutas protegidas |
-| **Hero Section** | Descripción de propuesta de valor de la plataforma |
-| **Listado de Propiedades** | 6 propiedades destacadas con información básica |
+| Componente                 | Descripción                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| **Header Navegable**       | Logo NeiFe, links a secciones (Arriendos, Características, Para quién, Mapa, Privacidad) |
+| **CTA Principal**          | Botones "Iniciar Sesión" y "Registrarse" con rutas protegidas                            |
+| **Hero Section**           | Descripción de propuesta de valor de la plataforma                                       |
+| **Listado de Propiedades** | 6 propiedades destacadas con información básica                                          |
 
 ### Funcionalidades Principales
 
 #### 1. **Presentación de Características (6 Features)**
+
 - ✅ **Pagos Digitales** - Sistema de pagos automatizado y seguro
 - ✅ **Contratos Digitales** - Contratos con firma electrónica válida legalmente
 - ✅ **Mantenciones** - Reporte, asignación y seguimiento en tiempo real
@@ -46,6 +47,7 @@ Landing page pública que presenta la plataforma NeiFe para gestión de arriendo
 - ✅ **Proveedores de Confianza** - Red verificada de servicios
 
 #### 2. **Badges de Compliance y Confianza**
+
 ```
 Ley 18.101 (Contratos) | Ley 21.461 (Desalojo) | Ley 19.628 (Datos)
 Firma Electrónica | Datos Seguros | Privacidad Garantizada
@@ -54,6 +56,7 @@ Firma Electrónica | Datos Seguros | Privacidad Garantizada
 #### 3. **Secciones de Beneficios por Rol**
 
 **Para Arrendadores:**
+
 - Dashboard con KPIs en tiempo real
 - Mapa interactivo de propiedades
 - Gestión centralizada de proveedores
@@ -61,6 +64,7 @@ Firma Electrónica | Datos Seguros | Privacidad Garantizada
 - Reportes detallados de ingresos
 
 **Para Arrendatarios:**
+
 - Vista clara de pagos mensuales
 - Acceso a servicios e historial
 - Reporte fácil de mantenciones
@@ -68,6 +72,7 @@ Firma Electrónica | Datos Seguros | Privacidad Garantizada
 - Historial de pagos y documentos
 
 **Para Corredores:**
+
 - Gestión de mandatos y seguimiento
 - Acceso a propiedades de clientes
 - Panel centralizado de contratos
@@ -90,13 +95,13 @@ Centro de control centralizado para administración de propiedades en arriendo. 
 
 #### KPIs en Tiempo Real
 
-| KPI | Descripción | Datos Consultados |
-|-----|-----------|------------------|
-| **Total Propiedades Activas** | Cantidad de propiedades en arriendo | Conteo de propiedades con tenant |
-| **Total Recaudado Mes** | Suma de pagos realizados (CLP + UF) | Pagos con estado PAID del mes actual |
-| **Pagos Pendientes** | Montos no pagados | Pagos con estado PENDING |
-| **Mantenciones Activas** | Solicitudes en proceso | Estados: REQUESTED, REVIEWING, APPROVED, IN_PROGRESS |
-| **Pagos Vencidos** | Pagos atrasados | Estado OVERDUE |
+| KPI                           | Descripción                         | Datos Consultados                                    |
+| ----------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| **Total Propiedades Activas** | Cantidad de propiedades en arriendo | Conteo de propiedades con tenant                     |
+| **Total Recaudado Mes**       | Suma de pagos realizados (CLP + UF) | Pagos con estado PAID del mes actual                 |
+| **Pagos Pendientes**          | Montos no pagados                   | Pagos con estado PENDING                             |
+| **Mantenciones Activas**      | Solicitudes en proceso              | Estados: REQUESTED, REVIEWING, APPROVED, IN_PROGRESS |
+| **Pagos Vencidos**            | Pagos atrasados                     | Estado OVERDUE                                       |
 
 #### Visualizaciones
 
@@ -111,11 +116,13 @@ Centro de control centralizado para administración de propiedades en arriendo. 
 #### Funcionalidades
 
 **Listado Principal:**
+
 - Vista de grid o tabla de todas las propiedades activas
 - Estado dinámico de información
 - Búsqueda integrada en tiempo real
 
 **Campos de Búsqueda:**
+
 - Dirección de propiedad
 - Comuna/Región
 - Nombre de propiedad
@@ -123,6 +130,7 @@ Centro de control centralizado para administración de propiedades en arriendo. 
 - Estado de pago
 
 **Información Mostrada por Propiedad:**
+
 ```
 ┌─────────────────────────────────────────┐
 │ Nombre Propiedad                        │
@@ -155,15 +163,15 @@ Gestión integral de contratos digitales cumpliendo con la legislación chilena.
 
 #### Funcionalidades
 
-| Función | Detalles |
-|---------|----------|
-| **Gestión de Contratos** | Crear, ver, editar, eliminar contratos |
-| **Filtrado por Propiedad** | Vista específica de contratos por inmueble |
-| **Estados de Contrato** | DRAFT, PENDING_SIGNATURE, SIGNED, ACTIVE, EXPIRED, TERMINATED |
-| **Firma Electrónica** | Generación y validación de firmas digitales |
-| **Descarga PDF** | Generación de documento PDF del contrato |
-| **Historial de Versiones** | Rastreo de cambios y versiones anteriores |
-| **Cumplimiento Legal** | Validación automática según Ley 18.101 |
+| Función                    | Detalles                                                      |
+| -------------------------- | ------------------------------------------------------------- |
+| **Gestión de Contratos**   | Crear, ver, editar, eliminar contratos                        |
+| **Filtrado por Propiedad** | Vista específica de contratos por inmueble                    |
+| **Estados de Contrato**    | DRAFT, PENDING_SIGNATURE, SIGNED, ACTIVE, EXPIRED, TERMINATED |
+| **Firma Electrónica**      | Generación y validación de firmas digitales                   |
+| **Descarga PDF**           | Generación de documento PDF del contrato                      |
+| **Historial de Versiones** | Rastreo de cambios y versiones anteriores                     |
+| **Cumplimiento Legal**     | Validación automática según Ley 18.101                        |
 
 #### Estructura de Contrato
 
@@ -190,23 +198,26 @@ Información del Contrato:
 #### Funcionalidades
 
 **Listado Completo de Pagos:**
+
 - Visualización de todos los pagos de arrendatarios
 - Tabla con scroll horizontal en móvil
 
 **Filtros Avanzados:**
 
-| Filtro | Opciones |
-|--------|----------|
-| **Por Propiedad** | Todas / Seleccionar propiedad específica |
-| **Por Estado** | ALL, PAID, PENDING, OVERDUE |
+| Filtro                 | Opciones                                  |
+| ---------------------- | ----------------------------------------- |
+| **Por Propiedad**      | Todas / Seleccionar propiedad específica  |
+| **Por Estado**         | ALL, PAID, PENDING, OVERDUE               |
 | **Por Comportamiento** | Pagadores puntuales, ocasionales, morosos |
 
 **Información de Pago por Fila:**
+
 ```
 Mes/Año | Propiedad | Monto CLP | Monto UF | Estado | Método | Fecha Pago | Recibo
 ```
 
 **Estados Posibles:**
+
 - 🟢 **PAID** - Pagado correctamente
 - 🟡 **PENDING** - Esperando pago
 - 🔴 **OVERDUE** - Vencido, no pagado
@@ -242,6 +253,7 @@ REQUESTED → REVIEWING → APPROVED → IN_PROGRESS → COMPLETED
 #### Información de Solicitud
 
 **Detalles Técnicos:**
+
 - Categoría de mantención
 - Propiedad afectada
 - Arrendatario que reportó
@@ -260,14 +272,14 @@ REQUESTED → REVIEWING → APPROVED → IN_PROGRESS → COMPLETED
 
 #### Acciones del Arrendador
 
-| Acción | Descripción |
-|--------|-----------|
+| Acción                  | Descripción                      |
+| ----------------------- | -------------------------------- |
 | **Revisar Solicitudes** | Ver nuevas solicitudes con fotos |
-| **Aprobar/Rechazar** | Autorizar o denegar mantención |
-| **Asignar Proveedor** | Seleccionar de red de confianza |
-| **Hacer Seguimiento** | Ver estado en tiempo real |
-| **Agregar Comentarios** | Notas y comunicación |
-| **Marcar Completada** | Confirmar finalización |
+| **Aprobar/Rechazar**    | Autorizar o denegar mantención   |
+| **Asignar Proveedor**   | Seleccionar de red de confianza  |
+| **Hacer Seguimiento**   | Ver estado en tiempo real        |
+| **Agregar Comentarios** | Notas y comunicación             |
+| **Marcar Completada**   | Confirmar finalización           |
 
 ---
 
@@ -276,25 +288,27 @@ REQUESTED → REVIEWING → APPROVED → IN_PROGRESS → COMPLETED
 #### Funcionalidades
 
 **Vista Interactiva de Eventos:**
+
 - Calendario mes/semana/día
 - Colores codificados por tipo de evento
 - Información al pasar mouse
 
 **Tipos de Eventos:**
 
-| Tipo de Evento | Código | Descripción |
-|----------------|--------|-----------|
-| 🔍 **INSPECTION** | Inspección | Visita programada a propiedad |
-| 📈 **IPC** | Ajuste IPC | Revisión de índice de precios |
-| 📊 **IPC_ADJUSTMENT** | Ajuste Aplicado | IPC aplicado al arriendo |
-| 📋 **CONTRACT** | Contrato | Vencimiento de contrato |
-| 🔄 **CONTRACT_RENEWAL** | Renovación | Renovación de contrato |
-| 💰 **PAYMENT** | Pago Próximo | Fecha de pago esperada |
-| ⏰ **PAYMENT_DUE** | Pago Próximo | Recordatorio de pago |
-| 🚨 **PAYMENT_OVERDUE** | Pago Vencido | Pago atrasado |
-| 🔧 **MAINTENANCE** | Mantención | Trabajo de mantenimiento |
+| Tipo de Evento          | Código          | Descripción                   |
+| ----------------------- | --------------- | ----------------------------- |
+| 🔍 **INSPECTION**       | Inspección      | Visita programada a propiedad |
+| 📈 **IPC**              | Ajuste IPC      | Revisión de índice de precios |
+| 📊 **IPC_ADJUSTMENT**   | Ajuste Aplicado | IPC aplicado al arriendo      |
+| 📋 **CONTRACT**         | Contrato        | Vencimiento de contrato       |
+| 🔄 **CONTRACT_RENEWAL** | Renovación      | Renovación de contrato        |
+| 💰 **PAYMENT**          | Pago Próximo    | Fecha de pago esperada        |
+| ⏰ **PAYMENT_DUE**      | Pago Próximo    | Recordatorio de pago          |
+| 🚨 **PAYMENT_OVERDUE**  | Pago Vencido    | Pago atrasado                 |
+| 🔧 **MAINTENANCE**      | Mantención      | Trabajo de mantenimiento      |
 
 **Acciones:**
+
 - ✏️ Crear evento manual
 - 🖊️ Editar evento
 - 🗑️ Eliminar evento
@@ -307,11 +321,13 @@ REQUESTED → REVIEWING → APPROVED → IN_PROGRESS → COMPLETED
 #### Funcionalidades
 
 **Visualización Geográfica:**
+
 - Mapa interactivo con todas las propiedades
 - Marcadores georreferenciados
 - Información emergente al hacer clic
 
 **Información en Marcador:**
+
 ```
 Nombre Propiedad
 Dirección
@@ -321,6 +337,7 @@ Arrendatario: [Nombre]
 ```
 
 **Estadísticas Superpuestas:**
+
 - 📍 Total de propiedades: X
 - 🟢 Propiedades pagadas este mes: X
 - 🟡 Propiedades pendientes: X
@@ -335,11 +352,11 @@ Arrendatario: [Nombre]
 
 **Registro de Consumo Mensual:**
 
-| Servicio | Unidad | Descripción |
-|----------|--------|-----------|
-| 💧 **Agua** | m³ | Consumo de agua potable |
-| ⚡ **Electricidad** | kWh | Consumo de energía eléctrica |
-| 🔥 **Gas** | m³ | Consumo de gas natural/licuado |
+| Servicio            | Unidad | Descripción                    |
+| ------------------- | ------ | ------------------------------ |
+| 💧 **Agua**         | m³     | Consumo de agua potable        |
+| ⚡ **Electricidad** | kWh    | Consumo de energía eléctrica   |
+| 🔥 **Gas**          | m³     | Consumo de gas natural/licuado |
 
 **Acciones:**
 | Acción | Descripción |
@@ -351,6 +368,7 @@ Arrendatario: [Nombre]
 | **Subir Boletas** | Cargar comprobantes a Cloudinary |
 
 **Visualización:**
+
 - Tendencias de consumo mensual
 - Comparación con períodos anteriores
 - Alertas de consumo anómalo
@@ -378,6 +396,7 @@ Gestión de red de proveedores de servicios de confianza para mantenciones y ser
 ```
 
 **Especialidades Disponibles:**
+
 - 🔧 Plomería
 - ⚡ Electricidad
 - 🏗️ Estructura
@@ -388,14 +407,14 @@ Gestión de red de proveedores de servicios de confianza para mantenciones y ser
 
 **Acciones:**
 
-| Acción | Ruta |
-|--------|------|
-| **Crear Proveedor** | POST `/dashboard/proveedores/agregar` |
-| **Ver Detalles** | GET `/dashboard/proveedores/[id]` |
-| **Editar** | PUT `/dashboard/proveedores/[id]` |
-| **Eliminar** | DELETE `/dashboard/proveedores/[id]` |
-| **Ver Historial** | GET historial de trabajos |
-| **Gestionar Especialidades** | Agregar/quitar especialidades |
+| Acción                       | Ruta                                  |
+| ---------------------------- | ------------------------------------- |
+| **Crear Proveedor**          | POST `/dashboard/proveedores/agregar` |
+| **Ver Detalles**             | GET `/dashboard/proveedores/[id]`     |
+| **Editar**                   | PUT `/dashboard/proveedores/[id]`     |
+| **Eliminar**                 | DELETE `/dashboard/proveedores/[id]`  |
+| **Ver Historial**            | GET historial de trabajos             |
+| **Gestionar Especialidades** | Agregar/quitar especialidades         |
 
 ---
 
@@ -404,6 +423,7 @@ Gestión de red de proveedores de servicios de confianza para mantenciones y ser
 #### 👤 Perfil Personal
 
 **Información Básica:**
+
 ```
 Nombre Completo
 Email (verificado)
@@ -416,6 +436,7 @@ RUT Chileno (validado)
 ```
 
 **Información Bancaria:**
+
 ```
 Nombre del Banco
 Tipo de Cuenta (Corriente, Ahorro, etc.)
@@ -424,6 +445,7 @@ Email Bancario
 ```
 
 **Acciones:**
+
 - ✏️ Editar información
 - 📸 Actualizar foto de perfil
 - ✅ Verificar email
@@ -448,28 +470,31 @@ Email Bancario
 **Descripción**: Recibir y gestionar solicitudes de corredores que desean acceder a propiedades para gestionar mandatos.
 
 **Estado de Solicitud:**
+
 - ⏳ **PENDING** - Esperando decisión del arrendador
 - ✅ **APPROVED** - Acceso otorgado
 - ❌ **REJECTED** - Acceso denegado
 
 **Información de Solicitud:**
 
-| Campo | Descripción |
-|-------|-----------|
-| **Corredor** | Nombre del broker solicitante |
-| **Email** | Email de contacto del corredor |
-| **Empresa** | Nombre de empresa (opcional) |
-| **Propiedad** | Inmueble para el cual solicita acceso |
-| **Fecha Solicitud** | Cuándo fue enviada |
-| **Mensaje** | Descripción de intención |
+| Campo               | Descripción                           |
+| ------------------- | ------------------------------------- |
+| **Corredor**        | Nombre del broker solicitante         |
+| **Email**           | Email de contacto del corredor        |
+| **Empresa**         | Nombre de empresa (opcional)          |
+| **Propiedad**       | Inmueble para el cual solicita acceso |
+| **Fecha Solicitud** | Cuándo fue enviada                    |
+| **Mensaje**         | Descripción de intención              |
 
 **Acciones:**
+
 - 👁️ Ver detalles completos
 - ✅ Aprobar acceso
 - ❌ Rechazar solicitud
 - 📝 Agregar comentario
 
 **Consecuencias:**
+
 - **Aprobar**: Corredor obtiene permisos de lectura sobre propiedad y arrendatario
 - **Rechazar**: Solicitud archivada, corredor notificado
 
@@ -482,6 +507,7 @@ Email Bancario
 ##### **Tab 1: Corredores (Broker Permissions)**
 
 **Funcionalidades:**
+
 - Gestionar permisos de brokers en el sistema
 - Vista de solicitudes de partnership
 
@@ -494,6 +520,7 @@ Email Bancario
 | **Propiedades Asignadas** | X propiedades |
 
 **Acciones:**
+
 - ✅ Crear nuevo permiso
 - 📊 Ver estadísticas del broker
 - 🗑️ Revocar acceso
@@ -501,11 +528,13 @@ Email Bancario
 ##### **Tab 2: Propiedades (Property Access Requests)**
 
 **Funcionalidades:**
+
 - Vista agrupada por propiedad
 - Todas las solicitudes de acceso a propiedad
 - Filtrado por estado
 
 **Información Agrupada:**
+
 ```
 Propiedad A
 ├── Corredor 1 - Estado: PENDING
@@ -547,18 +576,22 @@ Interfaz simplificada para arrendatarios con acceso a información crítica sobr
 #### Cards de Estado
 
 **1. Pago Actual del Mes**
+
 ```
 Estado: [PAID/PENDING/OVERDUE]
 Monto a Pagar: $[CLP]
 UF Equivalente: [X UF]
 Fecha de Vencimiento: [DD/MM/YYYY]
 ```
+
 Color dinámico según estado:
+
 - 🟢 Verde si PAID
 - 🟡 Amarillo si PENDING
 - 🔴 Rojo si OVERDUE
 
 **2. Servicios Básicos del Mes**
+
 ```
 💧 Agua: $[CLP]
 ⚡ Electricidad: $[CLP]
@@ -568,6 +601,7 @@ Total: $[CLP]
 ```
 
 **3. Últimos 3 Pagos Realizados**
+
 ```
 [Mes/Año] | $[CLP] | [Fecha Pago]
 [Mes/Año] | $[CLP] | [Fecha Pago]
@@ -575,6 +609,7 @@ Total: $[CLP]
 ```
 
 **4. Últimas 3 Mantenciones Reportadas**
+
 ```
 [Categoría] | Estado: [Estado] | [Fecha]
 [Categoría] | Estado: [Estado] | [Fecha]
@@ -582,6 +617,7 @@ Total: $[CLP]
 ```
 
 #### Acciones Rápidas (Botones de Navegación)
+
 - 💰 Ir a Pagos
 - 📋 Ver Contrato
 - 🔧 Reportar Mantención
@@ -593,23 +629,25 @@ Total: $[CLP]
 #### Funcionalidades
 
 **Visualización Completa de Pagos:**
+
 - Tabla de todos los pagos del arrendatario
 - Filtros por período de tiempo
 - Búsqueda
 
 **Información por Pago:**
 
-| Campo | Descripción |
-|-------|-----------|
-| **Mes/Año** | Período del pago |
-| **Monto CLP** | Cantidad en pesos chilenos |
-| **Monto UF** | Equivalente en Unidades de Fomento |
-| **Estado** | PAID, PENDING, OVERDUE |
-| **Fecha de Pago** | Cuándo se realizó (si pagado) |
-| **Método de Pago** | Transferencia, Débito, Otro |
-| **Comprobante** | Link descargable (PDF/imagen) |
+| Campo              | Descripción                        |
+| ------------------ | ---------------------------------- |
+| **Mes/Año**        | Período del pago                   |
+| **Monto CLP**      | Cantidad en pesos chilenos         |
+| **Monto UF**       | Equivalente en Unidades de Fomento |
+| **Estado**         | PAID, PENDING, OVERDUE             |
+| **Fecha de Pago**  | Cuándo se realizó (si pagado)      |
+| **Método de Pago** | Transferencia, Débito, Otro        |
+| **Comprobante**    | Link descargable (PDF/imagen)      |
 
 **Estados Posibles:**
+
 - 🟢 **PAID** - Pago realizado y verificado
 - 🟡 **PENDING** - Pendiente de pago
 - 🔴 **OVERDUE** - Vencido sin pagar
@@ -617,11 +655,11 @@ Total: $[CLP]
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
-| **Ver Detalle** | Expandir información completa |
-| **Descargar Comprobante** | PDF/Imagen del recibo |
-| **Ver Historial** | Todos los intentos de pago |
+| Acción                    | Descripción                   |
+| ------------------------- | ----------------------------- |
+| **Ver Detalle**           | Expandir información completa |
+| **Descargar Comprobante** | PDF/Imagen del recibo         |
+| **Ver Historial**         | Todos los intentos de pago    |
 
 ---
 
@@ -630,6 +668,7 @@ Total: $[CLP]
 #### Funcionalidades
 
 **Información del Contrato:**
+
 ```
 ┌──────────────────────────────────┐
 │ DATOS DEL CONTRATO               │
@@ -654,27 +693,28 @@ Total: $[CLP]
 
 **Documento del Contrato:**
 
-| Propiedad | Descripción |
-|-----------|-----------|
-| **URL PDF** | Link descargable del contrato |
-| **Estado Firma** | FIRMADO / PENDIENTE |
-| **Firma Arrendador** | Sí ✅ / No ❌ - Fecha: [DD/MM/YYYY] |
+| Propiedad              | Descripción                         |
+| ---------------------- | ----------------------------------- |
+| **URL PDF**            | Link descargable del contrato       |
+| **Estado Firma**       | FIRMADO / PENDIENTE                 |
+| **Firma Arrendador**   | Sí ✅ / No ❌ - Fecha: [DD/MM/YYYY] |
 | **Firma Arrendatario** | Sí ✅ / No ❌ - Fecha: [DD/MM/YYYY] |
-| **Fecha Firma Final** | [DD/MM/YYYY] (si ambos firmaron) |
+| **Fecha Firma Final**  | [DD/MM/YYYY] (si ambos firmaron)    |
 
 **Fotodocumentación Adjunta:**
+
 - Fotos iniciales de propiedad
 - Documento de identidad
 - Otros documentos relevantes
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
-| **Descargar Contrato** | PDF de contrato completo |
+| Acción                  | Descripción                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| **Descargar Contrato**  | PDF de contrato completo                                      |
 | **Firmar Digitalmente** | Si contrato pendiente (Componente: TenantContractSignActions) |
-| **Ver Historial** | Versiones anteriores del contrato |
-| **Cargar Fotos** | Agregar documentación |
+| **Ver Historial**       | Versiones anteriores del contrato                             |
+| **Cargar Fotos**        | Agregar documentación                                         |
 
 ---
 
@@ -694,26 +734,28 @@ Formulario de Reporte:
 ```
 
 **Categorías Disponibles:**
+
 - 🔧 Plomería (tuberías, grifos, desagües)
 - ⚡ Electricidad (circuitos, tomas, iluminación)
 - 🏗️ Estructura (paredes, techos, puertas)
 - 📋 Otro (describir en detalle)
 
 **Información Legal:**
+
 > Según Ley 18.101, estas reparaciones son responsabilidad del arrendador. El reporte será enviado y debe ser atendido en plazo legal.
 
 **Información de Reporte:**
 
-| Campo | Descripción |
-|-------|-----------|
-| **Categoría** | Tipo de mantención |
-| **Descripción** | Detalles del problema |
-| **Fotos** | Evidencia del problema (Cloudinary URLs) |
-| **Estado** | REQUESTED, REVIEWING, APPROVED, IN_PROGRESS, COMPLETED, REJECTED |
-| **Fecha Reporte** | Cuándo se creó |
-| **Proveedor Asignado** | Especialista que lo hace |
-| **Fecha Completación** | Cuándo se resolvió |
-| **Comentarios** | Comunicación arrendador-arrendatario |
+| Campo                  | Descripción                                                      |
+| ---------------------- | ---------------------------------------------------------------- |
+| **Categoría**          | Tipo de mantención                                               |
+| **Descripción**        | Detalles del problema                                            |
+| **Fotos**              | Evidencia del problema (Cloudinary URLs)                         |
+| **Estado**             | REQUESTED, REVIEWING, APPROVED, IN_PROGRESS, COMPLETED, REJECTED |
+| **Fecha Reporte**      | Cuándo se creó                                                   |
+| **Proveedor Asignado** | Especialista que lo hace                                         |
+| **Fecha Completación** | Cuándo se resolvió                                               |
+| **Comentarios**        | Comunicación arrendador-arrendatario                             |
 
 **Estados de Mantención:**
 
@@ -729,20 +771,20 @@ APPROVED (Aprobado)
 IN_PROGRESS (Trabajando en it)
     ↓
 COMPLETED (Resuelto)
-    
+
 (Alternativa)
 REJECTED (Rechazado - no es responsabilidad arrendador)
 ```
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
-| **Crear Reporte** | Nuevo formulario de mantención |
-| **Ver Estado** | Seguimiento en tiempo real |
-| **Subir Fotos** | Agregar evidencia |
+| Acción                 | Descripción                           |
+| ---------------------- | ------------------------------------- |
+| **Crear Reporte**      | Nuevo formulario de mantención        |
+| **Ver Estado**         | Seguimiento en tiempo real            |
+| **Subir Fotos**        | Agregar evidencia                     |
 | **Agregar Comentario** | Comunicación con arrendador/proveedor |
-| **Ver Proveedor** | Contacto del especialista asignado |
+| **Ver Proveedor**      | Contacto del especialista asignado    |
 
 ---
 
@@ -754,18 +796,20 @@ REJECTED (Rechazado - no es responsabilidad arrendador)
 
 Tabla/Gráfico mensual de consumo de servicios básicos:
 
-| Servicio | Mes Actual | Mes Anterior | Promedio |
-|----------|-----------|-------------|---------|
-| 💧 Agua | [m³] | [m³] | [m³] |
-| ⚡ Electricidad | [kWh] | [kWh] | [kWh] |
-| 🔥 Gas | [m³] | [m³] | [m³] |
+| Servicio        | Mes Actual | Mes Anterior | Promedio |
+| --------------- | ---------- | ------------ | -------- |
+| 💧 Agua         | [m³]       | [m³]         | [m³]     |
+| ⚡ Electricidad | [kWh]      | [kWh]        | [kWh]    |
+| 🔥 Gas          | [m³]       | [m³]         | [m³]     |
 
 **Visualización Gráfica:**
+
 - Tendencias de consumo (últimos 12 meses)
 - Comparativas mes a mes
 - Alertas de consumo anómalo
 
 **Información Adicional:**
+
 - Comprobantes/boletas de servicios
 - Montos de pago en URLs Cloudinary
 - Información de contacto de servicios
@@ -791,6 +835,7 @@ Tabla/Gráfico mensual de consumo de servicios básicos:
 **Listado de Proveedores Disponibles:**
 
 Para cada proveedor:
+
 ```
 ┌──────────────────────────────┐
 │ [Nombre Proveedor]           │
@@ -805,7 +850,7 @@ Para cada proveedor:
 **Información Legal:**
 
 > ⚠️ **Responsabilidades según Ley 18.101:**
-> 
+>
 > El arrendador es responsable de mantener la propiedad en condiciones de habitabilidad. Los proveedores disponibles son de confianza verificada. En caso de emergencia fuera de horario, contactar directamente al arrendador.
 
 ---
@@ -824,12 +869,12 @@ Panel especializado para gestionar propiedades bajo mandato, arrendadores client
 
 #### KPIs Específicos del Corredor
 
-| KPI | Cálculo | Formato |
-|-----|---------|---------|
-| **Propiedades Administradas** | Conteo de mandatos ACTIVE | "12 propiedades" con subtítulo "8/12 pagadas este mes" |
-| **Total Recaudado** | Suma de pagos PAID del mes | En millones "$ 2.5M" |
-| **Pagos Pendientes** | Conteo + monto PENDING | "3 pendientes • $450.000" |
-| **Mantenciones Activas** | Conteo de estados activos | "5 mantenciones en progreso" |
+| KPI                           | Cálculo                    | Formato                                                |
+| ----------------------------- | -------------------------- | ------------------------------------------------------ |
+| **Propiedades Administradas** | Conteo de mandatos ACTIVE  | "12 propiedades" con subtítulo "8/12 pagadas este mes" |
+| **Total Recaudado**           | Suma de pagos PAID del mes | En millones "$ 2.5M"                                   |
+| **Pagos Pendientes**          | Conteo + monto PENDING     | "3 pendientes • $450.000"                              |
+| **Mantenciones Activas**      | Conteo de estados activos  | "5 mantenciones en progreso"                           |
 
 #### Listado de Mandatos (Propiedades Administradas)
 
@@ -857,10 +902,10 @@ Tabla de última actividad:
 
 #### Últimos Mensajes (Bottom 5)
 
-| Para Propiedad | A Arrendatario | Contenido (preview) |
-|---------------|----------------|-------------------|
-| [Propiedad] | [Nombre] | "Recordar pago de..." |
-| ... | ... | ... |
+| Para Propiedad | A Arrendatario | Contenido (preview)   |
+| -------------- | -------------- | --------------------- |
+| [Propiedad]    | [Nombre]       | "Recordar pago de..." |
+| ...            | ...            | ...                   |
 
 ---
 
@@ -877,6 +922,7 @@ Utiliza el mismo componente `ContractWorkspace` que el arrendador con funcionali
 - Historial de versiones
 
 **Acciones:**
+
 - Crear contrato nueva temporada
 - Ver contrato vigente
 - Generar PDF
@@ -895,6 +941,7 @@ Utiliza el mismo componente `ContractWorkspace` que el arrendador con funcionali
 Solo muestra propiedades donde el corredor tiene mandato ACTIVE.
 
 **Búsqueda Avanzada:**
+
 - Por dirección
 - Por comuna/región
 - Por nombre de propiedad
@@ -919,13 +966,13 @@ Solo muestra propiedades donde el corredor tiene mandato ACTIVE.
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
-| **Ver Detalles** | Información completa de propiedad |
-| **Acceder a Pagos** | Ver estado de pagos mensuales |
-| **Ver Mantenciones** | Solicitudes activas |
-| **Gestionar Documentación** | Contrato, fotos, etc |
-| **Enviar Aviso** | Comunicación con arrendatario |
+| Acción                      | Descripción                       |
+| --------------------------- | --------------------------------- |
+| **Ver Detalles**            | Información completa de propiedad |
+| **Acceder a Pagos**         | Ver estado de pagos mensuales     |
+| **Ver Mantenciones**        | Solicitudes activas               |
+| **Gestionar Documentación** | Contrato, fotos, etc              |
+| **Enviar Aviso**            | Comunicación con arrendatario     |
 
 ---
 
@@ -943,12 +990,12 @@ PENDING → ACTIVE → REVOKED
            EXPIRED
 ```
 
-| Estado | Descripción |
-|--------|-----------|
-| ⏳ **PENDING** | Awaiting acceptance from landlord |
-| ✅ **ACTIVE** | Mandato vigente, corredor puede operar |
-| ❌ **REVOKED** | Terminado por el arrendador |
-| ⏱️ **EXPIRED** | Vencido por fecha |
+| Estado         | Descripción                            |
+| -------------- | -------------------------------------- |
+| ⏳ **PENDING** | Awaiting acceptance from landlord      |
+| ✅ **ACTIVE**  | Mandato vigente, corredor puede operar |
+| ❌ **REVOKED** | Terminado por el arrendador            |
+| ⏱️ **EXPIRED** | Vencido por fecha                      |
 
 #### Información de Mandato
 
@@ -966,13 +1013,13 @@ PENDING → ACTIVE → REVOKED
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
+| Acción            | Descripción                          |
+| ----------------- | ------------------------------------ |
 | **Crear Mandato** | Solicitar nuevo mandato a arrendador |
-| **Ver Detalles** | Información completa del mandato |
-| **Revocar** | Terminar mandato (si es arrendador) |
-| **Renovar** | Extender vigencia |
-| **Ver Ingresos** | Desglose de comisiones |
+| **Ver Detalles**  | Información completa del mandato     |
+| **Revocar**       | Terminar mandato (si es arrendador)  |
+| **Renovar**       | Extender vigencia                    |
+| **Ver Ingresos**  | Desglose de comisiones               |
 
 ---
 
@@ -998,6 +1045,7 @@ Formulario:
 ```
 
 **Tipos de Avisos Comunes:**
+
 - 💰 Recordatorio de pago pendiente
 - 📋 Información sobre mantenimiento
 - 🔧 Solicitud información adicional
@@ -1008,12 +1056,13 @@ Formulario:
 
 **Tabla de Últimos 50 Mensajes:**
 
-| Propiedad | Arrendatario | Contenido (Preview) | Fecha | Estado |
-|-----------|-------------|-------------------|-------|--------|
-| [Prop] | [Nombre] | "Recordar que pago vence..." | [Fecha] | Enviado |
-| ... | ... | ... | ... | ... |
+| Propiedad | Arrendatario | Contenido (Preview)          | Fecha   | Estado  |
+| --------- | ------------ | ---------------------------- | ------- | ------- |
+| [Prop]    | [Nombre]     | "Recordar que pago vence..." | [Fecha] | Enviado |
+| ...       | ...          | ...                          | ...     | ...     |
 
 **Información por Mensaje:**
+
 - Fecha de envío
 - Hora exacta
 - Estado: Enviado / Entregado / Leído
@@ -1086,12 +1135,12 @@ Formulario:
 
 **Acciones:**
 
-| Acción | Descripción |
-|--------|-----------|
-| **Crear Rendición** | Nueva rendición mensual |
-| **Generar PDF** | Descargar documento |
-| **Ver Historial** | Rendiciones anteriores |
-| **Exportar Excel** | Descargar datos para análisis |
+| Acción              | Descripción                   |
+| ------------------- | ----------------------------- |
+| **Crear Rendición** | Nueva rendición mensual       |
+| **Generar PDF**     | Descargar documento           |
+| **Ver Historial**   | Rendiciones anteriores        |
+| **Exportar Excel**  | Descargar datos para análisis |
 
 ---
 
@@ -1102,6 +1151,7 @@ Formulario:
 Similar al calendario del arrendador pero mostrando solo eventos de propiedades mandatadas.
 
 **Eventos Visibles:**
+
 - Fechas de pago de arrendamientos
 - Renovaciones de contrato
 - Mantenciones en progreso
@@ -1159,13 +1209,13 @@ Autenticación robusta usando NextAuth v5 con JWT y validación de email.
 
 #### Rutas de API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/auth/[...nextauth]` | - | NextAuth handler (login, logout, session) |
-| `/api/auth/registro` | POST | Crear cuenta nueva con validación |
-| `/api/auth/resend-verification` | POST | Reenviar email de verificación |
-| `/api/auth/verify-email` | POST | Confirmar email con token |
-| `/api/auth/verification-status` | GET | Verificar estado de email |
+| Ruta                            | Método | Descripción                               |
+| ------------------------------- | ------ | ----------------------------------------- |
+| `/api/auth/[...nextauth]`       | -      | NextAuth handler (login, logout, session) |
+| `/api/auth/registro`            | POST   | Crear cuenta nueva con validación         |
+| `/api/auth/resend-verification` | POST   | Reenviar email de verificación            |
+| `/api/auth/verify-email`        | POST   | Confirmar email con token                 |
+| `/api/auth/verification-status` | GET    | Verificar estado de email                 |
 
 #### Proceso de Login
 
@@ -1191,12 +1241,12 @@ Autenticación robusta usando NextAuth v5 con JWT y validación de email.
 
 #### Roles Soportados
 
-| Rol | Acceso |
-|-----|--------|
-| **TENANT** | Mi Arriendo - Dashboard arrendatario |
+| Rol          | Acceso                                    |
+| ------------ | ----------------------------------------- |
+| **TENANT**   | Mi Arriendo - Dashboard arrendatario      |
 | **LANDLORD** | Dashboard - Administración de propiedades |
-| **BROKER** | Broker - Gestión de mandatos |
-| **OWNER** | Todos los accesos (Admin super usuario) |
+| **BROKER**   | Broker - Gestión de mandatos              |
+| **OWNER**    | Todos los accesos (Admin super usuario)   |
 
 #### Protección de Rutas
 
@@ -1218,29 +1268,30 @@ Sistema de notificaciones en tiempo real con múltiples canales (UI, email, SSE)
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/notifications` | GET | Listar notificaciones del usuario |
-| `/api/notifications` | PATCH | Marcar notificaciones como leídas |
-| `/api/notifications/stream` | GET | Server-Sent Events (tiempo real) |
+| Ruta                        | Método | Descripción                       |
+| --------------------------- | ------ | --------------------------------- |
+| `/api/notifications`        | GET    | Listar notificaciones del usuario |
+| `/api/notifications`        | PATCH  | Marcar notificaciones como leídas |
+| `/api/notifications/stream` | GET    | Server-Sent Events (tiempo real)  |
 
 #### Tipos de Notificaciones
 
-| Tipo | Destinatario | Disparador |
-|------|-------------|-----------|
-| 💰 **Pago Pendiente** | Arrendatario | Cuando pago está near vencimiento |
-| ✅ **Pago Realizado** | Arrendador | Cuando arrendatario paga |
-| 🔧 **Mantención Solicitada** | Arrendador | Cuando arrendatario reporta |
-| 📋 **Mantención Aprobada** | Arrendatario | Cuando arrendador aprueba |
-| 💬 **Nuevo Mensaje** | Arrendatario | De parte del arrendador/corredor |
-| 📄 **Contrato Pendiente** | Arrendatario/Arrendador | Cuando hay firma pendiente |
-| 🤝 **Solicitud Acceso** | Arrendador | Cuando corredor solicita acceso |
+| Tipo                         | Destinatario            | Disparador                        |
+| ---------------------------- | ----------------------- | --------------------------------- |
+| 💰 **Pago Pendiente**        | Arrendatario            | Cuando pago está near vencimiento |
+| ✅ **Pago Realizado**        | Arrendador              | Cuando arrendatario paga          |
+| 🔧 **Mantención Solicitada** | Arrendador              | Cuando arrendatario reporta       |
+| 📋 **Mantención Aprobada**   | Arrendatario            | Cuando arrendador aprueba         |
+| 💬 **Nuevo Mensaje**         | Arrendatario            | De parte del arrendador/corredor  |
+| 📄 **Contrato Pendiente**    | Arrendatario/Arrendador | Cuando hay firma pendiente        |
+| 🤝 **Solicitud Acceso**      | Arrendador              | Cuando corredor solicita acceso   |
 
 #### Componente de Campana de Notificaciones
 
 **Ubicación:** Header layout (shared)
 
 **Funcionalidades:**
+
 - Icono de campana con contador de no leídas
 - Dropdown con últimas 5 notificaciones
 - Click en notificación redirige a página relevante
@@ -1256,11 +1307,11 @@ Gestión integral de pagos de arrendamientos con seguimiento, recibos y estados.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/payments` | GET | Listar pagos del usuario/propiedad |
-| `/api/payments` | POST | Crear registro de pago |
-| `/api/payments/[id]` | PATCH | Actualizar estado de pago |
+| Ruta                 | Método | Descripción                        |
+| -------------------- | ------ | ---------------------------------- |
+| `/api/payments`      | GET    | Listar pagos del usuario/propiedad |
+| `/api/payments`      | POST   | Crear registro de pago             |
+| `/api/payments/[id]` | PATCH  | Actualizar estado de pago          |
 
 #### Estructura de Pago
 
@@ -1300,6 +1351,7 @@ PAID (Pagado pero atrasado)
 #### Funcionamiento
 
 **Flujo de Pago:**
+
 1. Se crea registro PENDING automáticamente mes anterior a vencimiento
 2. Arrendatario realiza transferencia
 3. Arrendador verifica y marca como PAID
@@ -1307,6 +1359,7 @@ PAID (Pagado pero atrasado)
 5. Notificación enviada a ambas partes
 
 **Descarga de Recibos:**
+
 - Generación dinámica de PDF con componente `generate-receipt-pdf.ts`
 - Contiene: Comprobante, montos, fechas, firmas digitales
 - Almacenado en Cloudinary
@@ -1321,12 +1374,12 @@ Gestión integral de contratos de arrendamiento con firma electrónica y cumplim
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/contracts` | GET | Listar contratos |
-| `/api/contracts` | POST | Crear nuevo contrato |
-| `/api/contracts/[id]` | GET | Obtener detalles |
-| `/api/contracts/[id]` | PATCH | Actualizar contrato |
+| Ruta                  | Método | Descripción          |
+| --------------------- | ------ | -------------------- |
+| `/api/contracts`      | GET    | Listar contratos     |
+| `/api/contracts`      | POST   | Crear nuevo contrato |
+| `/api/contracts/[id]` | GET    | Obtener detalles     |
+| `/api/contracts/[id]` | PATCH  | Actualizar contrato  |
 
 #### Estados de Contrato
 
@@ -1353,25 +1406,25 @@ TERMINATED
   landlordId: UUID,
   tenantId: UUID,
   brokerId?: UUID,
-  
+
   // Fechas
   startDate: "2026-01-01",
   endDate: "2027-01-01",
-  
+
   // Financiero
   monthlyRentCLP: 450000,
   monthlyRentUF: 2.5,
-  
+
   // Estado
   status: "DRAFT | PENDING_SIGNATURE | SIGNED | ACTIVE | EXPIRED | TERMINATED",
-  
+
   // Firmas
   landlordSignature: { signed: true, date: timestamp },
   tenantSignature: { signed: true, date: timestamp },
-  
+
   // Documento
   documentUrl: "cloudinary-pdf-url",
-  
+
   // Legal
   terms: "Términos específicos...",
   metadata: { ... }
@@ -1381,6 +1434,7 @@ TERMINATED
 #### Cumplimiento Legal
 
 ✅ **Ley 18.101** - Contrato incluye cláusulas obligatorias
+
 - Identificación de partes
 - Descripción de inmueble
 - Plazo del arriendo
@@ -1392,6 +1446,7 @@ TERMINATED
 #### Generación de PDF
 
 Componente `ContractPdfActions`:
+
 - Genera PDF con todos los datos
 - Incluye firmas digitales
 - Incluye fecha y hora de generación
@@ -1407,11 +1462,11 @@ Gestión de solicitudes de mantenimiento con responsabilidades legales y asignac
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/maintenance` | GET | Listar solicitudes |
-| `/api/maintenance` | POST | Crear nueva solicitud |
-| `/api/maintenance/[id]` | PATCH | Actualizar estado |
+| Ruta                    | Método | Descripción           |
+| ----------------------- | ------ | --------------------- |
+| `/api/maintenance`      | GET    | Listar solicitudes    |
+| `/api/maintenance`      | POST   | Crear nueva solicitud |
+| `/api/maintenance/[id]` | PATCH  | Actualizar estado     |
 
 #### Estructura de Solicitud
 
@@ -1421,26 +1476,26 @@ Gestión de solicitudes de mantenimiento con responsabilidades legales y asignac
   propertyId: UUID,
   tenantId: UUID,
   providerId?: UUID,
-  
+
   // Información
   category: "plumbing | electrical | structure | other",
   description: "Descripción del problema",
   photos: ["cloudinary-url-1", "cloudinary-url-2"],
-  
+
   // Estado del proceso
   status: "REQUESTED | REVIEWING | REQUESTED_INFO | APPROVED | IN_PROGRESS | COMPLETED | REJECTED",
-  
+
   // Responsabilidades legales
   legalResponsibility: "landlord | tenant | other",
-  
+
   // Timeline
   requestedAt: timestamp,
   approvedAt?: timestamp,
   completedAt?: timestamp,
-  
+
   // Comunicación
   comments: [{ author, text, date }, ...],
-  
+
   // Documentación
   invoiceUrl?: "url",
   completionPhotoUrl?: "url"
@@ -1449,12 +1504,12 @@ Gestión de solicitudes de mantenimiento con responsabilidades legales y asignac
 
 #### Categorías y Responsabilidades (Ley 18.101)
 
-| Categoría | Responsable | Ejemplos |
-|-----------|-----------|----------|
-| 🔧 **Plomería** | Arrendador | Tuberías, grifos, desagües, WC |
-| ⚡ **Electricidad** | Arrendador | Circuitos, enchufes, iluminación |
-| 🏗️ **Estructura** | Arrendador | Paredes, techos, puertas, ventanas |
-| 📋 **Otro** | Caso a caso | Evaluar responsabilidad específica |
+| Categoría           | Responsable | Ejemplos                           |
+| ------------------- | ----------- | ---------------------------------- |
+| 🔧 **Plomería**     | Arrendador  | Tuberías, grifos, desagües, WC     |
+| ⚡ **Electricidad** | Arrendador  | Circuitos, enchufes, iluminación   |
+| 🏗️ **Estructura**   | Arrendador  | Paredes, techos, puertas, ventanas |
+| 📋 **Otro**         | Caso a caso | Evaluar responsabilidad específica |
 
 #### Flujo de Aprobación
 
@@ -1481,12 +1536,12 @@ Gestión de acuerdos entre arrendadores y corredores para administrar propiedade
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/mandates` | GET | Listar mandatos |
-| `/api/mandates` | POST | Crear nuevo mandato |
-| `/api/mandates/[id]` | PATCH | Actualizar mandato |
-| `/api/mandates/revoke` | POST | Revocar mandato |
+| Ruta                   | Método | Descripción         |
+| ---------------------- | ------ | ------------------- |
+| `/api/mandates`        | GET    | Listar mandatos     |
+| `/api/mandates`        | POST   | Crear nuevo mandato |
+| `/api/mandates/[id]`   | PATCH  | Actualizar mandato  |
+| `/api/mandates/revoke` | POST   | Revocar mandato     |
 
 #### Estructura de Mandato
 
@@ -1496,17 +1551,17 @@ Gestión de acuerdos entre arrendadores y corredores para administrar propiedade
   landlordId: UUID,
   brokerId: UUID,
   propertyId: UUID,
-  
+
   // Estado
   status: "PENDING | ACTIVE | REVOKED | EXPIRED",
-  
+
   // Vigencia
   startDate: "2026-01-01",
   expiryDate: "2027-01-01",
-  
+
   // Comisión
   commissionPercentage: 8.5,
-  
+
   // Creación
   createdAt: timestamp,
   acceptedAt?: timestamp
@@ -1515,16 +1570,17 @@ Gestión de acuerdos entre arrendadores y corredores para administrar propiedade
 
 #### Estados de Mandato
 
-| Estado | Descripción |
-|--------|-----------|
+| Estado         | Descripción                  |
+| -------------- | ---------------------------- |
 | ⏳ **PENDING** | Awaiting landlord acceptance |
-| ✅ **ACTIVE** | Broker puede operar |
-| ❌ **REVOKED** | Terminado por landlord |
-| ⏱️ **EXPIRED** | Vencido por fecha |
+| ✅ **ACTIVE**  | Broker puede operar          |
+| ❌ **REVOKED** | Terminado por landlord       |
+| ⏱️ **EXPIRED** | Vencido por fecha            |
 
 #### Permisos con Mandato
 
 Corredor con mandato ACTIVE puede:
+
 - ✅ Ver información de propiedad
 - ✅ Ver información de arrendatario (limitada)
 - ✅ Crear/ver contratos
@@ -1544,27 +1600,27 @@ Proceso para invitar arrendatarios a registrarse vinculando directamente a propi
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/invitations` | POST | Crear invitación |
-| `/api/invitations/[token]` | GET | Verificar token |
-| `/api/invitations/[token]` | POST | Aceptar invitación |
+| Ruta                       | Método | Descripción        |
+| -------------------------- | ------ | ------------------ |
+| `/api/invitations`         | POST   | Crear invitación   |
+| `/api/invitations/[token]` | GET    | Verificar token    |
+| `/api/invitations/[token]` | POST   | Aceptar invitación |
 
 #### Flujo de Invitación
 
 ```
 1. Arrendador invita arrendatario
    Input: Email, nombre, propiedad
-   
+
 2. Sistema genera token único (60 caracteres, expira 7 días)
-   
+
 3. Email enviado con link:
    www.neifeapp.com/invitacion/[token]
-   
+
 4. Arrendatario hace click en link
    - Si NO existe cuenta → Ir a registro
    - Si EXISTE cuenta → Ir a aceptación
-   
+
 5. Aceptar invitación:
    - Propiedad vinculada a usuario
    - Contrato vinculado
@@ -1582,9 +1638,9 @@ Proceso para invitar arrendatarios a registrarse vinculando directamente a propi
   tenantName: "Juan Pérez",
   propertyId: UUID,
   landlordId: UUID,
-  
+
   status: "PENDING | ACCEPTED | REJECTED | EXPIRED",
-  
+
   createdAt: timestamp,
   expiresAt: timestamp (7 días),
   acceptedAt?: timestamp
@@ -1601,10 +1657,10 @@ Control granular de acceso de corredores a propiedades específicas.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/broker-permissions` | GET | Listar permisos |
-| `/api/broker-permissions` | POST | Crear permiso |
+| Ruta                      | Método | Descripción     |
+| ------------------------- | ------ | --------------- |
+| `/api/broker-permissions` | GET    | Listar permisos |
+| `/api/broker-permissions` | POST   | Crear permiso   |
 
 #### Estructura de Permiso
 
@@ -1614,7 +1670,7 @@ Control granular de acceso de corredores a propiedades específicas.
   propertyId: UUID,
   brokerId: UUID,
   landlordId: UUID,
-  
+
   status: "PENDING | APPROVED | REJECTED",
   requestedAt: timestamp,
   respondedAt?: timestamp
@@ -1631,11 +1687,11 @@ Corredores solicitan acceso a propiedades específicas para administrar.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/property-access-requests` | GET | Listar solicitudes |
-| `/api/property-access-requests` | POST | Crear solicitud |
-| `/api/property-access-requests/[id]` | PATCH | Responder solicitud |
+| Ruta                                 | Método | Descripción         |
+| ------------------------------------ | ------ | ------------------- |
+| `/api/property-access-requests`      | GET    | Listar solicitudes  |
+| `/api/property-access-requests`      | POST   | Crear solicitud     |
+| `/api/property-access-requests/[id]` | PATCH  | Responder solicitud |
 
 #### Estructura de Solicitud
 
@@ -1645,9 +1701,9 @@ Corredores solicitan acceso a propiedades específicas para administrar.
   propertyId: UUID,
   brokerId: UUID,
   landlordId: UUID,
-  
+
   message: "Razón de la solicitud",
-  
+
   status: "PENDING | APPROVED | REJECTED",
   createdAt: timestamp,
   respondedAt?: timestamp
@@ -1664,13 +1720,13 @@ Gestión de red de proveedores de servicios especializados.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/providers` | GET | Listar proveedores |
-| `/api/providers` | POST | Crear proveedor |
-| `/api/providers/[id]` | GET | Obtener detalles |
-| `/api/providers/[id]` | PUT | Actualizar |
-| `/api/providers/[id]` | DELETE | Eliminar |
+| Ruta                  | Método | Descripción        |
+| --------------------- | ------ | ------------------ |
+| `/api/providers`      | GET    | Listar proveedores |
+| `/api/providers`      | POST   | Crear proveedor    |
+| `/api/providers/[id]` | GET    | Obtener detalles   |
+| `/api/providers/[id]` | PUT    | Actualizar         |
+| `/api/providers/[id]` | DELETE | Eliminar           |
 
 #### Estructura de Proveedor
 
@@ -1678,20 +1734,20 @@ Gestión de red de proveedores de servicios especializados.
 {
   id: UUID,
   landlordId: UUID,
-  
+
   // Información
   name: "nombre proveedor",
   phone: "+56 9 XXXX XXXX",
   email: "email@provider.com",
   description: "descripción de servicios",
-  
+
   // Especialidades
   specialties: ["plumbing", "electrical", ...],
-  
+
   // Calificación
   rating: 4.5,
   reviewCount: 15,
-  
+
   // Histórico
   jobsCompleted: 23,
   createdAt: timestamp
@@ -1708,11 +1764,11 @@ Registro y seguimiento de consumo de servicios mensuales.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/services` | GET | Listar servicios mensuales |
-| `/api/services` | POST | Crear registro mensual |
-| `/api/services/upload` | POST | Subir boleta a Cloudinary |
+| Ruta                   | Método | Descripción                |
+| ---------------------- | ------ | -------------------------- |
+| `/api/services`        | GET    | Listar servicios mensuales |
+| `/api/services`        | POST   | Crear registro mensual     |
+| `/api/services/upload` | POST   | Subir boleta a Cloudinary  |
 
 #### Estructura de Servicio Mensual
 
@@ -1721,7 +1777,7 @@ Registro y seguimiento de consumo de servicios mensuales.
   id: UUID,
   propertyId: UUID,
   month: "2026-04",
-  
+
   water: {
     consumption: 25.5,  // m³
     billUrl: "cloudinary-url"
@@ -1734,7 +1790,7 @@ Registro y seguimiento de consumo de servicios mensuales.
     consumption: 8.2,   // m³
     billUrl: "cloudinary-url"
   },
-  
+
   createdAt: timestamp
 }
 ```
@@ -1745,13 +1801,14 @@ Registro y seguimiento de consumo de servicios mensuales.
 
 #### Rutas API
 
-| Ruta | Método | Descripción |
-|------|--------|-----------|
-| `/api/dashboard/stats` | GET | KPIs según rol |
+| Ruta                   | Método | Descripción    |
+| ---------------------- | ------ | -------------- |
+| `/api/dashboard/stats` | GET    | KPIs según rol |
 
 #### Datos Disponibles
 
 **Para Arrendador:**
+
 - Ingresos totales (CLP, UF)
 - Pagos pendientes
 - Propiedades activas
@@ -1759,12 +1816,14 @@ Registro y seguimiento de consumo de servicios mensuales.
 - Tendencias 12 meses
 
 **Para Corredor:**
+
 - Propiedades administradas
 - Total recaudado
 - Comisiones ganadas
 - Rendiciones mensuales
 
 **Para Arrendatario:**
+
 - Próximo pago
 - Servicios del mes
 - Historial últimos 3 pagos
@@ -1773,24 +1832,24 @@ Registro y seguimiento de consumo de servicios mensuales.
 
 ### 📋 Modelos de Base de Datos (16 Modelos)
 
-| Modelo | Descripción |
-|--------|-----------|
-| **User** | Información de usuarios (email, contraseña, rol, perfil) |
-| **Property** | Propiedades en arriendo (dirección, datos bancarios) |
-| **Payment** | Pagos mensuales (monto, estado, fecha) |
-| **MaintenanceRequest** | Solicitudes de mantención |
-| **Notification** | Notificaciones para usuarios |
-| **NotificationPreferences** | Preferencias de canales de notificación |
-| **Invitation** | Invitaciones de arrendatarios por email |
-| **Mandate** | Mandatos de corredores |
-| **Contract** | Contratos digitales |
-| **Provider** | Proveedores de servicios |
-| **BrokerMessage** | Mensajes de corredores a arrendatarios |
-| **BrokerStatement** | Rendiciones mensuales |
-| **BrokerStatementItem** | Items detallados de rendiciones |
-| **MonthlyService** | Consumo de servicios básicos |
-| **CalendarEvent** | Eventos en calendario |
-| **ActivityLog** | Log de actividades del sistema |
+| Modelo                      | Descripción                                              |
+| --------------------------- | -------------------------------------------------------- |
+| **User**                    | Información de usuarios (email, contraseña, rol, perfil) |
+| **Property**                | Propiedades en arriendo (dirección, datos bancarios)     |
+| **Payment**                 | Pagos mensuales (monto, estado, fecha)                   |
+| **MaintenanceRequest**      | Solicitudes de mantención                                |
+| **Notification**            | Notificaciones para usuarios                             |
+| **NotificationPreferences** | Preferencias de canales de notificación                  |
+| **Invitation**              | Invitaciones de arrendatarios por email                  |
+| **Mandate**                 | Mandatos de corredores                                   |
+| **Contract**                | Contratos digitales                                      |
+| **Provider**                | Proveedores de servicios                                 |
+| **BrokerMessage**           | Mensajes de corredores a arrendatarios                   |
+| **BrokerStatement**         | Rendiciones mensuales                                    |
+| **BrokerStatementItem**     | Items detallados de rendiciones                          |
+| **MonthlyService**          | Consumo de servicios básicos                             |
+| **CalendarEvent**           | Eventos en calendario                                    |
+| **ActivityLog**             | Log de actividades del sistema                           |
 
 ---
 
@@ -1798,27 +1857,27 @@ Registro y seguimiento de consumo de servicios mensuales.
 
 ### Matriz de Funcionalidades por Rol
 
-| Funcionalidad | Arrendador | Arrendatario | Corredor |
-|--------------|-----------|-------------|----------|
-| **Gestionar Propiedades** | ✅ | ❌ | ❌ |
-| **Ver Pagos** | ✅ | ✅ | ✅ |
-| **Crear Contratos** | ✅ | ❌ | ✅ |
-| **Firmar Contrato** | ✅ | ✅ | ❌ |
-| **Reportar Mantención** | ❌ | ✅ | ❌ |
-| **Aprobar Mantención** | ✅ | ❌ | ❌ |
-| **Ver Servicios Básicos** | ✅ | ✅ | ❌ |
-| **Gestionar Proveedores** | ✅ | ❌ | ❌ |
-| **Ver Mandatos** | ✅ | ❌ | ✅ |
-| **Crear Rendición** | ❌ | ❌ | ✅ |
-| **Enviar Avisos** | ✅ | ❌ | ✅ |
-| **Acceso a Calendario** | ✅ | ❌ | ✅ |
+| Funcionalidad             | Arrendador | Arrendatario | Corredor |
+| ------------------------- | ---------- | ------------ | -------- |
+| **Gestionar Propiedades** | ✅         | ❌           | ❌       |
+| **Ver Pagos**             | ✅         | ✅           | ✅       |
+| **Crear Contratos**       | ✅         | ❌           | ✅       |
+| **Firmar Contrato**       | ✅         | ✅           | ❌       |
+| **Reportar Mantención**   | ❌         | ✅           | ❌       |
+| **Aprobar Mantención**    | ✅         | ❌           | ❌       |
+| **Ver Servicios Básicos** | ✅         | ✅           | ❌       |
+| **Gestionar Proveedores** | ✅         | ❌           | ❌       |
+| **Ver Mandatos**          | ✅         | ❌           | ✅       |
+| **Crear Rendición**       | ❌         | ❌           | ✅       |
+| **Enviar Avisos**         | ✅         | ❌           | ✅       |
+| **Acceso a Calendario**   | ✅         | ❌           | ✅       |
 
 ### Cumplimiento Legal
 
 ✅ **Ley 18.101** - Contrato de Arriendos  
 ✅ **Ley 21.461** - Procedimiento de Desalojo  
 ✅ **Ley 19.628** - Protección de Datos Personales  
-✅ **Firma Electrónica** - Válida legalmente (Ley 19.799)  
+✅ **Firma Electrónica** - Válida legalmente (Ley 19.799)
 
 ### Volumen de Funcionalidades
 
@@ -1832,6 +1891,7 @@ Registro y seguimiento de consumo de servicios mensuales.
 ### Tecnología Stack
 
 **Frontend:**
+
 - Next.js 15 (App Router)
 - React Server Components
 - TypeScript
@@ -1839,6 +1899,7 @@ Registro y seguimiento de consumo de servicios mensuales.
 - Responsive Design
 
 **Backend:**
+
 - Next.js API Routes
 - Prisma ORM
 - NextAuth v5 (JWT)
@@ -1846,10 +1907,12 @@ Registro y seguimiento de consumo de servicios mensuales.
 - Cloudinary (Storage)
 
 **Base de Datos:**
+
 - PostgreSQL (via Prisma)
 - 16 modelos relacionales
 
 **Infraestructura:**
+
 - Vercel (Deployment)
 - Cloudinary CDN (Assets)
 
