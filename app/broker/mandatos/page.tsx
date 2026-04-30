@@ -247,8 +247,31 @@ export default function BrokerMandatosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-[#9C8578]">Cargando mandatos...</p>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-32 bg-[#2A2520] rounded animate-pulse" />
+            <div className="h-4 w-64 bg-[#2A2520] rounded animate-pulse" />
+          </div>
+          <div className="h-9 w-36 bg-[#2A2520] rounded animate-pulse" />
+        </div>
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <div className="h-5 w-48 bg-[#1C1917] rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-[#1C1917] rounded animate-pulse" />
+                  <div className="h-4 w-56 bg-[#1C1917] rounded animate-pulse" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-6 w-20 bg-[#1C1917] rounded-full animate-pulse" />
+                  <div className="h-9 w-24 bg-[#1C1917] rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -354,14 +377,22 @@ export default function BrokerMandatosPage() {
         {mandates.length === 0 ? (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
             <CardContent className="p-12 text-center">
-              <FileText className="h-12 w-12 text-[#9C8578] mx-auto mb-3 opacity-50" />
-              <p className="text-[#9C8578] mb-4">
-                No tienes mandatos aún
+              <div className="w-16 h-16 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-8 w-8 text-[#5E8B8C]/50" />
+              </div>
+              <h3 className="text-[#FAF6F2] font-medium mb-2">Aún no tienes mandatos activos</h3>
+              <p className="text-[#9C8578] text-sm max-w-xl mx-auto mb-6">
+                Para comenzar, solicita permiso general al propietario y luego crea una solicitud por cada propiedad que quieras administrar.
               </p>
+              <div className="mb-6 text-sm text-[#D5C3B6]">
+                <p>1. Invita al propietario o busca su correo en el sistema.</p>
+                <p>2. Espera su aprobación para quedar habilitado.</p>
+                <p>3. Crea la solicitud de mandato de la propiedad.</p>
+              </div>
               <Link href="/broker/mandatos/nuevo">
                 <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
                   <Plus className="h-4 w-4 mr-2" />
-                  Crear Solicitud
+                  Crear solicitud de mandato
                 </Button>
               </Link>
             </CardContent>

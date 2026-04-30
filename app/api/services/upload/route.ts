@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
     const url = await uploadFile(
       Buffer.from(buffer),
       'boletas',
-      filename
+      filename,
+      file.type
     )
 
     // Actualizar el registro de servicios

@@ -56,13 +56,12 @@ const tenantNavItems = [
 const brokerNavItems = [
   { href: "/broker", label: "Panel", icon: Home, id: undefined },
   { href: "/broker/propiedades", label: "Propiedades", icon: Building2, id: undefined },
-  { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
-  { href: "/broker/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
-  { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
-  { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
+  { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
   { href: "/broker/rendiciones", label: "Rendiciones", icon: FileBarChart, id: undefined },
   { href: "/broker/avisos", label: "Avisos", icon: Phone, id: undefined },
-  { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
+  { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
+  { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
+  { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
   { href: "/broker/calendario", label: "Calendario", icon: Calendar, id: undefined },
   { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
 ]

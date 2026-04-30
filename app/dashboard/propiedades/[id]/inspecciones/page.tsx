@@ -32,6 +32,7 @@ import {
   AlertCircle,
   Trash2,
 } from "lucide-react"
+import { DocumentUploader } from "@/components/ui/document-uploader"
 
 interface Inspection {
   id: string
@@ -193,10 +194,10 @@ export default function InspeccionesPage() {
       })
 
       if (!res.ok) throw new Error("Failed to update status")
-      
+
       const updated = await res.json()
       setInspections(inspections.map(i => i.id === inspectionId ? updated : i))
-      
+
       toast({
         title: "Éxito",
         description: `Estado actualizado a ${inspectionStatusLabels[newStatus as keyof typeof inspectionStatusLabels]}`
@@ -205,6 +206,33 @@ export default function InspeccionesPage() {
       toast({
         title: "Error",
         description: "No se pudo actualizar el estado",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Handle report upload
+  const handleReportUpload = async (inspectionId: string, reportUrl: string) => {
+    try {
+      const res = await fetch(`/api/properties/${propertyId}/inspections/${inspectionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportUrl })
+      })
+
+      if (!res.ok) throw new Error("Failed to update report")
+
+      const updated = await res.json()
+      setInspections(inspections.map(i => i.id === inspectionId ? updated : i))
+
+      toast({
+        title: "Éxito",
+        description: "Acta de inspección subida correctamente"
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo subir el acta",
         variant: "destructive"
       })
     }
@@ -386,6 +414,16 @@ export default function InspeccionesPage() {
                         {inspection.notes && (
                           <p className="col-span-2 text-foreground italic">Notas: {inspection.notes}</p>
                         )}
+                      </div>
+                      <div className="mt-3">
+                        <DocumentUploader
+                          label="Acta de inspección"
+                          description="Sube el acta de inspección en formato PDF"
+                          currentUrl={inspection.reportUrl}
+                          folder="inspections"
+                          accept="application/pdf"
+                          onUpload={(url) => handleReportUpload(inspection.id, url)}
+                        />
                       </div>
                     </div>
                     <div className="flex gap-2">

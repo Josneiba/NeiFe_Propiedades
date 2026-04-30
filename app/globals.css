@@ -4,6 +4,10 @@
 
 /* NeiFe Design System — Mediterráneo Cálido Premium */
 :root {
+  --font-heading: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
   /* Brand Colors */
   --neife-brown: #75524C;
   --neife-beige: #D5C3B6;

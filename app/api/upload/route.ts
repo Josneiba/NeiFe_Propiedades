@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
       'avatars',
       'receipts',
       'boletas',
+      'documents',
+      'checklists',
     ]
     if (!allowedFolders.includes(folder)) {
       return NextResponse.json(
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = await file.arrayBuffer()
     const filename = `${Date.now()}-${file.name}`
-    const url = await uploadFile(Buffer.from(buffer), folder, filename)
+    const url = await uploadFile(Buffer.from(buffer), folder, filename, file.type)
 
     return NextResponse.json({ url })
   } catch (error) {

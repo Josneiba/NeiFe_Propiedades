@@ -55,20 +55,21 @@ export default async function BrokerPagosPage({
     behavior: behaviorFilter = 'ALL',
   } = await searchParams
 
-  const managedPropertyWhere = {
-    isActive: true,
-    OR: [
-      { managedBy: session.user.id },
-      {
-        mandates: {
-          some: {
-            brokerId: session.user.id,
-            status: 'ACTIVE' as const,
+  const managedPropertyWhere =
+    session.user.role === 'BROKER'
+      ? {
+          isActive: true,
+          mandates: {
+            some: {
+              brokerId: session.user.id,
+              status: 'ACTIVE' as const,
+            },
           },
-        },
-      },
-    ],
-  }
+        }
+      : {
+          isActive: true,
+          managedBy: session.user.id,
+        }
 
   const [properties, filterProperty] = await Promise.all([
     prisma.property.findMany({
@@ -314,13 +315,22 @@ export default async function BrokerPagosPage({
                 <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
                   {filterPropertyId || statusFilter !== 'ALL' || behaviorFilter !== 'ALL'
                     ? 'No se encontraron pagos con los filtros aplicados'
-                    : 'Sin pagos registrados'}
+                    : properties.length === 0
+                      ? 'Aún no tienes propiedades activas para recaudar'
+                      : 'Sin pagos registrados'}
                 </h3>
                 <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
                   {filterPropertyId || statusFilter !== 'ALL' || behaviorFilter !== 'ALL'
                     ? 'Intenta cambiar los filtros para ver más resultados.'
-                    : 'Los pagos aparecerán aquí cuando una propiedad administrada tenga arriendo activo.'}
+                    : properties.length === 0
+                      ? 'Cuando un propietario apruebe un mandato activo, verás aquí todos los pagos de esa cartera.'
+                      : 'Los pagos aparecerán aquí cuando una propiedad administrada tenga arriendo activo.'}
                 </p>
+                {properties.length === 0 && (
+                  <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]" asChild>
+                    <Link href="/broker/mandatos">Ir a mandatos</Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (

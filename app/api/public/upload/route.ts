@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = await file.arrayBuffer()
     const filename = `${Date.now()}-${file.name}`
-    const url = await uploadFile(Buffer.from(buffer), 'applications', filename)
+    const url = await uploadFile(Buffer.from(buffer), 'applications', filename, file.type)
 
     return NextResponse.json({ url })
   } catch (error) {

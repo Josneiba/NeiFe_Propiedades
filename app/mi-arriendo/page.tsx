@@ -4,31 +4,30 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Home, 
+import {
+  Home,
   CreditCard,
   Wrench,
   FileText,
   AlertCircle,
   CheckCircle2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  User
 } from "lucide-react"
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
+import { Suspense } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 function formatCLP(amount: number) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(amount)
 }
 
-export default async function MiArriendoPage() {
-  const session = await auth()
-  if (!session?.user?.id) redirect("/login")
-  if (session.user.role !== "TENANT") redirect("/mi-arriendo")
-
-  // Get the property assigned to this tenant
+async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
   const property = await prisma.property.findFirst({
-    where: { tenantId: session.user.id },
+    where: { tenantId },
     select: {
       id: true,
       address: true,
@@ -45,36 +44,87 @@ export default async function MiArriendoPage() {
 
   if (!property) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
-        </div>
-        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-          <CardContent className="p-16 text-center">
-            <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
-              <Home className="h-12 w-12 text-[#5E8B8C]" />
-            </div>
-            <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
-              No estás vinculado a ninguna propiedad
-            </h3>
-            <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
-              El propietario debe enviarte una invitación por email para conectarte a tu arriendo.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-16 text-center">
+          <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+            <Home className="h-12 w-12 text-[#5E8B8C]" />
+          </div>
+          <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+            No estás vinculado a ninguna propiedad
+          </h3>
+          <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+            El propietario debe enviarte una invitación por email para conectarte a tu arriendo.
+          </p>
+        </CardContent>
+      </Card>
     )
   }
 
+  const contractDates =
+    property.contractStart && property.contractEnd
+      ? {
+          start: property.contractStart,
+          end: property.contractEnd,
+        }
+      : null
+
+  return (
+    <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <CardHeader>
+        <CardTitle className="text-[#FAF6F2]">Información de Propiedad</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-[#5E8B8C]/20 flex items-center justify-center">
+            <Home className="h-6 w-6 text-[#5E8B8C]" />
+          </div>
+          <div>
+            <p className="text-sm text-[#9C8578]">Dirección</p>
+            <p className="font-medium text-[#FAF6F2]">{property.address}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-[#75524C]/20 flex items-center justify-center">
+            <User className="h-6 w-6 text-[#75524C]" />
+          </div>
+          <div>
+            <p className="text-sm text-[#9C8578]">Propietario</p>
+            <p className="font-medium text-[#FAF6F2]">{property.landlord.name}</p>
+          </div>
+        </div>
+        {property.monthlyRentCLP && (
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-[#B8965A]/20 flex items-center justify-center">
+              <CreditCard className="h-6 w-6 text-[#B8965A]" />
+            </div>
+            <div>
+              <p className="text-sm text-[#9C8578]">Arriendo mensual</p>
+              <p className="font-medium text-[#FAF6F2]">{formatCLP(property.monthlyRentCLP)}</p>
+            </div>
+          </div>
+        )}
+        {contractDates && (
+          <div className="pt-4 border-t border-[#D5C3B6]/10">
+            <ContractProgressChart
+              startDate={new Date(contractDates.start)}
+              endDate={new Date(contractDates.end)}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
 
-  // Get property details, current month payment, and recent activity
-  const [currentPayment, currentServices, recentPayments, recentMaintenance] = await Promise.all([
+  const [currentPayment, currentServices, recentPayments] = await Promise.all([
     prisma.payment.findFirst({
       where: {
-        propertyId: property.id,
+        propertyId,
         month: currentMonth,
         year: currentYear,
       },
@@ -87,7 +137,7 @@ export default async function MiArriendoPage() {
     }),
     prisma.monthlyService.findFirst({
       where: {
-        propertyId: property.id,
+        propertyId,
         month: currentMonth,
         year: currentYear,
       },
@@ -99,7 +149,7 @@ export default async function MiArriendoPage() {
     }),
     prisma.payment.findMany({
       where: {
-        propertyId: property.id,
+        propertyId,
         status: "PAID",
       },
       select: {
@@ -111,36 +161,7 @@ export default async function MiArriendoPage() {
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
-    prisma.maintenanceRequest.findMany({
-      where: {
-        propertyId: property.id,
-      },
-      select: {
-        id: true,
-        category: true,
-        status: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    }),
   ])
-
-  if (!property) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
-        </div>
-        <Card className="bg-card border-border">
-          <CardContent className="p-12 text-center">
-            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground">No se encontró información de tu propiedad</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string; label: string }> = {
@@ -166,32 +187,162 @@ export default async function MiArriendoPage() {
   const water = currentServices?.water ?? 0
   const electricity = currentServices?.electricity ?? 0
   const gas = currentServices?.gas ?? 0
-  const currentTotal = (property.monthlyRentCLP || 0) + water + electricity + gas
-  const contractDates =
-    property.contractStart && property.contractEnd
-      ? {
-          start: property.contractStart,
-          end: property.contractEnd,
-        }
-      : null
 
-  // Build activity items
-  const activityItems = [
-    ...recentPayments.map((p) => ({
-      type: "payment" as const,
-      description: `Pago de ${getMonthName(p.month)} ${p.year} confirmado`,
-      date: p.createdAt,
-      status: "success" as const,
-    })),
-    ...recentMaintenance.map((m) => ({
-      type: "maintenance" as const,
-      description: `Solicitud de ${m.category} - ${m.status === "COMPLETED" ? "completada" : m.status === "IN_PROGRESS" ? "en progreso" : "pendiente"}`,
-      date: m.createdAt,
-      status: m.status === "COMPLETED" ? ("success" as const) : ("pending" as const),
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
+  return (
+    <div className="space-y-6">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardHeader>
+          <CardTitle className="text-[#FAF6F2]">Pago del Mes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {currentPayment ? (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9C8578]">Estado</span>
+                {getStatusBadge(currentPayment.status)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9C8578]">Arriendo</span>
+                <span className="font-medium text-[#FAF6F2]">{formatCLP(currentPayment.amountCLP)}</span>
+              </div>
+              {currentServices && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#9C8578]">Agua</span>
+                    <span className="font-medium text-[#FAF6F2]">{formatCLP(water)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#9C8578]">Electricidad</span>
+                    <span className="font-medium text-[#FAF6F2]">{formatCLP(electricity)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#9C8578]">Gas</span>
+                    <span className="font-medium text-[#FAF6F2]">{formatCLP(gas)}</span>
+                  </div>
+                </>
+              )}
+              <div className="pt-4 border-t border-[#D5C3B6]/10 flex items-center justify-between">
+                <span className="text-[#9C8578] font-medium">Total</span>
+                <span className="text-xl font-bold text-[#FAF6F2]">{formatCLP(currentPayment.amountCLP + water + electricity + gas)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-[#9C8578] mx-auto mb-3 opacity-50" />
+              <p className="text-[#9C8578]">No hay información de pago para este mes</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardHeader>
+          <CardTitle className="text-[#FAF6F2]">Pagos Recientes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recentPayments.length === 0 ? (
+            <p className="text-[#9C8578] text-center py-4">No hay pagos registrados</p>
+          ) : (
+            recentPayments.map((payment) => (
+              <div key={payment.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1C1917]">
+                <div>
+                  <p className="text-[#FAF6F2] font-medium">{getMonthName(payment.month)} {payment.year}</p>
+                  <p className="text-xs text-[#9C8578]">{new Date(payment.createdAt).toLocaleDateString('es-CL')}</p>
+                </div>
+                <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
+  const recentMaintenance = await prisma.maintenanceRequest.findMany({
+    where: { propertyId },
+    select: {
+      id: true,
+      category: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 3,
+  })
+
+  return (
+    <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <CardHeader>
+        <CardTitle className="text-[#FAF6F2]">Mantenciones Recientes</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {recentMaintenance.length === 0 ? (
+          <p className="text-[#9C8578] text-center py-4">No hay mantenciones registradas</p>
+        ) : (
+          recentMaintenance.map((maintenance) => (
+            <div key={maintenance.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1C1917]">
+              <div>
+                <p className="text-[#FAF6F2] font-medium">{maintenance.category}</p>
+                <p className="text-xs text-[#9C8578]">{new Date(maintenance.createdAt).toLocaleDateString('es-CL')}</p>
+              </div>
+              <Badge className={
+                maintenance.status === "COMPLETED" ? "bg-[#5E8B8C] text-white" :
+                maintenance.status === "IN_PROGRESS" ? "bg-[#F2C94C] text-[#1C1917]" :
+                "bg-[#C27F79] text-white"
+              }>
+                {maintenance.status === "COMPLETED" ? "Completada" :
+                 maintenance.status === "IN_PROGRESS" ? "En progreso" :
+                 "Pendiente"}
+              </Badge>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export default async function MiArriendoPage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect("/login")
+  if (session.user.role !== "TENANT") redirect("/mi-arriendo")
+
+  const property = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: { id: true },
+  })
+
+  if (!property) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
+        </div>
+        <Suspense fallback={
+          <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
+        }>
+          <TenantPropertyInfo tenantId={session.user.id} />
+        </Suspense>
+      </div>
+    )
+  }
 
   const alerts = []
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth() + 1
+  const currentYear = currentDate.getFullYear()
+
+  const currentPayment = await prisma.payment.findFirst({
+    where: {
+      propertyId: property.id,
+      month: currentMonth,
+      year: currentYear,
+    },
+    select: { status: true },
+  })
+
   if (!currentPayment || currentPayment.status === "PENDING") {
     alerts.push({
       type: "payment",
@@ -201,8 +352,14 @@ export default async function MiArriendoPage() {
       bgColor: "bg-[#C27F79]/20",
     })
   }
-  if (property.contractEnd) {
-    const daysLeft = Math.floor((new Date(property.contractEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+
+  const propertyFull = await prisma.property.findFirst({
+    where: { tenantId: session.user.id },
+    select: { contractEnd: true },
+  })
+
+  if (propertyFull?.contractEnd) {
+    const daysLeft = Math.floor((new Date(propertyFull.contractEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     if (daysLeft > 0 && daysLeft <= 90) {
       alerts.push({
         type: "contract",
@@ -219,17 +376,13 @@ export default async function MiArriendoPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
-        <div className="flex items-center gap-2 text-muted-foreground mt-1">
-          <Home className="h-4 w-4" />
-          {property.address}
-        </div>
       </div>
 
       {/* Alerts */}
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.map((alert, index) => (
-            <div 
+            <div
               key={index}
               className={`flex items-center gap-3 p-4 rounded-lg ${alert.bgColor}`}
             >
@@ -243,234 +396,67 @@ export default async function MiArriendoPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Current Month Payment */}
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
-                  Estado del Mes
-                </CardTitle>
-                {currentPayment && getStatusBadge(currentPayment.status)}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Arriendo</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {formatCLP(property.monthlyRentCLP || 0)}
-                  </p>
-                </div>
-                {water > 0 && (
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Agua</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCLP(water)}
-                    </p>
-                  </div>
-                )}
-                {electricity > 0 && (
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Luz</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCLP(electricity)}
-                    </p>
-                  </div>
-                )}
-                {gas > 0 && (
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Gas</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCLP(gas)}
-                    </p>
-                  </div>
-                )}
-                <div className="p-4 rounded-lg bg-[#5E8B8C]/20">
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-lg font-bold text-[#5E8B8C]">
-                    {formatCLP(currentTotal)}
-                  </p>
-                </div>
-              </div>
+          {/* Property Info - Suspense boundary */}
+          <Suspense fallback={
+            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
+          }>
+            <TenantPropertyInfo tenantId={session.user.id} />
+          </Suspense>
 
-              <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-                <div>
-                  <p className="text-sm text-muted-foreground">Próximo vencimiento</p>
-                  <p className="font-medium text-foreground">
-                    {currentMonth === 12 ? "1 de Enero" : `1 de ${getMonthName(currentMonth + 1)}`}
-                  </p>
-                </div>
-                <Button 
-                  className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
-                  asChild
-                >
-                  <Link href="/mi-arriendo/pagos">
-                    Pagar ahora
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Payment Info - Suspense boundary */}
+          <Suspense fallback={
+            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
+          }>
+            <TenantPaymentInfo propertyId={property.id} />
+          </Suspense>
+        </div>
 
-          {/* Recent Activity */}
-          {activityItems.length > 0 && (
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground">Actividad Reciente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activityItems.map((activity, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        activity.status === "success" 
-                          ? "bg-green-100" 
-                          : "bg-amber-100"
-                      }`}>
-                        {activity.status === "success" ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-amber-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-foreground">{activity.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(activity.date).toLocaleDateString("es-CL")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Maintenance Info - Suspense boundary */}
+          <Suspense fallback={
+            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
+          }>
+            <TenantMaintenanceInfo propertyId={property.id} />
+          </Suspense>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Link href="/mi-arriendo/pagos">
-              <Card className="bg-card border-border hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <CreditCard className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-foreground text-sm">Ver Pagos</p>
+                  <p className="font-medium text-[#FAF6F2] text-sm">Ver Pagos</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/mi-arriendo/servicios">
-              <Card className="bg-card border-border hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <AlertCircle className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-foreground text-sm">Servicios</p>
+                  <p className="font-medium text-[#FAF6F2] text-sm">Servicios</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/mi-arriendo/mantenciones">
-              <Card className="bg-card border-border hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <Wrench className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-foreground text-sm">Mantenciones</p>
+                  <p className="font-medium text-[#FAF6F2] text-sm">Mantenciones</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/mi-arriendo/contrato">
-              <Card className="bg-card border-border hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <FileText className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-foreground text-sm">Contrato</p>
+                  <p className="font-medium text-[#FAF6F2] text-sm">Contrato</p>
                 </CardContent>
               </Card>
             </Link>
           </div>
         </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Contract Progress */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-lg">Mi Contrato</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contractDates ? (
-                <ContractProgressChart 
-                  startDate={contractDates.start}
-                  endDate={contractDates.end}
-                  size="large"
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Fechas de contrato no disponibles.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Property Info */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-lg">Información</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Dirección</p>
-                <p className="text-foreground">{property.address}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Arrendador</p>
-                <p className="text-foreground">{property.landlord.name}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-    {/* Contract Progress */}
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-foreground text-lg">Mi Contrato</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {contractDates ? (
-          <ContractProgressChart 
-            startDate={contractDates.start}
-            endDate={contractDates.end}
-            size="large"
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Fechas de contrato no disponibles.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-
-    {/* Property Info */}
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-foreground text-lg">Información</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm text-muted-foreground">Dirección</p>
-          <p className="text-foreground">{property.address}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Arrendador</p>
-          <p className="text-foreground">{property.landlord.name || "Sin asignar"}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Arriendo mensual</p>
-          <p className="text-lg font-bold text-[#5E8B8C]">
-            {formatCLP(property.monthlyRentCLP || 0)}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-</div>
-</div>
+      </div>
+    </div>
   )
 }

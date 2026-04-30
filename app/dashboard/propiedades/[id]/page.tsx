@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -99,7 +100,23 @@ export default function PropertyDetailPage() {
   const { toast } = useToast()
   const propertyId = params.id as string
   const rawTab = searchParams.get("tab") || "resumen"
-  const currentTab = rawTab === "corredor" ? "administracion" : rawTab
+  const tabMap: Record<string, string> = {
+    "pagos": "financiero",
+    "servicios": "financiero",
+    "garantia": "financiero",
+    "historial-renta": "financiero",
+    "mantenciones": "operacion",
+    "proveedores": "operacion",
+    "checklist": "operacion",
+    "contrato": "contrato",
+    "inspecciones": "contrato",
+    "reajuste": "contrato",
+    "administracion": "gestion",
+    "solicitudes": "gestion",
+    "postulaciones": "gestion",
+    "corredor": "gestion",
+  }
+  const currentTab = tabMap[rawTab] || rawTab
 
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
@@ -347,21 +364,10 @@ export default function PropertyDetailPage() {
         <div className="hidden md:block">
           <TabsList className="bg-muted w-full justify-start overflow-x-auto">
             <TabsTrigger value="resumen">Resumen</TabsTrigger>
-            <TabsTrigger value="administracion">Administración</TabsTrigger>
-            {userRole === 'LANDLORD' && (
-              <TabsTrigger value="solicitudes">Solicitudes</TabsTrigger>
-            )}
-            <TabsTrigger value="pagos">Pagos</TabsTrigger>
-            <TabsTrigger value="servicios">Servicios</TabsTrigger>
-            <TabsTrigger value="mantenciones">Mantenciones</TabsTrigger>
-            <TabsTrigger value="contrato">Contrato</TabsTrigger>
-            <TabsTrigger value="inspecciones">Inspecciones</TabsTrigger>
-            <TabsTrigger value="reajuste">Reajuste IPC</TabsTrigger>
-            <TabsTrigger value="historial-renta">Historial de renta</TabsTrigger>
-            <TabsTrigger value="checklist">Checklist</TabsTrigger>
-            <TabsTrigger value="garantia">Garantía</TabsTrigger>
-            <TabsTrigger value="postulaciones">Postulaciones</TabsTrigger>
-            <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
+            <TabsTrigger value="financiero">Financiero</TabsTrigger>
+            <TabsTrigger value="operacion">Operación</TabsTrigger>
+            <TabsTrigger value="contrato">Contrato y Documentos</TabsTrigger>
+            <TabsTrigger value="gestion">Gestión</TabsTrigger>
           </TabsList>
         </div>
         <div className="md:hidden">
@@ -374,21 +380,10 @@ export default function PropertyDetailPage() {
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-ring/50 focus-visible:ring-2"
             >
               <option value="resumen">Resumen</option>
-              <option value="administracion">Administración</option>
-              {userRole === 'LANDLORD' && (
-                <option value="solicitudes">Solicitudes</option>
-              )}
-              <option value="pagos">Pagos</option>
-              <option value="servicios">Servicios</option>
-              <option value="mantenciones">Mantenciones</option>
-              <option value="contrato">Contrato</option>
-              <option value="inspecciones">Inspecciones</option>
-              <option value="reajuste">Reajuste IPC</option>
-              <option value="historial-renta">Historial de renta</option>
-              <option value="checklist">Checklist</option>
-              <option value="garantia">Garantía</option>
-              <option value="postulaciones">Postulaciones</option>
-              <option value="proveedores">Proveedores</option>
+              <option value="financiero">Financiero</option>
+              <option value="operacion">Operación</option>
+              <option value="contrato">Contrato y Documentos</option>
+              <option value="gestion">Gestión</option>
             </select>
           </div>
         </div>
@@ -602,248 +597,15 @@ export default function PropertyDetailPage() {
           </div>
         </TabsContent>
 
-        {/* Administración Tab */}
-        <TabsContent value="administracion" className="space-y-6">
-          {landlordDelegatedToBroker ? (
-            <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
-              <p className="text-sm text-[#5E8B8C]">
-                Tu corredor gestiona la administración de esta propiedad.
-              </p>
-            </div>
-          ) : userRole !== 'BROKER' ? (
-            <AdministrationSection propertyId={propertyId} />
-          ) : (
-            <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
-              <p className="text-sm text-[#5E8B8C]">
-                {hasBroker
-                  ? "Tienes acceso activo a esta propiedad y compartes la misma ficha con el arrendador y el arrendatario."
-                  : brokerPermissionStatus === 'APPROVED'
-                    ? "Ya tienes permiso del arrendador. Ahora puedes solicitar acceso específico a esta propiedad."
-                    : "Primero necesitas la aprobación general del arrendador antes de solicitar acceso a esta propiedad."}
-              </p>
-            </div>
-          )}
-
-          {(userRole === 'BROKER' || !hasBroker) && (
-            <Card className="bg-card border-border">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <Users className="h-5 w-5 text-[#5E8B8C]" />
-                    Información del agente / corredor
-                  </CardTitle>
-                  <CardDescription>Datos del agente o corredor de propiedades (registro propio)</CardDescription>
-                </div>
-                {!editingAgent && (
-                  <Button
-                    onClick={() => setEditingAgent(true)}
-                    size="sm"
-                    className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editingAgent ? (
-                  <>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="agentName" className="text-foreground">Nombre</Label>
-                        <Input
-                          id="agentName"
-                          value={agentData.agentName}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, agentName: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="agentRut" className="text-foreground">Identificacion</Label>
-                        <Input
-                          id="agentRut"
-                          value={agentData.agentRut}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, agentRut: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="agentEmail" className="text-foreground">Email</Label>
-                        <Input
-                          id="agentEmail"
-                          type="email"
-                          value={agentData.agentEmail}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, agentEmail: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="agentPhone" className="text-foreground">Teléfono</Label>
-                        <Input
-                          id="agentPhone"
-                          value={agentData.agentPhone}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, agentPhone: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="agentCompany" className="text-foreground">Empresa</Label>
-                        <Input
-                          id="agentCompany"
-                          value={agentData.agentCompany}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, agentCompany: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="commissionRate" className="text-foreground">Comisión (%)</Label>
-                        <Input
-                          id="commissionRate"
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={agentData.commissionRate}
-                          onChange={(e) => setAgentData(prev => ({ ...prev, commissionRate: e.target.value }))}
-                          className="bg-background border-input text-foreground"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleSaveAgent} 
-                        disabled={savingAgent}
-                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                      >
-                        {savingAgent ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Guardando...
-                          </>
-                        ) : (
-                          <>Guardar</>
-                        )}
-                      </Button>
-                      <Button onClick={() => setEditingAgent(false)} variant="outline" className="text-foreground border-border">
-                        Cancelar
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-4">
-                    {agentData.agentName ? (
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Nombre</p>
-                          <p className="text-foreground font-semibold">{agentData.agentName}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Identificacion</p>
-                          <p className="text-foreground font-semibold">{agentData.agentRut}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Email</p>
-                          <p className="text-foreground font-semibold">{agentData.agentEmail}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Teléfono</p>
-                          <p className="text-foreground font-semibold">{agentData.agentPhone}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Empresa</p>
-                          <p className="text-foreground font-semibold">{agentData.agentCompany}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Comisión</p>
-                          <p className="text-foreground font-semibold">{agentData.commissionRate}% ({agentData.commissionType})</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-8">No hay información de corredor registrada</p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Inspecciones Tab */}
-        <TabsContent value="inspecciones">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Inspecciones</CardTitle>
-              <CardDescription>Ver y administrar inspecciones de la propiedad</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href={`/dashboard/propiedades/${propertyId}/inspecciones`}>
-                <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
-                  Ir a inspecciones
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Reajuste IPC Tab */}
-        <TabsContent value="reajuste">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Reajuste por IPC</CardTitle>
-              <CardDescription>Ver y administrar reajustes de arriendo</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href={`/dashboard/propiedades/${propertyId}/reajustes`}>
-                <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
-                  Ir a reajustes
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="historial-renta">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Historial de renta</CardTitle>
-              <CardDescription>Traza reajustes IPC, acuerdos y correcciones sobre la renta.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href={`/dashboard/propiedades/${propertyId}/historial-renta`}>
-                <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
-                  Ver historial completo
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="checklist" className="space-y-6">
-          <PropertyChecklist propertyId={propertyId} />
-        </TabsContent>
-
-        <TabsContent value="garantia" className="space-y-6">
-          <SecurityDepositPanel propertyId={propertyId} />
-        </TabsContent>
-
-        <TabsContent value="postulaciones" className="space-y-6">
-          <ApplicationPortalManager
-            propertyId={propertyId}
-            propertyAddress={`${property.address}, ${property.commune}`}
-            applicationOpen={property.applicationOpen}
-            applicationSlug={property.applicationSlug}
-            hasTenant={Boolean(property.tenant)}
-          />
-        </TabsContent>
-
-        <TabsContent value="pagos">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Pagos</CardTitle>
-              <CardDescription>
+        <TabsContent value="financiero" className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Pagos</h3>
+              <p className="text-sm text-muted-foreground">
                 Misma vista que en la lista de propiedades, filtrada por esta unidad.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
+          <Card className="bg-card border-border">
             <CardContent className="space-y-4">
               <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
                 <Link href={`/dashboard/pagos?property=${propertyId}`}>
@@ -854,16 +616,16 @@ export default function PropertyDetailPage() {
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="servicios">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Servicios</CardTitle>
-              <CardDescription>
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Servicios</h3>
+              <p className="text-sm text-muted-foreground">
                 Consumos mensuales (agua, luz, gas) registrados para esta propiedad.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
+          <Card className="bg-card border-border">
             <CardContent className="space-y-4">
               {landlordDelegatedToBroker ? (
                 <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
@@ -882,16 +644,43 @@ export default function PropertyDetailPage() {
               )}
             </CardContent>
           </Card>
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Garantía</h3>
+            </div>
+            <SecurityDepositPanel propertyId={propertyId} />
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Historial de renta</h3>
+              <p className="text-sm text-muted-foreground">
+                Traza reajustes IPC, acuerdos y correcciones sobre la renta.
+              </p>
+            </div>
+            <Card className="bg-card border-border">
+              <CardContent>
+                <Link href={`/dashboard/propiedades/${propertyId}/historial-renta`}>
+                  <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+                    Ver historial completo
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </section>
         </TabsContent>
 
-        <TabsContent value="mantenciones">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Mantenciones</CardTitle>
-              <CardDescription>
+        <TabsContent value="operacion" className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Mantenciones</h3>
+              <p className="text-sm text-muted-foreground">
                 Solicitudes y estados de mantención filtrados por esta propiedad.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
+          <Card className="bg-card border-border">
             <CardContent className="space-y-4">
               {landlordDelegatedToBroker ? (
                 <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
@@ -910,16 +699,32 @@ export default function PropertyDetailPage() {
               )}
             </CardContent>
           </Card>
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Proveedores</h3>
+            </div>
+            <PropertyProvidersPanel propertyId={propertyId} />
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Checklist</h3>
+            </div>
+            <PropertyChecklist propertyId={propertyId} />
+          </section>
         </TabsContent>
 
-        <TabsContent value="contrato">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Contrato</CardTitle>
-              <CardDescription>
+        <TabsContent value="contrato" className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Contrato</h3>
+              <p className="text-sm text-muted-foreground">
                 PDF y fechas del contrato asociados a esta propiedad.
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
+          <Card className="bg-card border-border">
             <CardContent className="space-y-4">
               <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white gap-2" asChild>
                 <Link href={`/dashboard/contratos?property=${propertyId}`}>
@@ -930,17 +735,238 @@ export default function PropertyDetailPage() {
               </Button>
             </CardContent>
           </Card>
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Inspecciones</h3>
+              <p className="text-sm text-muted-foreground">
+                Ver y administrar inspecciones de la propiedad.
+              </p>
+            </div>
+            <Card className="bg-card border-border">
+              <CardContent>
+                <Link href={`/dashboard/propiedades/${propertyId}/inspecciones`}>
+                  <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+                    Ir a inspecciones
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </section>
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Reajuste IPC</h3>
+              <p className="text-sm text-muted-foreground">
+                Ver y administrar reajustes de arriendo.
+              </p>
+            </div>
+            <Card className="bg-card border-border">
+              <CardContent>
+                <Link href={`/dashboard/propiedades/${propertyId}/reajustes`}>
+                  <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+                    Ir a reajustes
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </section>
         </TabsContent>
 
-        <TabsContent value="proveedores" className="space-y-6">
-          <PropertyProvidersPanel propertyId={propertyId} />
-        </TabsContent>
+        <TabsContent value="gestion" className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Administración</h3>
+            </div>
+            {landlordDelegatedToBroker ? (
+              <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
+                <p className="text-sm text-[#5E8B8C]">
+                  Tu corredor gestiona la administración de esta propiedad.
+                </p>
+              </div>
+            ) : userRole !== 'BROKER' ? (
+              <AdministrationSection propertyId={propertyId} />
+            ) : (
+              <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/20 rounded-xl p-3 mb-4">
+                <p className="text-sm text-[#5E8B8C]">
+                  {hasBroker
+                    ? "Tienes acceso activo a esta propiedad y compartes la misma ficha con el arrendador y el arrendatario."
+                    : brokerPermissionStatus === 'APPROVED'
+                      ? "Ya tienes permiso del arrendador. Ahora puedes solicitar acceso específico a esta propiedad."
+                      : "Primero necesitas la aprobación general del arrendador antes de solicitar acceso a esta propiedad."}
+                </p>
+              </div>
+            )}
 
-        {userRole === 'LANDLORD' && (
-          <TabsContent value="solicitudes" className="space-y-6">
-            <PropertyAccessRequestsPanel propertyId={propertyId} showOnlyPending={false} />
-          </TabsContent>
-        )}
+            {(userRole === 'BROKER' || !hasBroker) && (
+              <Card className="bg-card border-border">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <Users className="h-5 w-5 text-[#5E8B8C]" />
+                      Información del agente / corredor
+                    </CardTitle>
+                    <CardDescription>Datos del agente o corredor de propiedades (registro propio)</CardDescription>
+                  </div>
+                  {!editingAgent && (
+                    <Button
+                      onClick={() => setEditingAgent(true)}
+                      size="sm"
+                      className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {editingAgent ? (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="agentName" className="text-foreground">Nombre</Label>
+                          <Input
+                            id="agentName"
+                            value={agentData.agentName}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, agentName: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="agentRut" className="text-foreground">Identificacion</Label>
+                          <Input
+                            id="agentRut"
+                            value={agentData.agentRut}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, agentRut: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="agentEmail" className="text-foreground">Email</Label>
+                          <Input
+                            id="agentEmail"
+                            type="email"
+                            value={agentData.agentEmail}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, agentEmail: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="agentPhone" className="text-foreground">Teléfono</Label>
+                          <Input
+                            id="agentPhone"
+                            value={agentData.agentPhone}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, agentPhone: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="agentCompany" className="text-foreground">Empresa</Label>
+                          <Input
+                            id="agentCompany"
+                            value={agentData.agentCompany}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, agentCompany: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="commissionRate" className="text-foreground">Comisión (%)</Label>
+                          <Input
+                            id="commissionRate"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={agentData.commissionRate}
+                            onChange={(e) => setAgentData(prev => ({ ...prev, commissionRate: e.target.value }))}
+                            className="bg-background border-input text-foreground"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleSaveAgent} 
+                          disabled={savingAgent}
+                          className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
+                        >
+                          {savingAgent ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Guardando...
+                            </>
+                          ) : (
+                            <>Guardar</>
+                          )}
+                        </Button>
+                        <Button onClick={() => setEditingAgent(false)} variant="outline" className="text-foreground border-border">
+                          Cancelar
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      {agentData.agentName ? (
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Nombre</p>
+                            <p className="text-foreground font-semibold">{agentData.agentName}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Identificacion</p>
+                            <p className="text-foreground font-semibold">{agentData.agentRut}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Email</p>
+                            <p className="text-foreground font-semibold">{agentData.agentEmail}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Teléfono</p>
+                            <p className="text-foreground font-semibold">{agentData.agentPhone}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Empresa</p>
+                            <p className="text-foreground font-semibold">{agentData.agentCompany}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Comisión</p>
+                            <p className="text-foreground font-semibold">{agentData.commissionRate}% ({agentData.commissionType})</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-8">No hay información de corredor registrada</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </section>
+          {userRole === 'LANDLORD' && (
+            <>
+              <Separator />
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Solicitudes</h3>
+                </div>
+                <PropertyAccessRequestsPanel propertyId={propertyId} showOnlyPending={false} />
+              </section>
+            </>
+          )}
+          <Separator />
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Postulaciones</h3>
+            </div>
+            <ApplicationPortalManager
+              propertyId={propertyId}
+              propertyAddress={`${property.address}, ${property.commune}`}
+              applicationOpen={property.applicationOpen}
+              applicationSlug={property.applicationSlug}
+              hasTenant={Boolean(property.tenant)}
+            />
+          </section>
+        </TabsContent>
       </Tabs>
 
       {/* Revoke Mandate Modal */}

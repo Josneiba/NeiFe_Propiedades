@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Upload } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { DocumentUploader } from '@/components/ui/document-uploader'
 
 type PropertyOption = {
   id: string
@@ -42,7 +43,7 @@ export function MonthlyServiceManager({
   const { toast } = useToast()
   const now = useMemo(() => new Date(), [])
   const [saving, setSaving] = useState(false)
-  const [files, setFiles] = useState<Partial<Record<BillType, File | null>>>({})
+  const [billUrls, setBillUrls] = useState<Partial<Record<BillType, string>>>({})
   const [form, setForm] = useState({
     propertyId: defaultPropertyId ?? properties[0]?.id ?? '',
     month: String(now.getMonth() + 1),
@@ -98,11 +99,11 @@ export function MonthlyServiceManager({
         throw new Error(createData.error || 'No se pudo guardar el registro de servicios')
       }
 
-      for (const [type, file] of Object.entries(files) as Array<[BillType, File | null | undefined]>) {
-        if (!file) continue
+      for (const [type, url] of Object.entries(billUrls) as Array<[BillType, string | undefined]>) {
+        if (!url) continue
 
         const fd = new FormData()
-        fd.append('file', file)
+        fd.append('file', await fetch(url).then(r => r.blob()))
         fd.append('propertyId', form.propertyId)
         fd.append('month', form.month)
         fd.append('year', form.year)
@@ -231,30 +232,17 @@ export function MonthlyServiceManager({
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(Object.keys(billLabels) as BillType[]).map((type) => (
-            <div key={type} className="space-y-2">
-              <Label htmlFor={`bill-${type}`}>{billLabels[type]}</Label>
-              <label
-                htmlFor={`bill-${type}`}
-                className="flex cursor-pointer items-center justify-between rounded-md border border-dashed border-input px-3 py-2 text-sm text-muted-foreground hover:bg-muted/40"
-              >
-                <span className="truncate">
-                  {files[type]?.name || 'Adjuntar PDF o imagen'}
-                </span>
-                <Upload className="h-4 w-4 shrink-0" />
-              </label>
-              <input
-                id={`bill-${type}`}
-                type="file"
-                accept="application/pdf,image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) =>
-                  setFiles((current) => ({
-                    ...current,
-                    [type]: e.target.files?.[0] ?? null,
-                  }))
-                }
-              />
-            </div>
+            <DocumentUploader
+              key={type}
+              label={billLabels[type]}
+              description={`Adjunta la boleta de ${billLabels[type].replace('Boleta ', '').toLowerCase()}`}
+              currentUrl={billUrls[type]}
+              folder="boletas"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              onUpload={(url) => {
+                setBillUrls((prev) => ({ ...prev, [type]: url }))
+              }}
+            />
           ))}
         </div>
 
