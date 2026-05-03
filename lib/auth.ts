@@ -1,16 +1,14 @@
 import NextAuth from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import type { Adapter } from 'next-auth/adapters'
 import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { authConfig } from './auth.config'
 import { shouldRequireEmailVerificationForUser } from './email-verification'
+import { isPrismaConnectionError, logPrismaConnectionWarning } from './prisma-errors'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     Credentials({
       async authorize(credentials) {
@@ -23,9 +21,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!parsed.success) return null
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-        })
+        let user
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: parsed.data.email },
+          })
+        } catch (error) {
+          if (isPrismaConnectionError(error)) {
+            logPrismaConnectionWarning('auth.authorize', error)
+            return null
+          }
+
+          throw error
+        }
 
         if (!user || !user.isActive) return null
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { TenantApplicationForm } from '@/components/public/tenant-application-form'
+import { isPrismaConnectionError, logPrismaConnectionWarning } from '@/lib/prisma-errors'
 
 export default async function PostularPage({
   params,
@@ -9,30 +10,41 @@ export default async function PostularPage({
 }) {
   const { slug } = await params
 
-  const property = await prisma.property.findFirst({
-    where: {
-      applicationSlug: slug,
-      applicationOpen: true,
-      isActive: true,
-      tenantId: null,
-    },
-    select: {
-      id: true,
-      address: true,
-      commune: true,
-      region: true,
-      bedrooms: true,
-      bathrooms: true,
-      squareMeters: true,
-      monthlyRentCLP: true,
-      description: true,
-      photos: {
-        where: { type: 'CURRENT' },
-        take: 4,
-        select: { url: true, room: true },
+  let property
+
+  try {
+    property = await prisma.property.findFirst({
+      where: {
+        applicationSlug: slug,
+        applicationOpen: true,
+        isActive: true,
+        tenantId: null,
       },
-    },
-  })
+      select: {
+        id: true,
+        address: true,
+        commune: true,
+        region: true,
+        bedrooms: true,
+        bathrooms: true,
+        squareMeters: true,
+        monthlyRentCLP: true,
+        description: true,
+        photos: {
+          where: { type: 'CURRENT' },
+          take: 4,
+          select: { url: true, room: true },
+        },
+      },
+    })
+  } catch (error) {
+    if (isPrismaConnectionError(error)) {
+      logPrismaConnectionWarning('public-application', error)
+      notFound()
+    }
+
+    throw error
+  }
 
   if (!property) notFound()
 

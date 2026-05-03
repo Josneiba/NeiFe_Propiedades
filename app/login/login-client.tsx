@@ -44,11 +44,19 @@ export default function LoginClient() {
     setIsLoading(true)
     setRequiresVerification(false)
 
-    const result = await signIn('credentials', {
-      email: formData.email,
-      password: formData.password,
-      redirect: false,
-    })
+    let result
+    try {
+      result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+    } catch (error) {
+      console.error("Sign in failed:", error)
+      toast.error("No fue posible iniciar sesión en este momento")
+      setIsLoading(false)
+      return
+    }
 
     if (result?.error) {
       try {
@@ -138,11 +146,19 @@ export default function LoginClient() {
 
     setIsLoading(true)
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    let result
+    try {
+      result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+    } catch (error) {
+      console.error("Demo sign in failed:", error)
+      toast.error("No fue posible cargar el demo en este momento")
+      setIsLoading(false)
+      return
+    }
 
     if (result?.error) {
       toast.error("Error al iniciar sesión demo")

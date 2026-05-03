@@ -1,16 +1,5 @@
 import { prisma } from '@/lib/prisma'
-
-function isPrismaConnectionError(error: unknown) {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  return (
-    error.name === 'PrismaClientInitializationError' ||
-    error.message.includes("Can't reach database server") ||
-    error.message.includes('P1001')
-  )
-}
+import { isPrismaConnectionError, logPrismaConnectionWarning } from '@/lib/prisma-errors'
 
 export async function getPublishedProperties(limit = 6) {
   try {
@@ -50,7 +39,7 @@ export async function getPublishedProperties(limit = 6) {
     })
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      console.error('[public-listings] Could not load published properties.', error)
+      logPrismaConnectionWarning('public-listings', error)
       return []
     }
 
@@ -97,7 +86,7 @@ export async function getPublishedPropertyById(id: string) {
     })
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      console.error('[public-listings] Could not load published property detail.', error)
+      logPrismaConnectionWarning('public-listings-detail', error)
       return null
     }
 

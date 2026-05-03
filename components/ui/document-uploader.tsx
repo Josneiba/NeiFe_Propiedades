@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Upload, X, Eye, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
@@ -32,9 +32,12 @@ export function DocumentUploader({
   const [uploading, setUploading] = useState(false)
   const [url, setUrl] = useState(currentUrl ?? null)
   const isPdf = url?.includes('.pdf') || url?.includes('/raw/')
-  
-  // Usar proxy para PDFs para asegurar Content-Type correcto
-  const viewUrl: string | null = isPdf && url ? `/api/pdf/${encodeURIComponent(url)}` : url
+
+  useEffect(() => {
+    setUrl(currentUrl ?? null)
+  }, [currentUrl])
+
+  const viewUrl: string | null = isPdf && url ? `/api/pdf?url=${encodeURIComponent(url)}` : url
 
   const handleFile = async (file: File) => {
     const maxBytes = maxSizeMB * 1024 * 1024
