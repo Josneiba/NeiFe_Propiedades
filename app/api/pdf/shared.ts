@@ -21,34 +21,30 @@ function getPdfUrlFromRequest(request: NextRequest, path: string[]) {
   return decodeURIComponent(path.join('/'))
 }
 
-function isAllowedCloudinaryPdf(pdfUrl: string) {
+function parseCloudinaryPdfUrl(pdfUrl: string) {
   try {
     const parsedUrl = new URL(pdfUrl)
-    const expectedCloudName = process.env.CLOUDINARY_CLOUD_NAME
+    const match = parsedUrl.pathname.match(/^\/([^/]+)\/raw\/upload\/(?:v\d+\/)?(.+\.pdf)$/i)
 
     if (parsedUrl.protocol !== 'https:') {
-      return false
+      return null
     }
 
     if (parsedUrl.hostname !== 'res.cloudinary.com') {
-      return false
+      return null
     }
 
-    if (expectedCloudName && !parsedUrl.pathname.startsWith(`/${expectedCloudName}/`)) {
-      return false
+    if (!match) {
+      return null
     }
 
-    return parsedUrl.pathname.includes('/raw/upload/') && parsedUrl.pathname.toLowerCase().endsWith('.pdf')
+    return {
+      cloudName: match[1],
+      publicId: match[2],
+    }
   } catch {
-    return false
+    return null
   }
-}
-
-function extractCloudinaryPublicId(pdfUrl: string) {
-  const parsedUrl = new URL(pdfUrl)
-  const match = parsedUrl.pathname.match(/^\/[^/]+\/raw\/upload\/(?:v\d+\/)?(.+)$/)
-
-  return match?.[1] ?? null
 }
 
 export async function proxyCloudinaryPdf(request: NextRequest, path: string[] = []) {
@@ -59,22 +55,41 @@ export async function proxyCloudinaryPdf(request: NextRequest, path: string[] = 
   }
 
   try {
-    if (!isAllowedCloudinaryPdf(pdfUrl)) {
+    const parsedPdf = parseCloudinaryPdfUrl(pdfUrl)
+
+    if (!parsedPdf) {
       return NextResponse.json({ error: 'Invalid Cloudinary PDF URL' }, { status: 400 })
     }
 
-    const publicId = extractCloudinaryPublicId(pdfUrl)
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || parsedPdf.cloudName
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
 
-    if (!publicId) {
-      return NextResponse.json({ error: 'Invalid Cloudinary public ID' }, { status: 400 })
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json({ error: 'Cloudinary is not configured correctly' }, { status: 500 })
     }
 
-    const signedDownloadUrl = cloudinary.utils.private_download_url(publicId, 'pdf', {
-      resource_type: 'raw',
+    const expiresAt = Math.floor(Date.now() / 1000) + 300
+    const timestamp = Math.floor(Date.now() / 1000)
+    const signatureParams = {
+      attachment: 'false',
+      expires_at: expiresAt,
+      format: 'pdf',
+      public_id: parsedPdf.publicId,
+      timestamp,
       type: 'upload',
-      attachment: false,
-      expires_at: Math.floor(Date.now() / 1000) + 300,
-    })
+    }
+    const signature = cloudinary.utils.api_sign_request(signatureParams, apiSecret)
+    const signedDownloadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/raw/download?${new URLSearchParams({
+      timestamp: String(timestamp),
+      public_id: parsedPdf.publicId,
+      format: 'pdf',
+      type: 'upload',
+      attachment: 'false',
+      expires_at: String(expiresAt),
+      signature,
+      api_key: apiKey,
+    }).toString()}`
 
     const response = await fetch(signedDownloadUrl, {
       headers: {
