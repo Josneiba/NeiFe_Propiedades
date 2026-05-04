@@ -41,6 +41,13 @@ const typeLabels: Record<MessageRecord['type'], string> = {
   CONTRACT_NOTICE: 'Aviso de contrato',
 }
 
+const typeBadges: Record<MessageRecord['type'], string> = {
+  PAYMENT_REMINDER: 'bg-[#F2C94C]/15 text-[#F2C94C] border border-[#F2C94C]/30',
+  GENERAL: 'bg-[#9C8578]/15 text-[#9C8578] border border-[#9C8578]/30',
+  MAINTENANCE_VISIT: 'bg-[#B8965A]/15 text-[#B8965A] border border-[#B8965A]/30',
+  CONTRACT_NOTICE: 'bg-[#5E8B8C]/15 text-[#5E8B8C] border border-[#5E8B8C]/30',
+}
+
 export function BrokerMessageCenter({ properties, initialMessages }: Props) {
   const { toast } = useToast()
   const [messages, setMessages] = useState(initialMessages)
@@ -219,7 +226,7 @@ export function BrokerMessageCenter({ properties, initialMessages }: Props) {
                       {message.tenant.name || message.tenant.email} · {message.property.name || message.property.address}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#5E8B8C]/15 px-2.5 py-1 text-xs text-[#5E8B8C]">
+                  <span className={`rounded-full px-2.5 py-1 text-xs ${typeBadges[message.type]}`}>
                     {typeLabels[message.type]}
                   </span>
                 </div>

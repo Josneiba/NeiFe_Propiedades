@@ -384,10 +384,10 @@ export function BrokerStatementManager({ properties, initialStatements }: Props)
               type="button"
               onClick={() => saveStatement(true)}
               disabled={saving || !form.propertyId}
-              className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
+              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
             >
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-              Enviar al propietario
+              Generar PDF
             </Button>
           </div>
         </CardContent>
@@ -414,8 +414,8 @@ export function BrokerStatementManager({ properties, initialStatements }: Props)
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                     statement.status === 'SENT'
-                      ? 'bg-[#5E8B8C]/20 text-[#5E8B8C]'
-                      : 'bg-[#B8965A]/20 text-[#D5C3B6]'
+                      ? 'bg-[#5E8B8C]/15 text-[#5E8B8C] border border-[#5E8B8C]/30'
+                      : 'bg-[#B8965A]/15 text-[#B8965A] border border-[#B8965A]/30'
                   }`}>
                     {statement.status === 'SENT' ? 'Enviada' : 'Borrador'}
                   </span>

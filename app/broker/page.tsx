@@ -4,9 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, MapPin, Eye, FileText, BellRing, Receipt } from 'lucide-react'
+import { Building2, DollarSign, Wrench, AlertTriangle, Plus, MapPin, Eye, FileText, BellRing, Receipt } from 'lucide-react'
 import { getErrorMessage } from '@/lib/error-handler'
-import { paymentStatusConfig as statusConfig } from '@/lib/status-config'
+import { paymentStatus } from '@/lib/broker-design'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
@@ -109,50 +109,61 @@ async function BrokerKPIs({ brokerId }: { brokerId: string }) {
     }),
   ])
 
-  const stats = [
-    {
-      label: 'Propiedades activas',
-      value: mandateStats.toString(),
-      sub: `${propertyPaidCount} pagadas este mes`,
-      color: 'text-[#5E8B8C]',
-      bg: 'bg-[#5E8B8C]/10',
-      border: 'border-[#5E8B8C]/20',
-    },
-    {
-      label: 'Recaudado este mes',
-      value: paidPayments._sum.amountCLP
-        ? `$${Math.round((paidPayments._sum.amountCLP ?? 0) / 1000)}K`
-        : '$0',
-      sub: `${paidPayments._sum.amountUF?.toFixed(1) ?? '0'} UF`,
-      color: 'text-[#B8965A]',
-      bg: 'bg-[#B8965A]/10',
-      border: 'border-[#B8965A]/20',
-    },
-    {
-      label: 'Pagos pendientes',
-      value: pendingPayments._count?.toString() ?? '0',
-      sub: `$${((pendingPayments._sum?.amountCLP ?? 0) / 1000).toFixed(0)}K por cobrar`,
-      color: 'text-[#F2C94C]',
-      bg: 'bg-[#F2C94C]/10',
-      border: 'border-[#F2C94C]/20',
-    },
-    {
-      label: 'Mantenciones activas',
-      value: activeMaintenances.toString(),
-      sub: activeMaintenances > 0 ? 'requieren atención' : 'todo en orden',
-      color: activeMaintenances > 0 ? 'text-[#C27F79]' : 'text-[#5E8B8C]',
-      bg: activeMaintenances > 0 ? 'bg-[#C27F79]/10' : 'bg-[#5E8B8C]/10',
-      border: activeMaintenances > 0 ? 'border-[#C27F79]/20' : 'border-[#5E8B8C]/20',
-    },
-  ]
+  const totalRecaudadoCLP = paidPayments._sum.amountCLP || 0
+  const pagosPendientesCLP = pendingPayments._sum.amountCLP || 0
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {stats.map((stat) => (
-        <div key={stat.label} className={`rounded-2xl border ${stat.border} ${stat.bg} p-4`}>
-          <p className="mb-2 text-[10px] uppercase tracking-wider text-[#9C8578]">{stat.label}</p>
-          <p className={`text-2xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
-          <p className="mt-1 text-xs text-[#9C8578]">{stat.sub}</p>
+      {[
+        {
+          label: 'Propiedades',
+          value: mandateStats,
+          sub: `${mandateStats} administradas`,
+          accent: '#5E8B8C',
+          icon: Building2,
+        },
+        {
+          label: 'Recaudado este mes',
+          value: totalRecaudadoCLP >= 1_000_000
+            ? `$${(totalRecaudadoCLP / 1_000_000).toFixed(1)}M`
+            : `$${(totalRecaudadoCLP / 1_000).toFixed(0)}K`,
+          sub: formatCLP(totalRecaudadoCLP),
+          accent: '#B8965A',
+          icon: DollarSign,
+        },
+        {
+          label: 'Por cobrar',
+          value: pagosPendientesCLP > 0
+            ? `$${(pagosPendientesCLP / 1_000).toFixed(0)}K`
+            : '$0',
+          sub: pagosPendientesCLP > 0 ? 'Requiere atención' : 'Al día',
+          accent: pagosPendientesCLP > 0 ? '#C27F79' : '#5E8B8C',
+          icon: AlertTriangle,
+        },
+        {
+          label: 'Mantenciones',
+          value: activeMaintenances,
+          sub: activeMaintenances > 0 ? 'requieren acción' : 'todo en orden',
+          accent: activeMaintenances > 0 ? '#F2C94C' : '#5E8B8C',
+          icon: Wrench,
+        },
+      ].map((kpi) => (
+        <div
+          key={kpi.label}
+          className="rounded-2xl border p-4"
+          style={{ borderColor: `${kpi.accent}30`, backgroundColor: `${kpi.accent}08` }}
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[#9C8578]">{kpi.label}</p>
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${kpi.accent}20` }}
+            >
+              <kpi.icon className="h-3.5 w-3.5" style={{ color: kpi.accent }} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-[#FAF6F2]">{kpi.value}</p>
+          <p className="mt-1 text-xs text-[#9C8578]">{kpi.sub}</p>
         </div>
       ))}
     </div>
@@ -238,8 +249,6 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
   ])
 
   const mandateStats = mandates.length
-  const propertyPaidCount = mandates.filter((m) => m.property.payments[0]?.status === 'PAID').length
-
   return (
     <>
       {mandateStats > 0 && (
@@ -267,8 +276,9 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
                   {mandates.map((mandate) => {
                     const property = mandate.property
                     const currentPayment = property.payments[0]
-                    const paymentStatus = currentPayment?.status || 'PENDING'
-                    const statusLabel = statusConfig[paymentStatus]
+                    const pStatus =
+                      paymentStatus[currentPayment?.status as keyof typeof paymentStatus] ??
+                      paymentStatus.PENDING
                     const contractEnd = property.contractEnd ? new Date(property.contractEnd) : null
                     const contractHint =
                       contractEnd
@@ -285,9 +295,7 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
                           {property.tenant?.name || 'Sin asignar'}
                         </td>
                         <td className="px-6 py-4">
-                          <Badge className={statusLabel?.className || 'bg-gray-600'}>
-                            {statusLabel?.label || 'Sin estado'}
-                          </Badge>
+                          <Badge className={pStatus.badge}>{pStatus.label}</Badge>
                         </td>
                         <td className="px-6 py-4 text-[#D5C3B6]">
                           {property._count?.maintenance ?? 0} abiertas
@@ -446,36 +454,36 @@ export default async function BrokerDashboardPage() {
   try {
     return (
       <div className="space-y-6">
-        <div>
-          <p className="mb-1 text-xs uppercase tracking-wider text-[#9C8578]">{formatDate()}</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2] sm:text-3xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="mb-1 text-xs text-[#9C8578] capitalize">{formatDate()}</p>
+            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">
               {getGreeting()},{' '}
               <span className="text-[#D5C3B6]">{session.user.name?.split(' ')[0]}</span>
             </h1>
-            <div className="flex gap-2">
-              <Link
-                href="/broker/rendiciones"
-                className="flex items-center gap-1.5 rounded-lg border border-[#75524C]/40 bg-[#75524C]/10 px-3 py-1.5 text-xs font-medium text-[#D5C3B6] transition-colors hover:bg-[#75524C]/20"
-              >
-                <Receipt className="h-3.5 w-3.5 text-[#75524C]" />
-                Rendiciones
-              </Link>
-              <Link
-                href="/broker/avisos"
-                className="flex items-center gap-1.5 rounded-lg border border-[#5E8B8C]/40 bg-[#5E8B8C]/10 px-3 py-1.5 text-xs font-medium text-[#D5C3B6] transition-colors hover:bg-[#5E8B8C]/20"
-              >
-                <BellRing className="h-3.5 w-3.5 text-[#5E8B8C]" />
-                Avisos
-              </Link>
-              <Link
-                href="/broker/mandatos/nuevo"
-                className="flex items-center gap-1.5 rounded-lg bg-[#75524C] px-3 py-1.5 text-xs font-medium text-[#FAF6F2] transition-colors hover:bg-[#75524C]/90"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Nuevo mandato
-              </Link>
-            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/broker/avisos"
+              className="flex items-center gap-1.5 rounded-lg border border-[#5E8B8C]/30 bg-[#5E8B8C]/10 px-3 py-1.5 text-xs font-medium text-[#5E8B8C] hover:bg-[#5E8B8C]/20 transition-colors"
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              Avisos
+            </Link>
+            <Link
+              href="/broker/rendiciones"
+              className="flex items-center gap-1.5 rounded-lg border border-[#B8965A]/30 bg-[#B8965A]/10 px-3 py-1.5 text-xs font-medium text-[#B8965A] hover:bg-[#B8965A]/20 transition-colors"
+            >
+              <Receipt className="h-3.5 w-3.5" />
+              Rendiciones
+            </Link>
+            <Link
+              href="/broker/mandatos/nuevo"
+              className="flex items-center gap-1.5 rounded-lg bg-[#75524C] hover:bg-[#75524C]/90 px-3 py-1.5 text-xs font-medium text-[#FAF6F2] transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nuevo mandato
+            </Link>
           </div>
         </div>
 

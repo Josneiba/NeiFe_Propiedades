@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { BrokerMessageCenter } from '@/components/broker/broker-message-center'
-import { PageHeader } from '@/components/ui/page-header'
 
 export default async function BrokerAvisosPage() {
   const session = await auth()
@@ -59,10 +58,9 @@ export default async function BrokerAvisosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Avisos al arrendatario"
-        description="Envía recordatorios y coordinaciones sin salir de NeiFe."
-      />
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Avisos al arrendatario</h1>
+      </div>
 
       <BrokerMessageCenter
         properties={properties.map((property) => ({

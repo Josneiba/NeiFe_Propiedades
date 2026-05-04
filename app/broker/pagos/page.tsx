@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmPaymentButton } from '@/components/payments/confirm-payment-button'
+import { paymentStatus } from '@/lib/broker-design'
 import {
   Building2,
   Check,
@@ -129,15 +130,8 @@ export default async function BrokerPagosPage({
         : payments
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-      PENDING: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pendiente' },
-      PROCESSING: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'En revisión' },
-      PAID: { bg: 'bg-green-100', text: 'text-green-700', label: 'Pagado' },
-      OVERDUE: { bg: 'bg-red-100', text: 'text-red-700', label: 'Vencido' },
-      CANCELLED: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Cancelado' },
-    }
-    const config = statusMap[status] || statusMap.PENDING
-    return <Badge className={`${config.bg} ${config.text} border-0`}>{config.label}</Badge>
+    const conf = paymentStatus[status as keyof typeof paymentStatus] ?? paymentStatus.PENDING
+    return <Badge className={conf.badge}>{conf.label}</Badge>
   }
 
   const getMonthName = (month: number) => {
@@ -176,85 +170,57 @@ export default async function BrokerPagosPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Pagos administrados</h1>
-        <p className="text-muted-foreground">
-          Revisa comprobantes y confirma pagos de las propiedades que gestionas.
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Pagos administrados</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Revisa comprobantes y confirma pagos de tus propiedades</p>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardContent className="p-4">
-          <form className="grid gap-4 md:grid-cols-3" action="/broker/pagos" method="GET">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="property">
-                Propiedad
-              </label>
-              <select
-                id="property"
-                name="property"
-                defaultValue={filterPropertyId ?? ''}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="">Todas</option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name || property.address}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="status">
-                Estado de pago
-              </label>
-              <select
-                id="status"
-                name="status"
-                defaultValue={statusFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="ALL">Todos</option>
-                <option value="PAID">Pagado</option>
-                <option value="PENDING">Pendiente</option>
-                <option value="PROCESSING">En revisión</option>
-                <option value="OVERDUE">Vencido</option>
-                <option value="CANCELLED">Cancelado</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="behavior">
-                Comportamiento
-              </label>
-              <select
-                id="behavior"
-                name="behavior"
-                defaultValue={behaviorFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="ALL">Todos</option>
-                <option value="ONTIME">Al día</option>
-                <option value="LATE">Pendientes / revisión</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-3 flex gap-3 pt-1">
-              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
-                Aplicar filtros
-              </Button>
-              {(filterPropertyId || statusFilter !== 'ALL' || behaviorFilter !== 'ALL') && (
-                <Button variant="outline" className="border-border" asChild>
-                  <Link href="/broker/pagos">Limpiar</Link>
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-4">
+        <form className="grid gap-3 sm:grid-cols-3" action="/broker/pagos" method="GET">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#9C8578] uppercase tracking-wider" htmlFor="property">Propiedad</label>
+            <select id="property" name="property" defaultValue={filterPropertyId ?? ''}
+              className="w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]">
+              <option value="">Todas las propiedades</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.name || p.address}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#9C8578] uppercase tracking-wider" htmlFor="status">Estado</label>
+            <select id="status" name="status" defaultValue={statusFilter}
+              className="w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]">
+              <option value="ALL">Todos</option>
+              <option value="PAID">Pagado</option>
+              <option value="PENDING">Pendiente</option>
+              <option value="PROCESSING">En revisión</option>
+              <option value="OVERDUE">Atrasado</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#9C8578] uppercase tracking-wider" htmlFor="behavior">Comportamiento</label>
+            <select id="behavior" name="behavior" defaultValue={behaviorFilter}
+              className="w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]">
+              <option value="ALL">Todos</option>
+              <option value="ONTIME">Al día</option>
+              <option value="LATE">Pendientes</option>
+            </select>
+          </div>
+          <div className="sm:col-span-3 flex gap-2 pt-1">
+            <button type="submit"
+              className="rounded-lg bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] px-4 py-2 text-sm font-medium transition-colors">
+              Aplicar
+            </button>
+            {(filterPropertyId || statusFilter !== 'ALL' || behaviorFilter !== 'ALL') && (
+              <a href="/broker/pagos"
+                className="rounded-lg border border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 px-4 py-2 text-sm font-medium transition-colors">
+                Limpiar
+              </a>
+            )}
+          </div>
+        </form>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
@@ -269,7 +235,7 @@ export default async function BrokerPagosPage({
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -284,7 +250,7 @@ export default async function BrokerPagosPage({
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-[#C27F79]/20 flex items-center justify-center">
@@ -301,7 +267,7 @@ export default async function BrokerPagosPage({
         </Card>
       </div>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
           <CardTitle>Historial de pagos</CardTitle>
         </CardHeader>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SearchFilter } from "@/components/ui/search-filter"
 import { MaintenanceStatusActions } from "@/components/maintenance/maintenance-status-actions"
+import { maintenanceStatus } from "@/lib/broker-design"
 import {
   Wrench,
   Building2,
@@ -51,37 +52,13 @@ type MaintenanceWithProperty = Prisma.MaintenanceRequestGetPayload<{
   include: typeof maintenanceInclude
 }>
 
-const statusConfig = {
-  REQUESTED: {
-    label: "Solicitado",
-    className: "bg-[#D5C3B6] text-[#2D3C3C]",
-    icon: Clock,
-  },
-  REVIEWING: {
-    label: "En revisión",
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
-    icon: Clock,
-  },
-  APPROVED: {
-    label: "Aprobado",
-    className: "bg-[#5E8B8C]/70 text-white",
-    icon: Check,
-  },
-  IN_PROGRESS: {
-    label: "En ejecución",
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
-    icon: Wrench,
-  },
-  COMPLETED: {
-    label: "Completado",
-    className: "bg-[#5E8B8C] text-white",
-    icon: Check,
-  },
-  REJECTED: {
-    label: "Rechazado",
-    className: "bg-[#C27F79] text-white",
-    icon: X,
-  },
+const statusIcons = {
+  REQUESTED: Clock,
+  REVIEWING: Clock,
+  APPROVED: Check,
+  IN_PROGRESS: Wrench,
+  COMPLETED: Check,
+  REJECTED: X,
 } as const
 
 const categoryConfig: Record<string, { icon: string; label: string }> = {
@@ -185,7 +162,7 @@ export default async function BrokerMantencionesPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mantenciones gestionadas</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Mantenciones gestionadas</h1>
         <p className="text-muted-foreground">
           Aprueba, asigna y sigue las mantenciones de tu cartera administrada.
         </p>
@@ -205,24 +182,21 @@ export default async function BrokerMantencionesPage({
         )}
       </div>
 
-      <Card className="bg-card border-border">
-        <CardContent className="p-4">
+      <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-4">
           <div className="mb-4">
             <SearchFilter placeholder="Buscar por descripcion, propiedad o arrendatario..." />
           </div>
-          <form className="grid gap-4 md:grid-cols-3" action="/broker/mantenciones" method="GET">
+          <form className="grid gap-3 sm:grid-cols-3" action="/broker/mantenciones" method="GET">
             {q ? <input type="hidden" name="q" value={q} /> : null}
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm text-muted-foreground" htmlFor="property">
-                Propiedad
-              </label>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-[#9C8578] uppercase tracking-wider" htmlFor="property">Propiedad</label>
               <select
                 id="property"
                 name="property"
                 defaultValue={filterPropertyId ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                className="w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
               >
-                <option value="">Todas</option>
+                <option value="">Todas las propiedades</option>
                 {properties.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name || p.address}
@@ -230,37 +204,37 @@ export default async function BrokerMantencionesPage({
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="status">
-                Estado
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[#9C8578] uppercase tracking-wider" htmlFor="status">Estado</label>
               <select
                 id="status"
                 name="status"
                 defaultValue={statusFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                className="w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
               >
                 <option value="all">Todos</option>
                 <option value="REQUESTED">Solicitadas</option>
+                <option value="REVIEWING">En revisión</option>
                 <option value="APPROVED">Aprobadas</option>
                 <option value="IN_PROGRESS">En ejecución</option>
                 <option value="COMPLETED">Completadas</option>
                 <option value="REJECTED">Rechazadas</option>
               </select>
             </div>
-            <div className="md:col-span-3 flex gap-3 pt-1">
-              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
-                Aplicar filtros
-              </Button>
+            <div className="sm:col-span-3 flex gap-2 pt-1">
+              <button type="submit"
+                className="rounded-lg bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] px-4 py-2 text-sm font-medium transition-colors">
+                Aplicar
+              </button>
               {(filterPropertyId || statusFilter !== "all" || q) && (
-                <Button variant="outline" className="border-border" asChild>
-                  <a href="/broker/mantenciones">Limpiar</a>
-                </Button>
+                <a href="/broker/mantenciones"
+                  className="rounded-lg border border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 px-4 py-2 text-sm font-medium transition-colors">
+                  Limpiar
+                </a>
               )}
             </div>
           </form>
-        </CardContent>
-      </Card>
+      </div>
 
       <div className="space-y-4">
         {requests.length === 0 ? (
@@ -279,12 +253,12 @@ export default async function BrokerMantencionesPage({
           </Card>
         ) : (
           requests.map((request) => {
-            const status = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.REQUESTED
-            const StatusIcon = status.icon
+            const status = maintenanceStatus[request.status as keyof typeof maintenanceStatus] ?? maintenanceStatus.REQUESTED
+            const StatusIcon = statusIcons[request.status as keyof typeof statusIcons] ?? Clock
             const category = categoryConfig[request.category] || categoryConfig.OTHER
 
             return (
-              <Card key={request.id} className="bg-card border-border">
+              <Card key={request.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardHeader className="pb-3">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -302,7 +276,7 @@ export default async function BrokerMantencionesPage({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={status.className}>
+                      <Badge className={status.badge}>
                         <StatusIcon className="h-3 w-3 mr-1" />
                         {status.label}
                       </Badge>

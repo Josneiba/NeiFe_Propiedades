@@ -97,4 +97,27 @@
     background-color: #1C1917;
     color: #FAF6F2;
   }
+
+  select:focus {
+    outline: none;
+    border-color: #5E8B8C;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(213, 195, 182, 0.2);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(213, 195, 182, 0.35);
 }

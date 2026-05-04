@@ -307,7 +307,7 @@ export default function BrokerConfiguracionPage() {
 
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-[#1C1917]">
         <Loader2 className="h-8 w-8 animate-spin text-[#5E8B8C]" />
       </div>
     )
@@ -315,36 +315,33 @@ export default function BrokerConfiguracionPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Configuración</h1>
-        <p className="text-muted-foreground">Administra tu perfil y preferencias</p>
+        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Configuración</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Administra tu perfil, empresa y datos bancarios</p>
       </div>
 
-      {/* Profile */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
             <User className="h-5 w-5 text-[#5E8B8C]" />
             Perfil de Corredor
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-[#9C8578]">
             Información de tu cuenta como corredor de propiedades
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-foreground">Nombre completo</Label>
+              <Label htmlFor="name">Nombre completo</Label>
               <Input
                 id="name"
                 value={profile?.name || ""}
                 onChange={(e) => setProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
-                className="bg-background border-input text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="documentCountry" className="text-foreground">Pais</Label>
+              <Label htmlFor="documentCountry">Pais</Label>
               <Select
                 value={profileCountry}
                 onValueChange={(value) =>
@@ -361,10 +358,10 @@ export default function BrokerConfiguracionPage() {
                   )
                 }
               >
-                <SelectTrigger className="w-full bg-background border-input text-foreground">
+                <SelectTrigger className="w-full bg-[#1C1917] border-[#D5C3B6]/20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                   {DOCUMENT_COUNTRIES.map((country) => (
                     <SelectItem key={country.value} value={country.value}>
                       {country.label}
@@ -374,7 +371,7 @@ export default function BrokerConfiguracionPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="documentType" className="text-foreground">Tipo</Label>
+              <Label htmlFor="documentType">Tipo</Label>
               <Select
                 value={profileType}
                 onValueChange={(value) =>
@@ -390,10 +387,10 @@ export default function BrokerConfiguracionPage() {
                   )
                 }
               >
-                <SelectTrigger className="w-full bg-background border-input text-foreground">
+                <SelectTrigger className="w-full bg-[#1C1917] border-[#D5C3B6]/20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                   {profileTypeOptions.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -403,7 +400,7 @@ export default function BrokerConfiguracionPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="documentNumber" className="text-foreground">{profileDocumentLabel}</Label>
+              <Label htmlFor="documentNumber">{profileDocumentLabel}</Label>
               <Input
                 id="documentNumber"
                 value={profile?.documentNumber || profile?.rut || ""}
@@ -420,12 +417,11 @@ export default function BrokerConfiguracionPage() {
                       : null
                   )
                 }}
-                className="bg-background border-input text-foreground"
               />
               {documentError && <p className="text-xs text-[#C27F79]">{documentError}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
+              <Label htmlFor="email">
                 <Mail className="h-4 w-4 inline mr-2" />
                 Correo electrónico
               </Label>
@@ -434,11 +430,11 @@ export default function BrokerConfiguracionPage() {
                 type="email"
                 value={profile?.email || ""}
                 disabled
-                className="bg-muted border-input text-muted-foreground"
+                className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#9C8578]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-foreground">
+              <Label htmlFor="phone">
                 <Phone className="h-4 w-4 inline mr-2" />
                 Teléfono
               </Label>
@@ -446,17 +442,15 @@ export default function BrokerConfiguracionPage() {
                 id="phone"
                 value={profile?.phone || ""}
                 onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
-                className="bg-background border-input text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company" className="text-foreground">Empresa corredora</Label>
+              <Label htmlFor="company">Empresa corredora</Label>
               <Input
                 id="company"
                 value={profile?.company || ""}
                 onChange={(e) => setProfile(prev => prev ? { ...prev, company: e.target.value } : null)}
                 placeholder="Nombre de tu empresa corredora"
-                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
@@ -464,7 +458,7 @@ export default function BrokerConfiguracionPage() {
           <Button 
             onClick={handleProfileSave}
             disabled={profileSaving}
-            className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+            className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
           >
             {profileSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             <Save className="h-4 w-4 mr-2" />
@@ -473,58 +467,53 @@ export default function BrokerConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Bank Data */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
             <Mail className="h-5 w-5 text-[#5E8B8C]" />
             Datos Bancarios
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-[#9C8578]">
             Información para recibir pagos de arrendatarios
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="bankName" className="text-foreground">Banco</Label>
+              <Label htmlFor="bankName">Banco</Label>
               <Input
                 id="bankName"
                 value={bankData?.bankName || ""}
                 onChange={(e) => setBankData(prev => prev ? { ...prev, bankName: e.target.value } : null)}
                 placeholder="Ej: Banco Santander"
-                className="bg-background border-input text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankAccountType" className="text-foreground">Tipo de Cuenta</Label>
+              <Label htmlFor="bankAccountType">Tipo de Cuenta</Label>
               <Input
                 id="bankAccountType"
                 value={bankData?.bankAccountType || ""}
                 onChange={(e) => setBankData(prev => prev ? { ...prev, bankAccountType: e.target.value } : null)}
                 placeholder="Ej: Cuenta Corriente / Cuenta de Ahorro"
-                className="bg-background border-input text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankAccountNumber" className="text-foreground">Número de Cuenta</Label>
+              <Label htmlFor="bankAccountNumber">Número de Cuenta</Label>
               <Input
                 id="bankAccountNumber"
                 value={bankData?.bankAccountNumber || ""}
                 onChange={(e) => setBankData(prev => prev ? { ...prev, bankAccountNumber: e.target.value } : null)}
                 placeholder="Ej: 1234567890"
-                className="bg-background border-input text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankEmail" className="text-foreground">Email para confirmación</Label>
+              <Label htmlFor="bankEmail">Email para confirmación</Label>
               <Input
                 id="bankEmail"
                 type="email"
                 value={bankData?.bankEmail || ""}
                 onChange={(e) => setBankData(prev => prev ? { ...prev, bankEmail: e.target.value } : null)}
                 placeholder="Ej: finanzas@tuempresa.cl"
-                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
@@ -532,7 +521,7 @@ export default function BrokerConfiguracionPage() {
           <Button 
             onClick={handleBankDataSave}
             disabled={bankSaving}
-            className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+            className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
           >
             {bankSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             <Save className="h-4 w-4 mr-2" />
@@ -541,52 +530,51 @@ export default function BrokerConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Security */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
             <Shield className="h-5 w-5 text-[#5E8B8C]" />
             Seguridad
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-[#9C8578]">
             Gestiona la seguridad de tu cuenta
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
             <DialogTrigger asChild>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917] cursor-pointer hover:bg-[#1C1917]/90 transition">
                 <div>
-                  <p className="font-medium text-foreground">Contraseña</p>
-                  <p className="text-sm text-muted-foreground">Cambia tu contraseña regularmente para mayor seguridad</p>
+                  <p className="font-medium text-[#FAF6F2]">Contraseña</p>
+                  <p className="text-sm text-[#9C8578]">Cambia tu contraseña regularmente para mayor seguridad</p>
                 </div>
-                <Button variant="outline" className="text-foreground border-border">
+                <Button variant="outline" className="text-[#FAF6F2] border-[#D5C3B6]/20">
                   Cambiar
                 </Button>
               </div>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-[#2D3C3C] border-[#D5C3B6]/15">
               <DialogHeader>
-                <DialogTitle className="text-foreground">Cambiar contraseña</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
+                <DialogTitle className="text-[#FAF6F2] font-serif">Cambiar contraseña</DialogTitle>
+                <DialogDescription className="text-[#9C8578]">
                   Ingresa tu contraseña actual y la nueva que deseas usar
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword" className="text-foreground">Contraseña actual</Label>
+                  <Label htmlFor="currentPassword">Contraseña actual</Label>
                   <div className="relative">
                     <Input
                       id="currentPassword"
                       type={showPasswords.current ? "text" : "password"}
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="bg-background border-input text-foreground pr-10"
+                      className="pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8578] hover:text-[#FAF6F2]"
                     >
                       {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -594,19 +582,19 @@ export default function BrokerConfiguracionPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-foreground">Nueva contraseña</Label>
+                  <Label htmlFor="newPassword">Nueva contraseña</Label>
                   <div className="relative">
                     <Input
                       id="newPassword"
                       type={showPasswords.new ? "text" : "password"}
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="bg-background border-input text-foreground pr-10"
+                      className="pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8578] hover:text-[#FAF6F2]"
                     >
                       {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -614,19 +602,19 @@ export default function BrokerConfiguracionPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-foreground">Confirmar nueva contraseña</Label>
+                  <Label htmlFor="confirmPassword">Confirmar nueva contraseña</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
                       type={showPasswords.confirm ? "text" : "password"}
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="bg-background border-input text-foreground pr-10"
+                      className="pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8578] hover:text-[#FAF6F2]"
                     >
                       {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -636,7 +624,7 @@ export default function BrokerConfiguracionPage() {
                 <Button 
                   onClick={handlePasswordChange}
                   disabled={passwordLoading}
-                  className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+                  className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
                 >
                   {passwordLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Cambiar contraseña
@@ -645,15 +633,15 @@ export default function BrokerConfiguracionPage() {
             </DialogContent>
           </Dialog>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917]">
             <div>
-              <p className="font-medium text-foreground">Sesiones activas</p>
-              <p className="text-sm text-muted-foreground">Cierra sesiones en otros dispositivos</p>
+              <p className="font-medium text-[#FAF6F2]">Sesiones activas</p>
+              <p className="text-sm text-[#9C8578]">Cierra sesiones en otros dispositivos</p>
             </div>
             <Button 
               onClick={handleLogoutOtherSessions}
               disabled={sessionLoading}
-              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
             >
               {sessionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               <LogOut className="h-4 w-4 mr-2" />

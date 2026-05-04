@@ -297,11 +297,10 @@ export default function BrokerCalendarClient() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#FAF6F2]">Calendario</h1>
-          <p className="text-[#9C8578]">Eventos de tus propiedades administradas</p>
+          <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Calendario</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">Vista de vencimientos y eventos de tu cartera</p>
         </div>
         <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
           <DialogTrigger asChild>
@@ -409,35 +408,35 @@ export default function BrokerCalendarClient() {
         <Button
           variant={filter === "ALL" ? "default" : "outline"}
           onClick={() => setFilter("ALL")}
-          className={filter === "ALL" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "text-[#FAF6F2] border-[#D5C3B6]/20 hover:bg-[#D5C3B6]/20"}
+          className={filter === "ALL" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
         >
           Todos
         </Button>
         <Button
           variant={filter === "INSPECTION" ? "default" : "outline"}
           onClick={() => setFilter("INSPECTION")}
-          className={filter === "INSPECTION" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "text-[#FAF6F2] border-[#D5C3B6]/20 hover:bg-[#D5C3B6]/20"}
+          className={filter === "INSPECTION" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
         >
           Inspecciones
         </Button>
         <Button
           variant={filter === "IPC" ? "default" : "outline"}
           onClick={() => setFilter("IPC")}
-          className={filter === "IPC" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "text-[#FAF6F2] border-[#D5C3B6]/20 hover:bg-[#D5C3B6]/20"}
+          className={filter === "IPC" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
         >
           Reajustes IPC
         </Button>
         <Button
           variant={filter === "CONTRACT" ? "default" : "outline"}
           onClick={() => setFilter("CONTRACT")}
-          className={filter === "CONTRACT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "text-[#FAF6F2] border-[#D5C3B6]/20 hover:bg-[#D5C3B6]/20"}
+          className={filter === "CONTRACT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
         >
           Contratos
         </Button>
         <Button
           variant={filter === "PAYMENT" ? "default" : "outline"}
           onClick={() => setFilter("PAYMENT")}
-          className={filter === "PAYMENT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "text-[#FAF6F2] border-[#D5C3B6]/20 hover:bg-[#D5C3B6]/20"}
+          className={filter === "PAYMENT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
         >
           Pagos
         </Button>
@@ -456,7 +455,7 @@ export default function BrokerCalendarClient() {
           </Card>
         ) : (
           filteredEvents.map((event) => (
-            <Card key={event.id} className={`border-l-4 ${event.color}`}>
+            <Card key={event.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10 rounded-xl">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -465,8 +464,8 @@ export default function BrokerCalendarClient() {
                         <event.icon className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-[#FAF6F2]">{event.title}</h3>
-                        <p className="text-sm text-[#9C8578]">{event.propertyAddress}</p>
+                        <h3 className="text-[#FAF6F2] font-medium">{event.title}</h3>
+                        <p className="text-[#9C8578] text-sm">{event.propertyAddress}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -493,22 +492,24 @@ export default function BrokerCalendarClient() {
                       )}
                     </div>
                   </div>
-                  {event.description && (
-                    <p className="text-sm text-[#9C8578] mt-2">{event.description}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-[#9C8578]">
-                    <Clock className="h-3 w-3" />
-                    {new Date(event.date).toLocaleDateString("es-CL", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <div className="flex-1">
+                    {event.description && (
+                      <p className="text-sm text-[#9C8578] mt-2">{event.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-[#9C8578]">
+                      <Clock className="h-3 w-3" />
+                      {new Date(event.date).toLocaleDateString("es-CL", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
                   </div>
                 </div>
               </CardContent>
-              </Card>
+            </Card>
           ))
         )}
       </div>

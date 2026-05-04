@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { FileText, Plus, MapPin, User, Calendar, Trash2, UserX, ExternalLink, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
-import { PageHeader } from '@/components/ui/page-header'
+import { mandateStatus } from '@/lib/broker-design'
 
 interface Mandate {
   id: string
@@ -41,42 +41,26 @@ interface BrokerPermissionRequest {
   }
 }
 
-const statusConfig: Record<string, { label: string; badge: string; color: string }> = {
-  PENDING: { 
-    label: 'Esperando firma del propietario',
-    badge: 'bg-[#F2C94C] text-[#1C1917]',
-    color: 'text-[#F2C94C]'
-  },
-  ACTIVE: { 
-    label: 'Activo',
-    badge: 'bg-[#5E8B8C] text-[#FAF6F2]',
-    color: 'text-[#5E8B8C]'
-  },
-  REVOKED: { 
-    label: 'Revocado',
-    badge: 'bg-[#C27F79] text-[#FAF6F2]',
-    color: 'text-[#C27F79]'
-  },
-  EXPIRED: { 
-    label: 'Expirado',
-    badge: 'bg-[#9C8578] text-[#FAF6F2]',
-    color: 'text-[#9C8578]'
-  },
+const mandateLabels: Record<string, string> = {
+  PENDING: 'Esperando firma del propietario',
+  ACTIVE: 'Activo',
+  REVOKED: 'Revocado',
+  EXPIRED: 'Expirado',
 }
 
 const permissionStatusConfig: Record<string, { label: string; badge: string }> = {
   PENDING: {
     label: 'Pendiente de revisión',
-    badge: 'bg-[#F2C94C] text-[#1C1917]'
+    badge: mandateStatus.PENDING.badge,
   },
   APPROVED: {
     label: 'Aprobado',
-    badge: 'bg-[#5E8B8C] text-[#FAF6F2]'
+    badge: mandateStatus.ACTIVE.badge,
   },
   REJECTED: {
     label: 'Rechazado',
-    badge: 'bg-[#C27F79] text-[#FAF6F2]'
-  }
+    badge: mandateStatus.REVOKED.badge,
+  },
 }
 
 function formatDate(date: string | undefined) {
@@ -279,19 +263,18 @@ export default function BrokerMandatosPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <PageHeader
-        title="Mandatos"
-        description="Solicitudes de administración de propiedades"
-        action={
-          <Link href="/broker/mandatos/nuevo">
-            <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Solicitud
-            </Button>
-          </Link>
-        }
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Mandatos</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">Gestiona tus acuerdos de administración con propietarios</p>
+        </div>
+        <Link href="/broker/mandatos/nuevo">
+          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Solicitud
+          </Button>
+        </Link>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -305,7 +288,7 @@ export default function BrokerMandatosPage() {
       {/* Permiso general por propietario (antes de mandatos por propiedad) */}
       {permissions.length > 0 && (
         <div>
-          <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Permiso con propietarios</h2>
+          <h2 className="text-base font-semibold text-[#D5C3B6] mb-2">Permiso con propietarios</h2>
           <p className="text-sm text-[#9C8578] mb-4">
             El propietario debe aprobar este acceso general; luego puedes solicitar mandatos por cada propiedad en Nueva solicitud.
           </p>
@@ -401,7 +384,7 @@ export default function BrokerMandatosPage() {
         ) : (
           <div className="grid gap-4">
             {mandates.map((mandate) => {
-              const status = statusConfig[mandate.status]
+              const status = mandateStatus[mandate.status as keyof typeof mandateStatus]
               return (
                 <Card key={mandate.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                   <CardContent className="p-6">
@@ -460,7 +443,7 @@ export default function BrokerMandatosPage() {
                       {/* Status and Actions */}
                       <div className="flex flex-col items-end gap-3">
                         <Badge className={status.badge}>
-                          {status.label}
+                          {mandateLabels[mandate.status] ?? status.label}
                         </Badge>
 
                         <div className="flex flex-wrap justify-end gap-2">
