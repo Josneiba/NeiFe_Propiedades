@@ -138,7 +138,7 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
   }
 
   return (
-    <div className={`grid gap-3 ${properties.length > 0 ? 'sm:grid-cols-2 xl:grid-cols-3' : ''}`}>
+    <div className={`grid gap-4 ${properties.length > 0 ? 'sm:grid-cols-2 2xl:grid-cols-3' : ''}`}>
       {properties.length === 0 ? (
         <div className="sm:col-span-2 xl:col-span-3 rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5E8B8C]/10">
@@ -174,36 +174,36 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
             <Link
               key={property.id}
               href={`/broker/propiedades/${property.id}`}
-              className="group flex flex-col rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] overflow-hidden hover:border-[#5E8B8C]/30 transition-all duration-200"
+              className="group flex min-h-[260px] flex-col rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] overflow-hidden hover:border-[#5E8B8C]/30 transition-all duration-200"
             >
               <div className="h-1 w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
 
-              <div className="flex flex-col gap-3 p-4 flex-1">
-                <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-1 flex-col gap-4 p-5">
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[#FAF6F2] truncate group-hover:text-white transition-colors text-sm">
+                    <p className="font-semibold text-[#FAF6F2] truncate group-hover:text-white transition-colors text-base leading-tight">
                       {property.name || property.address}
                     </p>
-                    <p className="text-xs text-[#9C8578] truncate mt-0.5 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 shrink-0" />
+                    <p className="text-sm text-[#9C8578] truncate mt-1 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
                       {property.commune}
                     </p>
                   </div>
-                  <Badge className={`shrink-0 text-[10px] px-1.5 py-0.5 ${pConf.badge}`}>
+                  <Badge className={`shrink-0 text-[11px] px-2 py-0.5 ${pConf.badge}`}>
                     {pConf.label}
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-[#1C1917]/60 px-2.5 py-2">
-                    <p className="text-[9px] text-[#9C8578] uppercase tracking-wider mb-0.5">Propietario</p>
-                    <p className="text-xs text-[#D5C3B6] truncate font-medium">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
+                    <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Propietario</p>
+                    <p className="text-sm text-[#D5C3B6] truncate font-medium">
                       {property.landlord?.name || '—'}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-[#1C1917]/60 px-2.5 py-2">
-                    <p className="text-[9px] text-[#9C8578] uppercase tracking-wider mb-0.5">Arrendatario</p>
-                    <p className="text-xs truncate font-medium">
+                  <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
+                    <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Arrendatario</p>
+                    <p className="text-sm truncate font-medium">
                       {property.tenant?.name
                         ? <span className="text-[#D5C3B6]">{property.tenant.name}</span>
                         : <span className="text-[#9C8578] italic">Sin asignar</span>}
@@ -211,35 +211,35 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#FAF6F2] tabular-nums">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-base font-semibold text-[#FAF6F2] tabular-nums leading-none">
                     {property.monthlyRentCLP
                       ? `$${property.monthlyRentCLP.toLocaleString('es-CL')}`
-                      : <span className="text-[#9C8578] font-normal text-xs">Sin renta</span>}
+                      : <span className="text-[#9C8578] font-normal text-sm">Sin renta</span>}
                   </span>
                   {property._count?.maintenance > 0 && (
-                    <span className="flex items-center gap-1 text-[10px] text-[#F2C94C]">
-                      <Wrench className="h-3 w-3" />
-                      {property._count.maintenance}
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#F2C94C]/10 px-2.5 py-1 text-xs font-medium text-[#F2C94C]">
+                      <Wrench className="h-3.5 w-3.5" />
+                      {property._count.maintenance} abierta{property._count.maintenance === 1 ? '' : 's'}
                     </span>
                   )}
                 </div>
 
                 {contractPct !== null && (
                   <div>
-                    <div className="h-1 w-full rounded-full bg-[#1C1917] overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full bg-[#1C1917] overflow-hidden">
                       <div className="h-full rounded-full bg-[#5E8B8C]/50 transition-all"
                         style={{ width: `${contractPct}%` }} />
                     </div>
-                    <p className="text-[9px] text-[#9C8578] mt-1">
+                    <p className="text-[11px] text-[#9C8578] mt-1.5">
                       {daysLeft !== null && daysLeft > 0 ? `Vence en ${daysLeft}d` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-[#D5C3B6]/8 px-4 py-2.5 flex justify-end">
-                <span className="text-xs text-[#5E8B8C] group-hover:text-[#8FC4C5] font-medium transition-colors">
+              <div className="border-t border-[#D5C3B6]/8 px-5 py-3 flex justify-end">
+                <span className="text-sm text-[#5E8B8C] group-hover:text-[#8FC4C5] font-medium transition-colors">
                   Ver ficha →
                 </span>
               </div>
