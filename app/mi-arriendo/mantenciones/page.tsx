@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
 import { 
   Wrench, 
   Plus,
@@ -82,9 +83,7 @@ export default async function TenantMantencionesPage() {
   if (!property?.id) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Mantenciones</h1>
-        </div>
+        <PageHeader title="Mantenciones" description="Reporta fallas y sigue el estado de tus solicitudes" />
         <Card className="bg-[#2A2520] border-border">
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground">No tienes una propiedad asignada</p>
@@ -118,21 +117,21 @@ export default async function TenantMantencionesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Mantenciones</h1>
-          <p className="text-muted-foreground">Reporta fallas y sigue el estado de tus solicitudes</p>
-        </div>
-        <Button 
-          className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
-          asChild
-        >
-          <Link href="/mi-arriendo/mantenciones/reportar">
-            <Plus className="h-4 w-4 mr-2" />
-            Reportar falla
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Mantenciones"
+        description="Reporta fallas y sigue el estado de tus solicitudes"
+        action={
+          <Button
+            className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+            asChild
+          >
+            <Link href="/mi-arriendo/mantenciones/reportar">
+              <Plus className="h-4 w-4 mr-2" />
+              Reportar falla
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Active Requests */}
       {activeRequests.length > 0 && (

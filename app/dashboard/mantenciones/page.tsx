@@ -5,8 +5,11 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
+import { NativeSelect } from "@/components/ui/native-select"
 import { SearchFilter } from "@/components/ui/search-filter"
 import { MaintenanceStatusActions } from "@/components/maintenance/maintenance-status-actions"
+import { maintenanceStatusConfig } from "@/lib/status-config"
 import { 
   Wrench, 
   Building2,
@@ -52,36 +55,34 @@ type MaintenanceWithProperty = Prisma.MaintenanceRequestGetPayload<{
 }>
 
 const statusConfig = {
-  REQUESTED: { 
-    label: "Solicitado", 
-    className: "bg-[#D5C3B6] text-[#2D3C3C]",
-    icon: Clock
+  REQUESTED: {
+    ...maintenanceStatusConfig.REQUESTED,
+    icon: Clock,
   },
-  REVIEWING: { 
-    label: "En revisión", 
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
-    icon: Clock
+  REVIEWING: {
+    ...maintenanceStatusConfig.REVIEWING,
+    icon: Clock,
   },
-  APPROVED: { 
-    label: "Aprobado", 
-    className: "bg-[#5E8B8C]/70 text-white",
-    icon: Check
+  REQUESTED_INFO: {
+    ...maintenanceStatusConfig.REQUESTED_INFO,
+    icon: Clock,
   },
-  IN_PROGRESS: { 
-    label: "En ejecución", 
-    className: "bg-[#F2C94C] text-[#2D3C3C]",
-    icon: Wrench
+  APPROVED: {
+    ...maintenanceStatusConfig.APPROVED,
+    icon: Check,
   },
-  COMPLETED: { 
-    label: "Completado", 
-    className: "bg-[#5E8B8C] text-white",
-    icon: Check
+  IN_PROGRESS: {
+    ...maintenanceStatusConfig.IN_PROGRESS,
+    icon: Wrench,
   },
-  REJECTED: { 
-    label: "Rechazado", 
-    className: "bg-[#C27F79] text-white",
-    icon: X
-  }
+  COMPLETED: {
+    ...maintenanceStatusConfig.COMPLETED,
+    icon: Check,
+  },
+  REJECTED: {
+    ...maintenanceStatusConfig.REJECTED,
+    icon: X,
+  },
 }
 
 const categoryConfig: Record<string, { icon: string; label: string }> = {
@@ -168,8 +169,10 @@ export default async function MantencionesPage({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mantenciones</h1>
-        <p className="text-muted-foreground">Gestiona las solicitudes de mantención de tus propiedades</p>
+        <PageHeader
+          title="Mantenciones"
+          description="Gestiona las solicitudes de mantención de tus propiedades"
+        />
         {filterProperty && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
             <span className="text-foreground">
@@ -187,62 +190,45 @@ export default async function MantencionesPage({
       </div>
 
       {/* Filtros */}
-      <Card className="bg-card border-border">
-        <CardContent className="p-4">
-          <div className="mb-4">
-            <SearchFilter placeholder="Buscar por descripcion, propiedad o arrendatario..." />
+      <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2A2520] p-4">
+        <div className="mb-4">
+          <SearchFilter placeholder="Buscar por descripcion, propiedad o arrendatario..." />
+        </div>
+        <form className="grid gap-3 sm:grid-cols-3" action="/dashboard/mantenciones" method="GET">
+          {q ? <input type="hidden" name="q" value={q} /> : null}
+          <div className="sm:col-span-2">
+            <NativeSelect label="Propiedad" name="property" id="property" defaultValue={filterPropertyId ?? ""}>
+              <option value="">Todas las propiedades</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name || p.address}
+                </option>
+              ))}
+            </NativeSelect>
           </div>
-          <form className="grid gap-4 md:grid-cols-3" action="/dashboard/mantenciones" method="GET">
-            {q ? <input type="hidden" name="q" value={q} /> : null}
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm text-muted-foreground" htmlFor="property">
-                Propiedad
-              </label>
-              <select
-                id="property"
-                name="property"
-                defaultValue={filterPropertyId ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="">Todas</option>
-                {properties.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name || p.address}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="status">
-                Estado
-              </label>
-              <select
-                id="status"
-                name="status"
-                defaultValue={statusFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="all">Todos</option>
-                <option value="REQUESTED">Solicitadas</option>
-                <option value="APPROVED">Aprobadas</option>
-                <option value="IN_PROGRESS">En ejecución</option>
-                <option value="COMPLETED">Completadas</option>
-                <option value="REJECTED">Rechazadas</option>
-              </select>
-            </div>
-            <div className="md:col-span-3 flex gap-3 pt-1">
-              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
-                Aplicar filtros
+          <NativeSelect label="Estado" name="status" id="status" defaultValue={statusFilter}>
+            <option value="all">Todos los estados</option>
+            <option value="REQUESTED">Solicitadas</option>
+            <option value="APPROVED">Aprobadas</option>
+            <option value="IN_PROGRESS">En ejecución</option>
+            <option value="COMPLETED">Completadas</option>
+            <option value="REJECTED">Rechazadas</option>
+          </NativeSelect>
+          <div className="flex gap-3 sm:col-span-3 sm:justify-end">
+            <button
+              type="submit"
+              className="rounded-lg bg-[#5E8B8C] px-4 py-2 text-sm font-medium text-[#FAF6F2] transition-colors hover:bg-[#5E8B8C]/90"
+            >
+              Aplicar filtros
+            </button>
+            {(filterPropertyId || statusFilter !== "all" || q) && (
+              <Button variant="outline" className="border-[#D5C3B6]/15 text-[#D5C3B6]" asChild>
+                <a href="/dashboard/mantenciones">Limpiar</a>
               </Button>
-              {(filterPropertyId || statusFilter !== "all" || q) && (
-                <Button variant="outline" className="border-border" asChild>
-                  <a href="/dashboard/mantenciones">Limpiar</a>
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </form>
+      </div>
 
       {/* Requests List */}
       <div className="space-y-4">

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { FileText, Plus, MapPin, User, Calendar, Trash2, UserX, ExternalLink, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Mandate {
   id: string
@@ -279,18 +280,18 @@ export default function BrokerMandatosPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#FAF6F2]">Mandatos</h1>
-          <p className="text-[#9C8578]">Solicitudes de administración de propiedades</p>
-        </div>
-        <Link href="/broker/mandatos/nuevo">
-          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Solicitud
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Mandatos"
+        description="Solicitudes de administración de propiedades"
+        action={
+          <Link href="/broker/mandatos/nuevo">
+            <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Solicitud
+            </Button>
+          </Link>
+        }
+      />
 
       {/* Error Message */}
       {error && (

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { paymentStatusConfig } from "@/lib/status-config"
 import {
   Home,
   CreditCard,
@@ -12,8 +13,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  ArrowRight,
-  User
 } from "lucide-react"
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
@@ -31,12 +30,16 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
     select: {
       id: true,
       address: true,
+      commune: true,
+      region: true,
       monthlyRentCLP: true,
+      monthlyRentUF: true,
       contractStart: true,
       contractEnd: true,
       landlord: {
         select: {
           name: true,
+          phone: true,
         },
       },
     },
@@ -69,50 +72,78 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
       : null
 
   return (
-    <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-      <CardHeader>
-        <CardTitle className="text-[#FAF6F2]">Información de Propiedad</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-[#5E8B8C]/20 flex items-center justify-center">
-            <Home className="h-6 w-6 text-[#5E8B8C]" />
+    <div className="overflow-hidden rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C]">
+      <div className="border-b border-[#D5C3B6]/10 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#5E8B8C]/15">
+            <Home className="h-5 w-5 text-[#5E8B8C]" />
           </div>
-          <div>
-            <p className="text-sm text-[#9C8578]">Dirección</p>
-            <p className="font-medium text-[#FAF6F2]">{property.address}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-[#75524C]/20 flex items-center justify-center">
-            <User className="h-6 w-6 text-[#75524C]" />
-          </div>
-          <div>
-            <p className="text-sm text-[#9C8578]">Propietario</p>
-            <p className="font-medium text-[#FAF6F2]">{property.landlord.name}</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate font-semibold text-[#FAF6F2]">{property.address}</h2>
+            <p className="mt-0.5 text-xs text-[#9C8578]">
+              {property.commune}, {property.region}
+            </p>
           </div>
         </div>
-        {property.monthlyRentCLP && (
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#B8965A]/20 flex items-center justify-center">
-              <CreditCard className="h-6 w-6 text-[#B8965A]" />
-            </div>
-            <div>
-              <p className="text-sm text-[#9C8578]">Arriendo mensual</p>
-              <p className="font-medium text-[#FAF6F2]">{formatCLP(property.monthlyRentCLP)}</p>
-            </div>
-          </div>
-        )}
+      </div>
+
+      <div className="grid grid-cols-2 divide-x divide-y divide-[#D5C3B6]/8">
+        <div className="p-4">
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Propietario</p>
+          <p className="truncate text-sm font-medium text-[#FAF6F2]">{property.landlord.name}</p>
+          {property.landlord.phone && (
+            <a
+              href={`tel:${property.landlord.phone}`}
+              className="mt-0.5 block text-xs text-[#5E8B8C] hover:underline"
+            >
+              {property.landlord.phone}
+            </a>
+          )}
+        </div>
+        <div className="p-4">
+          <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Renta mensual</p>
+          <p className="text-sm font-semibold tabular-nums text-[#FAF6F2]">
+            {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "—"}
+          </p>
+          {property.monthlyRentUF && (
+            <p className="mt-0.5 text-xs text-[#9C8578]">UF {property.monthlyRentUF.toFixed(2)}</p>
+          )}
+        </div>
         {contractDates && (
-          <div className="pt-4 border-t border-[#D5C3B6]/10">
-            <ContractProgressChart
-              startDate={new Date(contractDates.start)}
-              endDate={new Date(contractDates.end)}
-            />
-          </div>
+          <>
+            <div className="p-4">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Inicio contrato</p>
+              <p className="text-sm text-[#D5C3B6]">
+                {new Date(contractDates.start).toLocaleDateString("es-CL", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="p-4">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Término contrato</p>
+              <p className="text-sm text-[#D5C3B6]">
+                {new Date(contractDates.end).toLocaleDateString("es-CL", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {contractDates && (
+        <div className="border-t border-[#D5C3B6]/10 p-4">
+          <ContractProgressChart
+            startDate={new Date(contractDates.start)}
+            endDate={new Date(contractDates.end)}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -163,21 +194,6 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
     }),
   ])
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-      PAID: { bg: "bg-green-100", text: "text-green-700", label: "Pagado" },
-      PENDING: { bg: "bg-amber-100", text: "text-amber-700", label: "Pendiente" },
-      OVERDUE: { bg: "bg-red-100", text: "text-red-700", label: "Atrasado" },
-      PROCESSING: { bg: "bg-blue-100", text: "text-blue-700", label: "En revisión" },
-    }
-    const config = statusMap[status] || statusMap.PENDING
-    return (
-      <Badge className={`${config.bg} ${config.text} border-0`}>
-        {config.label}
-      </Badge>
-    )
-  }
-
   const getMonthName = (month: number) => {
     const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -190,50 +206,71 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-        <CardHeader>
-          <CardTitle className="text-[#FAF6F2]">Pago del Mes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {currentPayment ? (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-[#9C8578]">Estado</span>
-                {getStatusBadge(currentPayment.status)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#9C8578]">Arriendo</span>
-                <span className="font-medium text-[#FAF6F2]">{formatCLP(currentPayment.amountCLP)}</span>
-              </div>
-              {currentServices && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#9C8578]">Agua</span>
-                    <span className="font-medium text-[#FAF6F2]">{formatCLP(water)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#9C8578]">Electricidad</span>
-                    <span className="font-medium text-[#FAF6F2]">{formatCLP(electricity)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#9C8578]">Gas</span>
-                    <span className="font-medium text-[#FAF6F2]">{formatCLP(gas)}</span>
-                  </div>
-                </>
-              )}
-              <div className="pt-4 border-t border-[#D5C3B6]/10 flex items-center justify-between">
-                <span className="text-[#9C8578] font-medium">Total</span>
-                <span className="text-xl font-bold text-[#FAF6F2]">{formatCLP(currentPayment.amountCLP + water + electricity + gas)}</span>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-[#9C8578] mx-auto mb-3 opacity-50" />
-              <p className="text-[#9C8578]">No hay información de pago para este mes</p>
-            </div>
+      <div
+        className={`rounded-2xl border-2 p-4 sm:p-5 ${
+          !currentPayment
+            ? "border-[#D5C3B6]/10 bg-[#2D3C3C]"
+            : currentPayment.status === "PAID"
+              ? "border-[#5E8B8C]/30 bg-[#5E8B8C]/5"
+              : currentPayment.status === "OVERDUE"
+                ? "border-[#C27F79]/40 bg-[#C27F79]/5"
+                : "border-[#F2C94C]/30 bg-[#F2C94C]/5"
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-[#9C8578]">
+              Pago {getMonthName(new Date().getMonth() + 1)} {new Date().getFullYear()}
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-[#FAF6F2]">
+              {currentPayment
+                ? `$${(currentPayment.amountCLP + water + electricity + gas).toLocaleString("es-CL")}`
+                : "Sin información"}
+            </p>
+          </div>
+          {currentPayment && (
+            <Badge className={paymentStatusConfig[currentPayment.status as keyof typeof paymentStatusConfig]?.className}>
+              {paymentStatusConfig[currentPayment.status as keyof typeof paymentStatusConfig]?.label}
+            </Badge>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {currentPayment && (
+          <div className="mb-4 space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-[#9C8578]">Arriendo</span>
+              <span className="tabular-nums text-[#FAF6F2]">
+                ${currentPayment.amountCLP.toLocaleString("es-CL")}
+              </span>
+            </div>
+            {(water + electricity + gas) > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-[#9C8578]">Servicios</span>
+                <span className="tabular-nums text-[#FAF6F2]">
+                  ${(water + electricity + gas).toLocaleString("es-CL")}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentPayment && (currentPayment.status === "PENDING" || currentPayment.status === "OVERDUE") && (
+          <Link
+            href="/mi-arriendo/pagos"
+            className="flex w-full items-center justify-center rounded-xl bg-[#75524C] py-2.5 text-sm font-semibold text-[#FAF6F2] transition-colors hover:bg-[#75524C]/90"
+          >
+            Subir comprobante de pago →
+          </Link>
+        )}
+        {(!currentPayment || currentPayment.status === "PAID") && (
+          <Link
+            href="/mi-arriendo/pagos"
+            className="flex w-full items-center justify-center rounded-xl border border-[#D5C3B6]/15 py-2.5 text-sm font-medium text-[#D5C3B6] transition-colors hover:bg-[#D5C3B6]/5"
+          >
+            Ver historial de pagos
+          </Link>
+        )}
+      </div>
 
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
@@ -393,68 +430,52 @@ export default async function MiArriendoPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Property Info - Suspense boundary */}
-          <Suspense fallback={
-            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
-          }>
-            <TenantPropertyInfo tenantId={session.user.id} />
-          </Suspense>
+      <div className="space-y-4 sm:space-y-6">
+        <Suspense fallback={<div className="h-48 rounded-2xl bg-[#2D3C3C] animate-pulse" />}>
+          <TenantPropertyInfo tenantId={session.user.id} />
+        </Suspense>
 
-          {/* Payment Info - Suspense boundary */}
-          <Suspense fallback={
-            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
-          }>
-            <TenantPaymentInfo propertyId={property.id} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div className="h-64 rounded-2xl bg-[#2D3C3C] animate-pulse" />}>
+          <TenantPaymentInfo propertyId={property.id} />
+        </Suspense>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Maintenance Info - Suspense boundary */}
-          <Suspense fallback={
-            <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
-          }>
-            <TenantMaintenanceInfo propertyId={property.id} />
-          </Suspense>
+        <Suspense fallback={<div className="h-64 rounded-2xl bg-[#2D3C3C] animate-pulse" />}>
+          <TenantMaintenanceInfo propertyId={property.id} />
+        </Suspense>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/mi-arriendo/pagos">
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                  <CreditCard className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-[#FAF6F2] text-sm">Ver Pagos</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/mi-arriendo/servicios">
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                  <AlertCircle className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-[#FAF6F2] text-sm">Servicios</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/mi-arriendo/mantenciones">
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                  <Wrench className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-[#FAF6F2] text-sm">Mantenciones</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/mi-arriendo/contrato">
-              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#5E8B8C]/50 transition-colors cursor-pointer h-full">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                  <FileText className="h-8 w-8 text-[#5E8B8C] mb-2" />
-                  <p className="font-medium text-[#FAF6F2] text-sm">Contrato</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Link href="/mi-arriendo/pagos">
+            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
+              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
+                <CreditCard className="mb-2 h-8 w-8 text-[#5E8B8C]" />
+                <p className="text-sm font-medium text-[#FAF6F2]">Ver Pagos</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/mi-arriendo/servicios">
+            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
+              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
+                <AlertCircle className="mb-2 h-8 w-8 text-[#5E8B8C]" />
+                <p className="text-sm font-medium text-[#FAF6F2]">Servicios</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/mi-arriendo/mantenciones">
+            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
+              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
+                <Wrench className="mb-2 h-8 w-8 text-[#5E8B8C]" />
+                <p className="text-sm font-medium text-[#FAF6F2]">Mantenciones</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/mi-arriendo/contrato">
+            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
+              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
+                <FileText className="mb-2 h-8 w-8 text-[#5E8B8C]" />
+                <p className="text-sm font-medium text-[#FAF6F2]">Contrato</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
     </div>

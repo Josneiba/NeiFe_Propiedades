@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/ui/page-header"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   FileText,
@@ -112,14 +113,14 @@ export async function ContractWorkspace({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          {isBroker ? 'Contratos de Propiedades Gestionadas' : 'Contratos y Documentos'}
-        </h1>
-        <p className="text-muted-foreground">
-          {isBroker
-            ? 'Prepara, envia y consolida contratos firmados sin salir de la plataforma.'
-            : 'Gestiona contratos digitales, envio a firma y registros fotográficos.'}
-        </p>
+        <PageHeader
+          title={isBroker ? 'Contratos de Propiedades Gestionadas' : 'Contratos'}
+          description={
+            isBroker
+              ? 'Prepara, envía y consolida contratos firmados sin salir de la plataforma.'
+              : 'Contratos digitales de tus propiedades'
+          }
+        />
         {filterProperty && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
             <span className="text-foreground">

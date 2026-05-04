@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { PaymentModal } from '@/components/payment/payment-modal'
 import { getUserIdentity } from '@/lib/identity-documents'
+import { PageHeader } from '@/components/ui/page-header'
+import { paymentStatusConfig } from '@/lib/status-config'
 
 // Format Chilean pesos
 function formatCLP(amount: number) {
@@ -125,10 +127,11 @@ export default function TenantPagosPage() {
   }, [])
 
   const statusConfig = {
-    PAID: { label: 'Pagado', className: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-    PENDING: { label: 'Pendiente', className: 'bg-amber-100 text-amber-700', icon: Clock },
-    OVERDUE: { label: 'Atrasado', className: 'bg-red-100 text-red-700', icon: AlertTriangle },
-    PROCESSING: { label: 'En revisión', className: 'bg-blue-100 text-blue-700', icon: Clock },
+    PAID: { ...paymentStatusConfig.PAID, icon: CheckCircle2 },
+    PENDING: { ...paymentStatusConfig.PENDING, icon: Clock },
+    OVERDUE: { ...paymentStatusConfig.OVERDUE, icon: AlertTriangle },
+    PROCESSING: { ...paymentStatusConfig.PROCESSING, icon: Clock },
+    CANCELLED: { ...paymentStatusConfig.CANCELLED, icon: Clock },
   }
 
   const getMonthName = (month: number) => {
@@ -160,9 +163,7 @@ export default function TenantPagosPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Mis Pagos</h1>
-        </div>
+        <PageHeader title="Mis Pagos" description="Historial de pagos y pagos pendientes" />
         <Card className="bg-card border-border">
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground">Cargando información de pagos...</p>
@@ -175,10 +176,7 @@ export default function TenantPagosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Mis Pagos</h1>
-        <p className="text-muted-foreground">Historial de pagos y pagos pendientes</p>
-      </div>
+      <PageHeader title="Mis Pagos" description="Historial de pagos y pagos pendientes" />
 
       {/* Current Payment */}
       {pendingPayment && (

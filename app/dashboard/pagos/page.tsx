@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { PaymentReceiptDownload } from "@/components/payments/payment-receipt-download"
 import { ConfirmPaymentButton } from "@/components/payments/confirm-payment-button"
 import { GenerateMonthlyPaymentsButton } from "@/components/payments/generate-monthly-payments-button"
+import { PageHeader } from "@/components/ui/page-header"
+import { NativeSelect } from "@/components/ui/native-select"
+import { paymentStatusConfig } from "@/lib/status-config"
 import { 
   Building2,
   Check,
@@ -119,19 +122,10 @@ export default async function PagosPage({
       : payments
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-      PENDING: { bg: "bg-gray-100", text: "text-gray-700", label: "Pendiente" },
-      PROCESSING: { bg: "bg-amber-100", text: "text-amber-700", label: "En revisión" },
-      PAID: { bg: "bg-green-100", text: "text-green-700", label: "Pagado" },
-      OVERDUE: { bg: "bg-red-100", text: "text-red-700", label: "Vencido" },
-      CANCELLED: { bg: "bg-slate-100", text: "text-slate-700", label: "Cancelado" },
-    }
-    const config = statusMap[status] || statusMap.PENDING
-    return (
-      <Badge className={`${config.bg} ${config.text} border-0`}>
-        {config.label}
-      </Badge>
-    )
+    const config =
+      paymentStatusConfig[status as keyof typeof paymentStatusConfig] ??
+      paymentStatusConfig.PENDING
+    return <Badge className={config.className}>{config.label}</Badge>
   }
 
   const getMonthName = (month: number) => {
@@ -150,10 +144,10 @@ export default async function PagosPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Gestión de Pagos</h1>
-        <p className="text-muted-foreground">Monitorea y confirma pagos de tus arrendatarios</p>
-      </div>
+      <PageHeader
+        title="Gestión de Pagos"
+        description="Monitorea y confirma los pagos de tus arrendatarios"
+      />
 
       {session.user.role === "OWNER" && (
         <Card className="bg-card border-border">
@@ -170,76 +164,47 @@ export default async function PagosPage({
       )}
 
       {/* Filtros */}
-      <Card className="bg-card border-border">
-        <CardContent className="p-4">
-          <form className="grid gap-4 md:grid-cols-3" action="/dashboard/pagos" method="GET">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="property">
-                Propiedad
-              </label>
-              <select
-                id="property"
-                name="property"
-                defaultValue={filterPropertyId ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="">Todas</option>
-                {properties.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name || p.address}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2A2520] p-4">
+        <form className="grid gap-3 sm:grid-cols-3" action="/dashboard/pagos" method="GET">
+          <NativeSelect label="Propiedad" name="property" id="property" defaultValue={filterPropertyId ?? ""}>
+            <option value="">Todas las propiedades</option>
+            {properties.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name || p.address}
+              </option>
+            ))}
+          </NativeSelect>
 
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="status">
-                Estado de pago
-              </label>
-              <select
-                id="status"
-                name="status"
-                defaultValue={statusFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="ALL">Todos</option>
-                <option value="PAID">Pagado</option>
-                <option value="PENDING">Pendiente</option>
-                <option value="PROCESSING">En revisión</option>
-                <option value="OVERDUE">Vencido</option>
-                <option value="CANCELLED">Cancelado</option>
-              </select>
-            </div>
+          <NativeSelect label="Estado" name="status" id="status" defaultValue={statusFilter}>
+            <option value="ALL">Todos los estados</option>
+            <option value="PAID">Pagado</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="PROCESSING">En revisión</option>
+            <option value="OVERDUE">Atrasado</option>
+            <option value="CANCELLED">Cancelado</option>
+          </NativeSelect>
 
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="behavior">
-                Comportamiento
-              </label>
-              <select
-                id="behavior"
-                name="behavior"
-                defaultValue={behaviorFilter}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
-                <option value="ALL">Todos</option>
-                <option value="ONTIME">Al día (Pagados)</option>
-                <option value="LATE">Atrasados / Pendientes</option>
-              </select>
-            </div>
+          <NativeSelect label="Comportamiento" name="behavior" id="behavior" defaultValue={behaviorFilter ?? ""}>
+            <option value="ALL">Sin filtro</option>
+            <option value="ONTIME">Pagadores puntuales</option>
+            <option value="LATE">Con atrasos</option>
+          </NativeSelect>
 
-            <div className="md:col-span-3 flex gap-3 pt-1">
-              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
-                Aplicar filtros
+          <div className="flex gap-3 sm:col-span-3 sm:justify-end">
+            <button
+              type="submit"
+              className="rounded-lg bg-[#5E8B8C] px-4 py-2 text-sm font-medium text-[#FAF6F2] transition-colors hover:bg-[#5E8B8C]/90"
+            >
+              Aplicar filtros
+            </button>
+            {(filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL") && (
+              <Button variant="outline" className="border-[#D5C3B6]/15 text-[#D5C3B6]" asChild>
+                <Link href="/dashboard/pagos">Limpiar</Link>
               </Button>
-              {(filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL") && (
-                <Button variant="outline" className="border-border" asChild>
-                  <Link href="/dashboard/pagos">Limpiar</Link>
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </form>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-4">

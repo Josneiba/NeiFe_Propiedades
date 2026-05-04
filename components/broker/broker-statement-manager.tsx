@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { NativeSelect } from '@/components/ui/native-select'
 import { useToast } from '@/hooks/use-toast'
 import { Download, FileText, Loader2, Plus, Send, Trash2 } from 'lucide-react'
 
@@ -195,18 +196,17 @@ export function BrokerStatementManager({ properties, initialStatements }: Props)
         <CardContent className="space-y-5">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-[#D5C3B6]">Propiedad</Label>
-              <select
+              <NativeSelect
+                label="Propiedad"
                 value={form.propertyId}
                 onChange={(e) => resetForProperty(e.target.value)}
-                className="w-full rounded-md border border-[#D5C3B6]/10 bg-[#1C1917] px-3 py-2 text-[#FAF6F2]"
               >
                 {properties.map((property) => (
                   <option key={property.id} value={property.id}>
                     {property.label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               {selectedProperty ? (
                 <div className="space-y-1">
                   <p className="text-xs text-[#9C8578]">
@@ -303,8 +303,8 @@ export function BrokerStatementManager({ properties, initialStatements }: Props)
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#D5C3B6]">Tipo</Label>
-                    <select
+                    <NativeSelect
+                      label="Tipo"
                       value={item.type}
                       onChange={(e) =>
                         setItems((current) =>
@@ -315,11 +315,10 @@ export function BrokerStatementManager({ properties, initialStatements }: Props)
                           )
                         )
                       }
-                      className="w-full rounded-md border border-[#D5C3B6]/10 bg-[#2D3C3C] px-3 py-2 text-[#FAF6F2]"
                     >
                       <option value="MAINTENANCE">Mantención</option>
                       <option value="DEDUCTION">Descuento</option>
-                    </select>
+                    </NativeSelect>
                   </div>
                   <Button
                     type="button"

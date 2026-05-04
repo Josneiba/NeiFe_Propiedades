@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { BrokerStatementManager } from '@/components/broker/broker-statement-manager'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default async function BrokerRendicionesPage() {
   const session = await auth()
@@ -72,12 +73,10 @@ export default async function BrokerRendicionesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-[#FAF6F2]">Rendiciones</h1>
-        <p className="text-[#9C8578]">
-          Genera el documento mensual que el propietario espera y descárgalo en PDF.
-        </p>
-      </div>
+      <PageHeader
+        title="Rendiciones"
+        description="Genera el documento mensual que el propietario espera y descárgalo en PDF."
+      />
 
       <BrokerStatementManager
         properties={properties.map((property) => ({

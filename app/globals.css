@@ -92,4 +92,9 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  select option {
+    background-color: #1C1917;
+    color: #FAF6F2;
+  }
 }
