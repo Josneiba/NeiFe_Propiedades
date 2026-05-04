@@ -53,25 +53,39 @@ const tenantNavItems = [
   { href: "/mi-arriendo/contactos", label: "Contactos", icon: Phone, id: undefined },
 ]
 
-const brokerNavItems = [
-  { href: "/broker", label: "Panel", icon: Home, id: undefined },
-  { href: "/broker/propiedades", label: "Propiedades", icon: Building2, id: undefined },
-  { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
-  { href: "/broker/rendiciones", label: "Rendiciones", icon: FileBarChart, id: undefined },
-  { href: "/broker/avisos", label: "Avisos", icon: Phone, id: undefined },
-  { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
-  { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
-  { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
-  { href: "/broker/calendario", label: "Calendario", icon: Calendar, id: undefined },
-  { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
-]
+const brokerNavGroups = [
+  {
+    label: "General",
+    items: [
+      { href: "/broker", label: "Panel", icon: Home, id: undefined },
+      { href: "/broker/propiedades", label: "Propiedades", icon: Building2, id: undefined },
+      { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
+      { href: "/broker/calendario", label: "Calendario", icon: Calendar, id: undefined },
+    ],
+  },
+  {
+    label: "Operaciones",
+    items: [
+      { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
+      { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
+      { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
+      { href: "/broker/rendiciones", label: "Rendiciones", icon: FileBarChart, id: undefined },
+      { href: "/broker/avisos", label: "Avisos", icon: Phone, id: undefined },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
+    ],
+  },
+] as const
 
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const navItems = 
     role === "landlord" ? landlordNavItems : 
-    role === "broker" ? brokerNavItems : 
     tenantNavItems
 
   return (
@@ -108,38 +122,79 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-          <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]">
-            {role === "landlord" ? "Panel Arrendador" : role === "broker" ? "Panel Corredor" : "Mi Arriendo"}
-          </p>
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== "/dashboard" && item.href !== "/mi-arriendo" && pathname.startsWith(item.href))
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                id={item.id}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
-                  isActive
-                    ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                    : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
-                )}
-              >
-                <item.icon className={cn(
-                  "h-5 w-5 transition-colors duration-300",
-                  isActive ? "text-[#5E8B8C]" : ""
-                )} />
-                {item.label}
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
-                )}
-              </Link>
-            )
-          })}
-        </nav>
+        {role === "broker" ? (
+          <nav className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
+            {brokerNavGroups.map((group) => (
+              <div key={group.label}>
+                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/broker" && pathname.startsWith(item.href))
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        id={item.id}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                            : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                        )}
+                      >
+                        <item.icon
+                          className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                        />
+                        {item.label}
+                        {isActive && (
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        ) : (
+          <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+            <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]">
+              {role === "landlord" ? "Panel Arrendador" : "Mi Arriendo"}
+            </p>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || 
+                (item.href !== "/dashboard" && item.href !== "/mi-arriendo" && pathname.startsWith(item.href))
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  id={item.id}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
+                    isActive
+                      ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                      : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "h-5 w-5 transition-colors duration-300",
+                    isActive ? "text-[#5E8B8C]" : ""
+                  )} />
+                  {item.label}
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+        )}
 
         {/* User section */}
         <div className="border-t border-[#D5C3B6]/10 p-4">

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Building2, DollarSign, Wrench, AlertTriangle, Plus, MapPin, Eye, FileText, BellRing, Receipt } from 'lucide-react'
+import { Building2, DollarSign, Wrench, AlertTriangle, Plus, Eye, FileText, BellRing, Receipt } from 'lucide-react'
 import { getErrorMessage } from '@/lib/error-handler'
 import { paymentStatus } from '@/lib/broker-design'
 import Link from 'next/link'
@@ -36,28 +36,28 @@ function formatCLP(amount: number) {
   }).format(amount)
 }
 
+function Trend({ current, previous }: { current: number; previous: number }) {
+  if (previous === 0) return null
+  const pct = Math.round(((current - previous) / previous) * 100)
+  if (pct === 0) return null
+  const positive = pct > 0
+
+  return (
+    <span className={positive ? "text-[10px] font-semibold text-[#5E8B8C]" : "text-[10px] font-semibold text-[#C27F79]"}>
+      {positive ? "▲" : "▼"} {Math.abs(pct)}%
+    </span>
+  )
+}
+
 async function BrokerKPIs({ brokerId }: { brokerId: string }) {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
+  const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1
+  const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear
 
-  const [mandateStats, propertyPaidCount, paidPayments, pendingPayments, activeMaintenances] = await Promise.all([
+  const [mandateStats, paidPayments, pendingPayments, activeMaintenances, prevPaidPayments] = await Promise.all([
     prisma.mandate.count({
       where: { brokerId, status: 'ACTIVE' },
-    }),
-    prisma.payment.count({
-      where: {
-        property: {
-          mandates: {
-            some: {
-              brokerId,
-              status: 'ACTIVE',
-            },
-          },
-        },
-        status: 'PAID',
-        month: currentMonth,
-        year: currentYear,
-      },
     }),
     prisma.payment.aggregate({
       where: {
@@ -107,10 +107,27 @@ async function BrokerKPIs({ brokerId }: { brokerId: string }) {
         },
       },
     }),
+    prisma.payment.aggregate({
+      where: {
+        property: {
+          mandates: {
+            some: {
+              brokerId,
+              status: 'ACTIVE'
+            }
+          }
+        },
+        status: 'PAID',
+        month: prevMonth,
+        year: prevYear,
+      },
+      _sum: { amountCLP: true },
+    }),
   ])
 
   const totalRecaudadoCLP = paidPayments._sum.amountCLP || 0
   const pagosPendientesCLP = pendingPayments._sum.amountCLP || 0
+  const prevTotalRecaudadoCLP = prevPaidPayments._sum.amountCLP || 0
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -163,7 +180,14 @@ async function BrokerKPIs({ brokerId }: { brokerId: string }) {
             </div>
           </div>
           <p className="text-2xl font-bold tabular-nums text-[#FAF6F2]">{kpi.value}</p>
-          <p className="mt-1 text-xs text-[#9C8578]">{kpi.sub}</p>
+          {kpi.label === 'Recaudado este mes' ? (
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <p className="text-xs text-[#9C8578]">{kpi.sub}</p>
+              <Trend current={totalRecaudadoCLP} previous={prevTotalRecaudadoCLP} />
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-[#9C8578]">{kpi.sub}</p>
+          )}
         </div>
       ))}
     </div>
@@ -173,8 +197,9 @@ async function BrokerKPIs({ brokerId }: { brokerId: string }) {
 async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
+  const contractsCutoff = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
 
-  const [mandates, recentStatements, recentMessages] = await Promise.all([
+  const [mandates, recentStatements, overduePayments, expiringContracts] = await Promise.all([
     prisma.mandate.findMany({
       where: {
         brokerId,
@@ -226,8 +251,13 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
       orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'desc' }],
       take: 5,
     }),
-    prisma.brokerMessage.findMany({
-      where: { senderId: brokerId },
+    prisma.payment.findMany({
+      where: {
+        property: {
+          mandates: { some: { brokerId, status: 'ACTIVE' } }
+        },
+        status: 'OVERDUE',
+      },
       include: {
         property: {
           select: {
@@ -236,15 +266,26 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
             address: true,
           },
         },
-        tenant: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
       },
       orderBy: { createdAt: 'desc' },
-      take: 5,
+      take: 3,
+    }),
+    prisma.property.findMany({
+      where: {
+        mandates: { some: { brokerId, status: 'ACTIVE' } },
+        contractEnd: {
+          gte: new Date(),
+          lte: contractsCutoff,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        contractEnd: true,
+      },
+      take: 3,
+      orderBy: { contractEnd: 'asc' },
     }),
   ])
 
@@ -254,22 +295,28 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
       {mandateStats > 0 && (
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardHeader>
-            <CardTitle className="text-[#FAF6F2]">Cartera consolidada</CardTitle>
-            <p className="text-sm text-[#9C8578]">
-              Estado operativo de cada propiedad en una sola pantalla.
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-[#FAF6F2]">Cartera consolidada</CardTitle>
+                <p className="text-sm text-[#9C8578] mt-0.5">
+                  Estado operativo de cada propiedad.
+                </p>
+              </div>
+              <Badge className="bg-[#5E8B8C]/20 text-[#5E8B8C] text-sm font-semibold px-3 py-1 border border-[#5E8B8C]/30">
+                {mandates.length} propiedades
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto [scrollbar-color:rgba(213,195,182,0.2)_transparent] [scrollbar-width:thin]">
               <table className="min-w-full text-sm">
                 <thead className="border-y border-[#D5C3B6]/10 text-left text-[#9C8578]">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Propiedad</th>
-                    <th className="px-6 py-3 font-medium">Arrendatario</th>
-                    <th className="px-6 py-3 font-medium">Pago mes</th>
-                    <th className="px-6 py-3 font-medium">Mantenciones</th>
-                    <th className="px-6 py-3 font-medium">Contrato</th>
-                    <th className="px-6 py-3 font-medium">Acción</th>
+                    <th className="px-6 py-3 font-medium text-xs uppercase tracking-wide">Propiedad</th>
+                    <th className="px-6 py-3 font-medium text-xs uppercase tracking-wide">Arrendatario</th>
+                    <th className="px-6 py-3 font-medium text-xs uppercase tracking-wide">Pago mes</th>
+                    <th className="px-6 py-3 font-medium text-xs uppercase tracking-wide">Estado</th>
+                    <th className="px-6 py-3 font-medium text-xs uppercase tracking-wide"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -297,21 +344,31 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
                         <td className="px-6 py-4">
                           <Badge className={pStatus.badge}>{pStatus.label}</Badge>
                         </td>
-                        <td className="px-6 py-4 text-[#D5C3B6]">
-                          {property._count?.maintenance ?? 0} abiertas
-                        </td>
-                        <td className="px-6 py-4 text-[#D5C3B6]">
-                          {contractHint === null
-                            ? 'Sin fecha'
-                            : contractHint < 0
-                              ? 'Vencido'
-                              : contractHint <= 90
-                                ? `Vence en ${contractHint} días`
-                                : 'Vigente'}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-[#D5C3B6]">
+                              {contractHint === null
+                                ? 'Sin fecha'
+                                : contractHint < 0
+                                  ? <span className="text-[#C27F79]">Contrato vencido</span>
+                                  : contractHint <= 90
+                                    ? <span className="text-[#F2C94C]">Vence en {contractHint}d</span>
+                                    : 'Contrato vigente'}
+                            </span>
+                            {(property._count?.maintenance ?? 0) > 0 && (
+                              <span className="text-[10px] text-[#F2C94C]">
+                                ⚠ {property._count.maintenance} mantención{property._count.maintenance > 1 ? 'es' : ''}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
-                          <Link href={`/broker/propiedades/${property.id}`} className="text-[#5E8B8C] hover:text-[#D5C3B6]">
-                            Abrir ficha
+                          <Link
+                            href={`/broker/propiedades/${property.id}`}
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#5E8B8C]/10 hover:bg-[#5E8B8C]/20 px-3 py-1.5 text-xs font-medium text-[#5E8B8C] transition-colors"
+                          >
+                            <Eye className="h-3 w-3" />
+                            Ver
                           </Link>
                         </td>
                       </tr>
@@ -374,42 +431,65 @@ async function BrokerPropertyList({ brokerId }: { brokerId: string }) {
 
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
             <CardHeader>
-              <CardTitle className="text-[#FAF6F2]">Avisos recientes</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[#FAF6F2]">Alertas del día</CardTitle>
+                {(overduePayments.length + expiringContracts.length) > 0 && (
+                  <Badge className="bg-[#C27F79]/20 text-[#C27F79] border border-[#C27F79]/30">
+                    {overduePayments.length + expiringContracts.length} pendientes
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentMessages.length === 0 ? (
-                <div className="rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917] p-5 text-center">
-                  <p className="text-sm font-medium text-[#FAF6F2]">Todavía no has enviado avisos a arrendatarios.</p>
-                  <p className="mt-2 text-sm text-[#9C8578]">
-                    Usa esta sección para mandar recordatorios de pago o coordinaciones operativas.
-                  </p>
-                  <Button className="mt-4 bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]" asChild>
-                    <Link href="/broker/avisos">Enviar tu primer aviso</Link>
-                  </Button>
+              {overduePayments.length === 0 && expiringContracts.length === 0 ? (
+                <div className="rounded-lg bg-[#1C1917] p-5 text-center">
+                  <p className="text-sm font-medium text-[#5E8B8C]">✓ Todo en orden</p>
+                  <p className="mt-1 text-xs text-[#9C8578]">No hay alertas urgentes hoy.</p>
                 </div>
               ) : (
-                recentMessages.map((message) => (
-                  <div key={message.id} className="rounded-lg bg-[#1C1917] p-4">
-                    <div className="flex items-start justify-between gap-3">
+                <>
+                  {overduePayments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex items-center justify-between rounded-lg bg-[#C27F79]/10 border border-[#C27F79]/20 px-4 py-3 gap-3"
+                    >
                       <div>
-                        <p className="font-medium text-[#FAF6F2]">{message.subject}</p>
-                        <p className="text-xs text-[#9C8578]">
-                          {message.tenant.name || message.tenant.email} · {message.property.name || message.property.address}
+                        <p className="text-xs font-medium text-[#FAF6F2]">
+                          Pago vencido — {payment.property.name || payment.property.address}
                         </p>
                       </div>
-                      <Badge className="bg-[#5E8B8C]/20 text-[#5E8B8C]">
-                        {message.sendEmail
-                          ? message.emailStatus === 'SENT'
-                            ? 'Email + app'
-                            : 'App + email fallido'
-                          : 'Solo app'}
-                      </Badge>
+                      <Link href="/broker/pagos" className="text-[10px] font-semibold text-[#C27F79] hover:underline">
+                        Gestionar
+                      </Link>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  {expiringContracts.map((property) => {
+                    const days = Math.ceil(
+                      (new Date(property.contractEnd!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                    )
+                    return (
+                      <div
+                        key={property.id}
+                        className="flex items-center justify-between rounded-lg bg-[#F2C94C]/10 border border-[#F2C94C]/20 px-4 py-3 gap-3"
+                      >
+                        <div>
+                          <p className="text-xs font-medium text-[#FAF6F2]">
+                            Contrato vence en {days} días
+                          </p>
+                          <p className="text-[10px] text-[#9C8578]">
+                            {property.name || property.address}
+                          </p>
+                        </div>
+                        <Link href="/broker/contratos" className="text-[10px] font-semibold text-[#F2C94C] hover:underline">
+                          Revisar
+                        </Link>
+                      </div>
+                    )
+                  })}
+                </>
               )}
-              <Button variant="outline" className="w-full border-[#D5C3B6]/10 text-[#FAF6F2]" asChild>
-                <Link href="/broker/avisos">Ver historial y enviar avisos</Link>
+              <Button variant="outline" className="w-full border-[#D5C3B6]/10 text-[#9C8578] hover:text-[#FAF6F2] text-xs mt-2" asChild>
+                <Link href="/broker/avisos">Ver historial de avisos</Link>
               </Button>
             </CardContent>
           </Card>
@@ -465,23 +545,23 @@ export default async function BrokerDashboardPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/broker/avisos"
-              className="flex items-center gap-1.5 rounded-lg border border-[#5E8B8C]/30 bg-[#5E8B8C]/10 px-3 py-1.5 text-xs font-medium text-[#5E8B8C] hover:bg-[#5E8B8C]/20 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
             >
               <BellRing className="h-3.5 w-3.5" />
               Avisos
             </Link>
             <Link
               href="/broker/rendiciones"
-              className="flex items-center gap-1.5 rounded-lg border border-[#B8965A]/30 bg-[#B8965A]/10 px-3 py-1.5 text-xs font-medium text-[#B8965A] hover:bg-[#B8965A]/20 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
             >
               <Receipt className="h-3.5 w-3.5" />
               Rendiciones
             </Link>
             <Link
               href="/broker/mandatos/nuevo"
-              className="flex items-center gap-1.5 rounded-lg bg-[#75524C] hover:bg-[#75524C]/90 px-3 py-1.5 text-xs font-medium text-[#FAF6F2] transition-colors"
+              className="flex items-center gap-1.5 rounded-xl bg-[#75524C] hover:bg-[#75524C]/90 px-4 py-2 text-sm font-semibold text-[#FAF6F2] transition-colors shadow-sm"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Nuevo mandato
             </Link>
           </div>

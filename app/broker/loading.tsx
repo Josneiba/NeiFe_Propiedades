@@ -2,97 +2,52 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function BrokerLoading() {
   return (
-    <div className="min-h-screen bg-[#1C1917]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48 bg-[#2D3C3C]" />
-            <Skeleton className="h-4 w-64 bg-[#2D3C3C]" />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-40 bg-[#2D3C3C]" />
+          <Skeleton className="h-8 w-64 bg-[#2D3C3C]" />
         </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20 rounded-lg bg-[#2D3C3C]" />
+          <Skeleton className="h-8 w-24 rounded-lg bg-[#2D3C3C]" />
+          <Skeleton className="h-9 w-32 rounded-xl bg-[#2D3C3C]" />
+        </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 rounded-2xl bg-[#2D3C3C] animate-pulse" />
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] overflow-hidden">
+        <div className="px-6 py-5 border-b border-[#D5C3B6]/10">
+          <Skeleton className="h-5 w-48 bg-[#1C1917]" />
+          <Skeleton className="h-3 w-72 mt-2 bg-[#1C1917]" />
+        </div>
+        <div className="divide-y divide-[#D5C3B6]/10">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-[#2D3C3C] border border-[#D5C3B6]/10 rounded-lg p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20 bg-[#1C1917]" />
-                  <Skeleton className="h-8 w-16 bg-[#1C1917]" />
-                </div>
-                <Skeleton className="h-8 w-8 bg-[#1C1917]" />
-              </div>
+            <div key={i} className="px-6 py-4 flex items-center gap-6">
+              <Skeleton className="h-4 w-40 bg-[#1C1917]" />
+              <Skeleton className="h-4 w-28 bg-[#1C1917]" />
+              <Skeleton className="h-5 w-16 rounded-full bg-[#1C1917]" />
+              <Skeleton className="h-4 w-24 bg-[#1C1917]" />
+              <Skeleton className="h-7 w-12 rounded-lg bg-[#1C1917] ml-auto" />
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Quick Actions */}
-        <div className="bg-[#2D3C3C] border border-[#D5C3B6]/10 rounded-lg p-6 mb-8">
-          <Skeleton className="h-6 w-32 mb-4 bg-[#1C1917]" />
-          <div className="grid gap-4 md:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-12 bg-[#1C1917]" />
+      <div className="grid gap-6 xl:grid-cols-2">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-6 space-y-3">
+            <Skeleton className="h-5 w-36 bg-[#1C1917]" />
+            {[...Array(3)].map((_, j) => (
+              <Skeleton key={j} className="h-14 w-full rounded-lg bg-[#1C1917]" />
             ))}
           </div>
-        </div>
-
-        {/* Properties Grid */}
-        <div className="space-y-6">
-          <Skeleton className="h-6 w-32 bg-[#2D3C3C]" />
-          <div className="grid gap-6 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-[#2D3C3C] border border-[#D5C3B6]/10 rounded-lg overflow-hidden">
-                {/* Property Image Placeholder */}
-                <div className="w-full h-48 bg-[#1C1917] flex items-center justify-center">
-                  <Skeleton className="h-16 w-16 bg-[#2D3C3C]" />
-                </div>
-                
-                {/* Property Content */}
-                <div className="p-6 space-y-4">
-                  {/* Title and Address */}
-                  <div className="space-y-2">
-                    <Skeleton className="h-6 w-3/4 bg-[#1C1917]" />
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-4 w-4 bg-[#1C1917]" />
-                      <Skeleton className="h-4 w-32 bg-[#1C1917]" />
-                    </div>
-                  </div>
-
-                  {/* Tenant Info */}
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-20 bg-[#1C1917]" />
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full bg-[#1C1917]" />
-                      <Skeleton className="h-4 w-24 bg-[#1C1917]" />
-                    </div>
-                  </div>
-
-                  {/* Contract Progress */}
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24 bg-[#1C1917]" />
-                    <Skeleton className="h-2 w-full bg-[#1C1917]" />
-                  </div>
-
-                  {/* Payment Status */}
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-20 bg-[#1C1917]" />
-                      <Skeleton className="h-6 w-24 bg-[#1C1917]" />
-                    </div>
-                    <Skeleton className="h-6 w-16 rounded-full bg-[#1C1917]" />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
-                    <Skeleton className="h-9 flex-1 bg-[#1C1917]" />
-                    <Skeleton className="h-9 w-9 bg-[#1C1917]" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )
