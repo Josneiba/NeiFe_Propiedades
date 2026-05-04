@@ -44,6 +44,40 @@ const landlordNavItems = [
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, id: undefined },
 ]
 
+const landlordNavGroups = [
+  {
+    label: "Vista General",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: Home, id: undefined },
+      { href: "/dashboard/mapa", label: "Mapa", icon: MapPin, id: undefined },
+      { href: "/dashboard/calendario", label: "Calendario", icon: Calendar, id: undefined },
+    ],
+  },
+  {
+    label: "Gestion",
+    items: [
+      { href: "/dashboard/propiedades", label: "Propiedades", icon: Building2, id: undefined },
+      { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard, id: "sidebar-pagos" },
+      { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },
+      { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
+      { href: "/dashboard/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
+      { href: "/dashboard/proveedores", label: "Proveedores", icon: Users, id: "sidebar-servicios" },
+    ],
+  },
+  {
+    label: "Coordinacion",
+    items: [
+      { href: "/dashboard/solicitudes-corredores", label: "Corredores", icon: User, id: undefined },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, id: undefined },
+    ],
+  },
+] as const
+
 const tenantNavItems = [
   { href: "/mi-arriendo", label: "Resumen", icon: Home, id: undefined },
   { href: "/mi-arriendo/pagos", label: "Pagos", icon: CreditCard, id: undefined },
@@ -84,9 +118,7 @@ const brokerNavGroups = [
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const navItems = 
-    role === "landlord" ? landlordNavItems : 
-    tenantNavItems
+  const navItems = role === "landlord" ? landlordNavItems : tenantNavItems
 
   return (
     <>
@@ -122,7 +154,46 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         </div>
 
         {/* Navigation */}
-        {role === "broker" ? (
+        {role === "landlord" ? (
+          <nav className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
+            {landlordNavGroups.map((group) => (
+              <div key={group.label}>
+                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/dashboard" && pathname.startsWith(item.href))
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        id={item.id}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                            : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                        )}
+                      >
+                        <item.icon
+                          className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                        />
+                        {item.label}
+                        {isActive && (
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        ) : role === "broker" ? (
           <nav className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
             {brokerNavGroups.map((group) => (
               <div key={group.label}>
@@ -164,7 +235,7 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         ) : (
           <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
             <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]">
-              {role === "landlord" ? "Panel Arrendador" : "Mi Arriendo"}
+              Mi Arriendo
             </p>
             {navItems.map((item) => {
               const isActive = pathname === item.href || 
