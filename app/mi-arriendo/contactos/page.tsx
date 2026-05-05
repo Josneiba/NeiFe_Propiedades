@@ -32,6 +32,9 @@ export default async function ContactosPage() {
       landlord: {
         select: { name: true, phone: true, email: true },
       },
+      managedByUser: {
+        select: { name: true, phone: true, email: true, company: true },
+      },
       providers: {
         include: {
           provider: true,
@@ -64,6 +67,7 @@ export default async function ContactosPage() {
   }
 
   const landlord = property.landlord
+  const broker = property.managedByUser
   const providers = property.providers.map(pp => pp.provider)
   return (
     <div className="space-y-6">
@@ -71,7 +75,7 @@ export default async function ContactosPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Contactos de Confianza</h1>
         <p className="text-muted-foreground">
-          Proveedores verificados por tu arrendador para mantenciones
+          Proveedores verificados y contactos clave para tu arriendo
         </p>
       </div>
 
@@ -83,19 +87,63 @@ export default async function ContactosPage() {
             <div>
               <p className="font-medium text-foreground">Importante</p>
               <p className="text-sm text-muted-foreground">
-                Para solicitar mantenciones, usa el módulo de Mantenciones de la plataforma. 
-                Las solicitudes deben ser aprobadas por tu arrendador antes de contactar a los proveedores.
+                Para solicitar mantenciones, usa el módulo de Mantenciones de la plataforma.
+                {broker
+                  ? " Si esta propiedad está administrada por un corredor, ese será tu contacto principal."
+                  : " Las solicitudes deben ser aprobadas por tu arrendador antes de contactar a los proveedores."}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {broker && (
+        <Card className="bg-[#2A2520] border-border">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-foreground">Tu Corredor Administrador</CardTitle>
+              <Badge className="bg-[#5E8B8C]/20 text-[#5E8B8C]">Contacto principal</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-[#5E8B8C] flex items-center justify-center">
+                <span className="text-xl font-bold text-white">
+                  {broker.name?.substring(0, 2).toUpperCase() || 'CO'}
+                </span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground text-lg">{broker.name}</h3>
+                {broker.company && (
+                  <p className="text-sm text-muted-foreground mt-1">{broker.company}</p>
+                )}
+                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                  {broker.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {broker.phone}
+                    </div>
+                  )}
+                  {broker.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {broker.email}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Landlord Contact */}
       {landlord && (
         <Card className="bg-[#2A2520] border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">Tu Arrendador</CardTitle>
+            <CardTitle className="text-foreground">
+              {broker ? "Propietario" : "Tu Arrendador"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">

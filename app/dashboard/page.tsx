@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { PropertyCard } from '@/components/properties/property-card'
+import { LocalizedDateGreeting } from '@/components/layout/localized-date-greeting'
 import { 
   DollarSign, 
   Building2, 
@@ -26,22 +27,6 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   PAID: { label: 'Pagado', className: 'bg-[#5E8B8C] text-[#FAF6F2]' },
   PENDING: { label: 'Pendiente', className: 'bg-[#C27F79] text-[#FAF6F2]' },
   OVERDUE: { label: 'Atrasado', className: 'bg-red-600 text-[#FAF6F2]' },
-}
-
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Buenos días'
-  if (hour < 18) return 'Buenas tardes'
-  return 'Buenas noches'
-}
-
-function formatDate() {
-  return new Date().toLocaleDateString('es-CL', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
 }
 
 function formatCLP(amount: number) {
@@ -530,15 +515,13 @@ async function DashboardContent({ session }: { session: any }) {
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <p className="text-[#9C8578] text-sm mb-1">{formatDate()}</p>
-            <h1 className="text-3xl md:text-4xl font-serif font-semibold text-[#FAF6F2]">
-              {getGreeting()}, <span className="text-[#D5C3B6]">{session.user.name?.split(' ')[0]}</span>
-            </h1>
-            <p className="text-[#9C8578] mt-1">
-              Aquí está el resumen de tus propiedades
-            </p>
-          </div>
+          <LocalizedDateGreeting
+            name={session.user.name}
+            subtitle="Aquí está el resumen de tus propiedades"
+            dateClassName="text-[#9C8578] text-sm mb-1"
+            headingClassName="text-3xl md:text-4xl font-serif font-semibold text-[#FAF6F2]"
+            subtitleClassName="text-[#9C8578] mt-1"
+          />
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/dashboard/mapa">
               <Button className="bg-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/30">

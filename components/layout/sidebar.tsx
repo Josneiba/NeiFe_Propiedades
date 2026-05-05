@@ -101,6 +101,7 @@ const brokerNavGroups = [
     label: "Operaciones",
     items: [
       { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
+      { href: "/broker/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
       { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
       { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
       { href: "/broker/rendiciones", label: "Rendiciones", icon: FileBarChart, id: undefined },

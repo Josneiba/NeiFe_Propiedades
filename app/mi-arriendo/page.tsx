@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { paymentStatusConfig } from "@/lib/status-config"
+import { cn } from "@/lib/utils"
+import { LocalizedDateGreeting } from "@/components/layout/localized-date-greeting"
 import {
   Home,
   CreditCard,
@@ -12,16 +14,23 @@ import {
   FileText,
   AlertCircle,
   CheckCircle2,
-  Clock,
+  MapPin,
+  Droplets,
+  Zap,
+  Flame,
 } from "lucide-react"
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
-import { Suspense } from 'react'
+import { Suspense } from "react"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
 function formatCLP(amount: number) {
-  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(amount)
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
@@ -36,6 +45,13 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
       monthlyRentUF: true,
       contractStart: true,
       contractEnd: true,
+      managedByUser: {
+        select: {
+          name: true,
+          phone: true,
+          email: true,
+        },
+      },
       landlord: {
         select: {
           name: true,
@@ -47,16 +63,16 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
 
   if (!property) {
     return (
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
         <CardContent className="p-16 text-center">
-          <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#5E8B8C]/20">
             <Home className="h-12 w-12 text-[#5E8B8C]" />
           </div>
-          <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
-            No estás vinculado a ninguna propiedad
+          <h3 className="mb-3 text-2xl font-semibold text-[#FAF6F2]">
+            No estas vinculado a ninguna propiedad
           </h3>
-          <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
-            El propietario debe enviarte una invitación por email para conectarte a tu arriendo.
+          <p className="mx-auto mb-8 max-w-md text-[#9C8578]">
+            El propietario debe enviarte una invitacion por email para conectarte a tu arriendo.
           </p>
         </CardContent>
       </Card>
@@ -72,71 +88,84 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
       : null
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C]">
-      <div className="border-b border-[#D5C3B6]/10 p-4 sm:p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#5E8B8C]/15">
-            <Home className="h-5 w-5 text-[#5E8B8C]" />
+    <div className="overflow-hidden rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] shadow-lg shadow-black/10">
+      <div className="border-b border-[#D5C3B6]/10 p-5 sm:p-6">
+        <div className="mb-6 flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5E8B8C]/15">
+            <Home className="h-6 w-6 text-[#5E8B8C]" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate font-semibold text-[#FAF6F2]">{property.address}</h2>
-            <p className="mt-0.5 text-xs text-[#9C8578]">
+            <h2 className="truncate text-2xl font-semibold text-[#FAF6F2]">{property.address}</h2>
+            <p className="mt-1 flex items-center gap-2 text-sm text-[#9C8578]">
+              <MapPin className="h-4 w-4 text-[#5E8B8C]" />
               {property.commune}, {property.region}
             </p>
+            {property.managedByUser && (
+              <Badge className="mt-3 bg-[#5E8B8C]/20 text-[#5E8B8C]">
+                Administración delegada a {property.managedByUser.name}
+              </Badge>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 divide-x divide-y divide-[#D5C3B6]/8">
-        <div className="p-4">
-          <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Propietario</p>
-          <p className="truncate text-sm font-medium text-[#FAF6F2]">{property.landlord.name}</p>
-          {property.landlord.phone && (
-            <a
-              href={`tel:${property.landlord.phone}`}
-              className="mt-0.5 block text-xs text-[#5E8B8C] hover:underline"
-            >
-              {property.landlord.phone}
-            </a>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {property.managedByUser && (
+            <div className="rounded-xl bg-[#1C1917] p-4">
+              <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Corredor administrador</p>
+              <p className="truncate text-sm font-semibold text-[#FAF6F2]">{property.managedByUser.name}</p>
+              {property.managedByUser.phone && (
+                <a href={`tel:${property.managedByUser.phone}`} className="mt-1 block text-xs text-[#5E8B8C] hover:underline">
+                  {property.managedByUser.phone}
+                </a>
+              )}
+              {!property.managedByUser.phone && property.managedByUser.email && (
+                <p className="mt-1 text-xs text-[#5E8B8C]">{property.managedByUser.email}</p>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-xl bg-[#1C1917] p-4">
+            <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Propietario</p>
+            <p className="truncate text-sm font-semibold text-[#FAF6F2]">{property.landlord.name}</p>
+            {property.landlord.phone && (
+              <a href={`tel:${property.landlord.phone}`} className="mt-1 block text-xs text-[#5E8B8C] hover:underline">
+                {property.landlord.phone}
+              </a>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-[#1C1917] p-4">
+            <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Renta mensual</p>
+            <p className="text-sm font-semibold tabular-nums text-[#FAF6F2]">
+              {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "—"}
+            </p>
+            {property.monthlyRentUF && (
+              <p className="mt-1 text-xs text-[#9C8578]">UF {property.monthlyRentUF.toFixed(2)}</p>
+            )}
+          </div>
+
+          {contractDates && (
+            <>
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Inicio contrato</p>
+                <p className="text-sm font-semibold text-[#FAF6F2]">
+                  {new Date(contractDates.start).toLocaleDateString("es-CL")}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-[#1C1917] p-4">
+                <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Termino contrato</p>
+                <p className="text-sm font-semibold text-[#FAF6F2]">
+                  {new Date(contractDates.end).toLocaleDateString("es-CL")}
+                </p>
+              </div>
+            </>
           )}
         </div>
-        <div className="p-4">
-          <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Renta mensual</p>
-          <p className="text-sm font-semibold tabular-nums text-[#FAF6F2]">
-            {property.monthlyRentCLP ? `$${property.monthlyRentCLP.toLocaleString("es-CL")}` : "—"}
-          </p>
-          {property.monthlyRentUF && (
-            <p className="mt-0.5 text-xs text-[#9C8578]">UF {property.monthlyRentUF.toFixed(2)}</p>
-          )}
-        </div>
-        {contractDates && (
-          <>
-            <div className="p-4">
-              <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Inicio contrato</p>
-              <p className="text-sm text-[#D5C3B6]">
-                {new Date(contractDates.start).toLocaleDateString("es-CL", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
-            <div className="p-4">
-              <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Término contrato</p>
-              <p className="text-sm text-[#D5C3B6]">
-                {new Date(contractDates.end).toLocaleDateString("es-CL", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
-          </>
-        )}
       </div>
 
       {contractDates && (
-        <div className="border-t border-[#D5C3B6]/10 p-4">
+        <div className="border-t border-[#D5C3B6]/10 p-5 sm:p-6">
           <ContractProgressChart
             startDate={new Date(contractDates.start)}
             endDate={new Date(contractDates.end)}
@@ -195,19 +224,55 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
   ])
 
   const getMonthName = (month: number) => {
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    const months = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre",
+    ]
     return months[month - 1]
   }
 
   const water = currentServices?.water ?? 0
   const electricity = currentServices?.electricity ?? 0
   const gas = currentServices?.gas ?? 0
+  const serviceKPIs = [
+    {
+      label: "Agua",
+      value: water,
+      icon: Droplets,
+      color: "text-[#5E8B8C]",
+      bg: "bg-[#5E8B8C]/10 border-[#5E8B8C]/20",
+    },
+    {
+      label: "Luz",
+      value: electricity,
+      icon: Zap,
+      color: "text-[#F2C94C]",
+      bg: "bg-[#F2C94C]/10 border-[#F2C94C]/20",
+    },
+    {
+      label: "Gas",
+      value: gas,
+      icon: Flame,
+      color: "text-[#B8965A]",
+      bg: "bg-[#B8965A]/10 border-[#B8965A]/20",
+    },
+  ].filter((item) => item.value > 0)
 
   return (
     <div className="space-y-6">
       <div
-        className={`rounded-2xl border-2 p-4 sm:p-5 ${
+        className={cn(
+          "rounded-2xl border-2 p-4 sm:p-5",
           !currentPayment
             ? "border-[#D5C3B6]/10 bg-[#2D3C3C]"
             : currentPayment.status === "PAID"
@@ -215,7 +280,7 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
               : currentPayment.status === "OVERDUE"
                 ? "border-[#C27F79]/40 bg-[#C27F79]/5"
                 : "border-[#F2C94C]/30 bg-[#F2C94C]/5"
-        }`}
+        )}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
@@ -225,7 +290,7 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
             <p className="mt-1 text-2xl font-bold tabular-nums text-[#FAF6F2]">
               {currentPayment
                 ? `$${(currentPayment.amountCLP + water + electricity + gas).toLocaleString("es-CL")}`
-                : "Sin información"}
+                : "Sin informacion"}
             </p>
           </div>
           {currentPayment && (
@@ -254,6 +319,22 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
           </div>
         )}
 
+        {serviceKPIs.length > 0 && (
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {serviceKPIs.map((item) => (
+              <div key={item.label} className={cn("rounded-lg border p-4", item.bg)}>
+                <div className="flex items-center gap-2">
+                  <item.icon className={cn("h-4 w-4", item.color)} />
+                  <p className="text-[10px] uppercase tracking-wide text-[#9C8578]">{item.label}</p>
+                </div>
+                <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">
+                  ${item.value.toLocaleString("es-CL")}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {currentPayment && (currentPayment.status === "PENDING" || currentPayment.status === "OVERDUE") && (
           <Link
             href="/mi-arriendo/pagos"
@@ -272,19 +353,23 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
         )}
       </div>
 
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
         <CardHeader>
           <CardTitle className="text-[#FAF6F2]">Pagos Recientes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {recentPayments.length === 0 ? (
-            <p className="text-[#9C8578] text-center py-4">No hay pagos registrados</p>
+            <p className="py-4 text-center text-[#9C8578]">No hay pagos registrados</p>
           ) : (
             recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1C1917]">
+              <div key={payment.id} className="flex items-center justify-between rounded-lg bg-[#1C1917] p-3">
                 <div>
-                  <p className="text-[#FAF6F2] font-medium">{getMonthName(payment.month)} {payment.year}</p>
-                  <p className="text-xs text-[#9C8578]">{new Date(payment.createdAt).toLocaleDateString('es-CL')}</p>
+                  <p className="font-medium text-[#FAF6F2]">
+                    {getMonthName(payment.month)} {payment.year}
+                  </p>
+                  <p className="text-xs text-[#9C8578]">
+                    {new Date(payment.createdAt).toLocaleDateString("es-CL")}
+                  </p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
               </div>
@@ -310,28 +395,36 @@ async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
   })
 
   return (
-    <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+    <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
       <CardHeader>
         <CardTitle className="text-[#FAF6F2]">Mantenciones Recientes</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {recentMaintenance.length === 0 ? (
-          <p className="text-[#9C8578] text-center py-4">No hay mantenciones registradas</p>
+          <p className="py-4 text-center text-[#9C8578]">No hay mantenciones registradas</p>
         ) : (
           recentMaintenance.map((maintenance) => (
-            <div key={maintenance.id} className="flex items-center justify-between p-3 rounded-lg bg-[#1C1917]">
+            <div key={maintenance.id} className="flex items-center justify-between rounded-lg bg-[#1C1917] p-3">
               <div>
-                <p className="text-[#FAF6F2] font-medium">{maintenance.category}</p>
-                <p className="text-xs text-[#9C8578]">{new Date(maintenance.createdAt).toLocaleDateString('es-CL')}</p>
+                <p className="font-medium text-[#FAF6F2]">{maintenance.category}</p>
+                <p className="text-xs text-[#9C8578]">
+                  {new Date(maintenance.createdAt).toLocaleDateString("es-CL")}
+                </p>
               </div>
-              <Badge className={
-                maintenance.status === "COMPLETED" ? "bg-[#5E8B8C] text-white" :
-                maintenance.status === "IN_PROGRESS" ? "bg-[#F2C94C] text-[#1C1917]" :
-                "bg-[#C27F79] text-white"
-              }>
-                {maintenance.status === "COMPLETED" ? "Completada" :
-                 maintenance.status === "IN_PROGRESS" ? "En progreso" :
-                 "Pendiente"}
+              <Badge
+                className={
+                  maintenance.status === "COMPLETED"
+                    ? "bg-[#5E8B8C] text-white"
+                    : maintenance.status === "IN_PROGRESS"
+                      ? "bg-[#F2C94C] text-[#1C1917]"
+                      : "bg-[#C27F79] text-white"
+                }
+              >
+                {maintenance.status === "COMPLETED"
+                  ? "Completada"
+                  : maintenance.status === "IN_PROGRESS"
+                    ? "En progreso"
+                    : "Pendiente"}
               </Badge>
             </div>
           ))
@@ -355,18 +448,20 @@ export default async function MiArriendoPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
+          <h1 className="font-serif text-3xl font-bold text-foreground">Mi Arriendo</h1>
         </div>
-        <Suspense fallback={
-          <div className="h-64 rounded-xl bg-[#2A2520] animate-pulse" />
-        }>
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-[#2A2520]" />}>
           <TenantPropertyInfo tenantId={session.user.id} />
         </Suspense>
       </div>
     )
   }
 
-  const alerts = []
+  const alerts: Array<{
+    type: "payment" | "contract"
+    message: string
+    icon: typeof CreditCard | typeof FileText
+  }> = []
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
@@ -380,13 +475,14 @@ export default async function MiArriendoPage() {
     select: { status: true },
   })
 
-  if (!currentPayment || currentPayment.status === "PENDING") {
+  if (!currentPayment || currentPayment.status === "PENDING" || currentPayment.status === "OVERDUE") {
     alerts.push({
       type: "payment",
-      message: "Tu pago del mes está pendiente",
+      message:
+        currentPayment?.status === "OVERDUE"
+          ? "Tu pago del mes esta atrasado"
+          : "Tu pago del mes esta pendiente",
       icon: CreditCard,
-      color: "text-[#C27F79]",
-      bgColor: "bg-[#C27F79]/20",
     })
   }
 
@@ -396,35 +492,131 @@ export default async function MiArriendoPage() {
   })
 
   if (propertyFull?.contractEnd) {
-    const daysLeft = Math.floor((new Date(propertyFull.contractEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    const daysLeft = Math.floor(
+      (new Date(propertyFull.contractEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    )
     if (daysLeft > 0 && daysLeft <= 90) {
       alerts.push({
         type: "contract",
         message: `Tu contrato vence en ${Math.ceil(daysLeft / 30)} meses`,
         icon: FileText,
-        color: "text-[#5E8B8C]",
-        bgColor: "bg-[#5E8B8C]/20",
       })
     }
   }
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-serif text-foreground">Mi Arriendo</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <LocalizedDateGreeting
+          name={session.user.name}
+          subtitle="Tu informacion de arriendo y servicios"
+          dateClassName="mb-1 text-sm text-[#9C8578]"
+          headingClassName="text-3xl font-serif font-semibold text-[#FAF6F2] md:text-4xl"
+          subtitleClassName="mt-1 text-[#9C8578]"
+        />
+        <Badge
+          className={cn(
+            "px-3 py-1.5 text-sm",
+            currentPayment?.status === "PAID"
+              ? "bg-[#5E8B8C]/20 text-[#5E8B8C]"
+              : "bg-[#C27F79]/20 text-[#C27F79]"
+          )}
+        >
+          {currentPayment?.status === "PAID" ? "Al dia" : "Pago pendiente"}
+        </Badge>
       </div>
 
-      {/* Alerts */}
+      {currentPayment && (currentPayment.status === "PENDING" || currentPayment.status === "OVERDUE") ? (
+        <Link href="/mi-arriendo/pagos" className="block">
+          <Button className="w-full bg-[#C27F79] py-3 text-base font-semibold text-[#FAF6F2] shadow-lg shadow-[#C27F79]/20 hover:bg-[#C27F79]/90">
+            Pagar ahora
+          </Button>
+        </Link>
+      ) : (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link href="/mi-arriendo/pagos" className="flex-1">
+            <Button
+              variant="outline"
+              className="w-full border-[#D5C3B6]/10 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 hover:text-[#FAF6F2]"
+            >
+              Ver pagos
+            </Button>
+          </Link>
+          <Link href="/mi-arriendo/mantenciones" className="flex-1">
+            <Button
+              variant="outline"
+              className="w-full border-[#D5C3B6]/10 text-[#D5C3B6] hover:bg-[#D5C3B6]/5 hover:text-[#FAF6F2]"
+            >
+              Reportar problema
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <Link href="/mi-arriendo/pagos">
+          <div className="group rounded-xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/5 p-6 transition-all hover:border-[#5E8B8C]/50 hover:bg-[#5E8B8C]/10">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#5E8B8C]/20 group-hover:bg-[#5E8B8C]/30">
+              <CreditCard className="h-6 w-6 text-[#5E8B8C]" />
+            </div>
+            <p className="font-semibold text-[#FAF6F2]">Pagos</p>
+            <p className="mt-1 text-xs text-[#9C8578]">Ver historial y comprobar pago</p>
+          </div>
+        </Link>
+
+        <Link href="/mi-arriendo/servicios">
+          <div className="group rounded-xl border border-[#B8965A]/20 bg-[#B8965A]/5 p-6 transition-all hover:border-[#B8965A]/50 hover:bg-[#B8965A]/10">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#B8965A]/20 group-hover:bg-[#B8965A]/30">
+              <AlertCircle className="h-6 w-6 text-[#B8965A]" />
+            </div>
+            <p className="font-semibold text-[#FAF6F2]">Servicios</p>
+            <p className="mt-1 text-xs text-[#9C8578]">Agua, luz y gas del mes</p>
+          </div>
+        </Link>
+
+        <Link href="/mi-arriendo/mantenciones">
+          <div className="group rounded-xl border border-[#F2C94C]/20 bg-[#F2C94C]/5 p-6 transition-all hover:border-[#F2C94C]/50 hover:bg-[#F2C94C]/10">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2C94C]/20 group-hover:bg-[#F2C94C]/30">
+              <Wrench className="h-6 w-6 text-[#F2C94C]" />
+            </div>
+            <p className="font-semibold text-[#FAF6F2]">Mantenciones</p>
+            <p className="mt-1 text-xs text-[#9C8578]">Reportar problemas</p>
+          </div>
+        </Link>
+
+        <Link href="/mi-arriendo/contrato">
+          <div className="group rounded-xl border border-[#D5C3B6]/20 bg-[#D5C3B6]/5 p-6 transition-all hover:border-[#D5C3B6]/50 hover:bg-[#D5C3B6]/10">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#D5C3B6]/20 group-hover:bg-[#D5C3B6]/30">
+              <FileText className="h-6 w-6 text-[#D5C3B6]" />
+            </div>
+            <p className="font-semibold text-[#FAF6F2]">Contrato</p>
+            <p className="mt-1 text-xs text-[#9C8578]">Descargar o ver documento</p>
+          </div>
+        </Link>
+      </div>
+
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.map((alert, index) => (
             <div
               key={index}
-              className={`flex items-center gap-3 p-4 rounded-lg ${alert.bgColor}`}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border p-4 transition-all",
+                alert.type === "payment"
+                  ? "border-[#C27F79]/30 bg-[#C27F79]/10"
+                  : "border-[#F2C94C]/30 bg-[#F2C94C]/10"
+              )}
             >
-              <alert.icon className={`h-5 w-5 ${alert.color}`} />
-              <span className="text-foreground">{alert.message}</span>
+              <alert.icon
+                className={cn(
+                  "h-5 w-5 flex-shrink-0",
+                  alert.type === "payment" ? "text-[#C27F79]" : "text-[#F2C94C]"
+                )}
+              />
+              <span className="flex-1 text-[#FAF6F2]">{alert.message}</span>
+              <Badge className={alert.type === "payment" ? "bg-[#C27F79]/20 text-[#C27F79]" : "bg-[#F2C94C]/20 text-[#F2C94C]"}>
+                {alert.type === "payment" ? "URGENTE" : "ATENCION"}
+              </Badge>
             </div>
           ))}
         </div>
@@ -442,41 +634,6 @@ export default async function MiArriendoPage() {
         <Suspense fallback={<div className="h-64 rounded-2xl bg-[#2D3C3C] animate-pulse" />}>
           <TenantMaintenanceInfo propertyId={property.id} />
         </Suspense>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Link href="/mi-arriendo/pagos">
-            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
-              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
-                <CreditCard className="mb-2 h-8 w-8 text-[#5E8B8C]" />
-                <p className="text-sm font-medium text-[#FAF6F2]">Ver Pagos</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/mi-arriendo/servicios">
-            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
-              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
-                <AlertCircle className="mb-2 h-8 w-8 text-[#5E8B8C]" />
-                <p className="text-sm font-medium text-[#FAF6F2]">Servicios</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/mi-arriendo/mantenciones">
-            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
-              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
-                <Wrench className="mb-2 h-8 w-8 text-[#5E8B8C]" />
-                <p className="text-sm font-medium text-[#FAF6F2]">Mantenciones</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/mi-arriendo/contrato">
-            <Card className="h-full cursor-pointer border-[#D5C3B6]/10 bg-[#2D3C3C] transition-colors hover:border-[#5E8B8C]/50">
-              <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
-                <FileText className="mb-2 h-8 w-8 text-[#5E8B8C]" />
-                <p className="text-sm font-medium text-[#FAF6F2]">Contrato</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
       </div>
     </div>
   )

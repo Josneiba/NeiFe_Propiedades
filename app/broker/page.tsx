@@ -7,26 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Building2, DollarSign, Wrench, AlertTriangle, Plus, Eye, FileText, BellRing, Receipt } from 'lucide-react'
 import { getErrorMessage } from '@/lib/error-handler'
 import { paymentStatus } from '@/lib/broker-design'
+import { LocalizedDateGreeting } from '@/components/layout/localized-date-greeting'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
 export const dynamic = 'force-dynamic'
-
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Buenos días'
-  if (hour < 18) return 'Buenas tardes'
-  return 'Buenas noches'
-}
-
-function formatDate() {
-  return new Date().toLocaleDateString('es-CL', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
 
 function formatCLP(amount: number) {
   return new Intl.NumberFormat('es-CL', {
@@ -535,13 +520,11 @@ export default async function BrokerDashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-1 text-xs text-[#9C8578] capitalize">{formatDate()}</p>
-            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">
-              {getGreeting()},{' '}
-              <span className="text-[#D5C3B6]">{session.user.name?.split(' ')[0]}</span>
-            </h1>
-          </div>
+          <LocalizedDateGreeting
+            name={session.user.name}
+            dateClassName="mb-1 text-xs capitalize text-[#9C8578]"
+            headingClassName="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]"
+          />
           <div className="flex items-center gap-2">
             <Link
               href="/broker/avisos"
@@ -556,6 +539,12 @@ export default async function BrokerDashboardPage() {
             >
               <Receipt className="h-3.5 w-3.5" />
               Rendiciones
+            </Link>
+            <Link
+              href="/broker/servicios"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
+            >
+              Servicios
             </Link>
             <Link
               href="/broker/mandatos/nuevo"

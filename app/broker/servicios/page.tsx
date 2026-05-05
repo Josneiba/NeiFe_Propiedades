@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MonthlyServiceManager } from "@/components/services/monthly-service-manager"
-import { Droplets, Zap, Flame } from "lucide-react"
+import { Droplets, Zap, Flame, BadgeDollarSign } from "lucide-react"
 
 const monthNames = [
   "Enero",
@@ -30,7 +30,7 @@ export default async function BrokerServiciosPage({
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
   if (session.user.role !== "BROKER" && session.user.role !== "OWNER") {
-    redirect("/dashboard")
+    redirect("/mi-arriendo")
   }
 
   const { property: filterPropertyId, month: monthFilter, year: yearFilter } = await searchParams
@@ -82,7 +82,7 @@ export default async function BrokerServiciosPage({
     },
     include: {
       property: {
-        select: { id: true, name: true, address: true, commune: true },
+        select: { id: true, name: true, address: true, commune: true, tenant: { select: { name: true } } },
       },
     },
     orderBy: [{ year: "desc" }, { month: "desc" }],
@@ -92,39 +92,37 @@ export default async function BrokerServiciosPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[#FAF6F2]">Servicios básicos</h1>
-        <p className="text-[#9C8578]">
-          Registra y comparte cargos de agua, luz, gas, gastos comunes y boletas.
+        <h1 className="text-3xl font-bold text-foreground">Servicios básicos</h1>
+        <p className="text-muted-foreground">
+          Carga cuentas de agua, luz, gas y cargos comunes para que el arrendatario vea el detalle completo.
         </p>
         {filterProperty && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-3 text-sm">
-            <span className="text-[#FAF6F2]">
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-foreground">
               Filtrado por: <strong>{filterProperty.name || filterProperty.address}</strong>
             </span>
-            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#FAF6F2]" asChild>
+            <Button variant="outline" size="sm" className="border-border" asChild>
               <Link href="/broker/servicios">Ver todas las propiedades</Link>
             </Button>
-            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#FAF6F2]" asChild>
-              <Link href={`/broker/propiedades/${filterProperty.id}`}>
-                Ir al detalle
-              </Link>
+            <Button variant="outline" size="sm" className="border-border" asChild>
+              <Link href={`/broker/propiedades/${filterProperty.id}`}>Ir al detalle</Link>
             </Button>
           </div>
         )}
       </div>
 
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card className="bg-card border-border">
         <CardContent className="p-4">
           <form className="grid gap-4 md:grid-cols-4" action="/broker/servicios" method="GET">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm text-[#9C8578]" htmlFor="property">
+              <label className="text-sm text-muted-foreground" htmlFor="property">
                 Propiedad
               </label>
               <select
                 id="property"
                 name="property"
                 defaultValue={filterPropertyId ?? ""}
-                className="w-full rounded-md border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2 text-[#FAF6F2]"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
               >
                 <option value="">Todas</option>
                 {properties.map((p) => (
@@ -135,14 +133,14 @@ export default async function BrokerServiciosPage({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-[#9C8578]" htmlFor="month">
+              <label className="text-sm text-muted-foreground" htmlFor="month">
                 Mes
               </label>
               <select
                 id="month"
                 name="month"
                 defaultValue={monthFilter ?? ""}
-                className="w-full rounded-md border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2 text-[#FAF6F2]"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
               >
                 <option value="">Todos</option>
                 {monthNames.map((m, idx) => (
@@ -153,7 +151,7 @@ export default async function BrokerServiciosPage({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-[#9C8578]" htmlFor="year">
+              <label className="text-sm text-muted-foreground" htmlFor="year">
                 Año
               </label>
               <input
@@ -164,16 +162,16 @@ export default async function BrokerServiciosPage({
                 min="2000"
                 max="2100"
                 defaultValue={yearFilter ?? ""}
-                className="w-full rounded-md border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2 text-[#FAF6F2]"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
                 placeholder="Todos"
               />
             </div>
-            <div className="md:col-span-4 flex gap-3 pt-1">
+            <div className="flex gap-3 pt-1 md:col-span-4">
               <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
                 Aplicar filtros
               </Button>
               {(filterPropertyId || monthFilter || yearFilter) && (
-                <Button variant="outline" className="border-[#D5C3B6]/20 text-[#FAF6F2]" asChild>
+                <Button variant="outline" className="border-border" asChild>
                   <Link href="/broker/servicios">Limpiar</Link>
                 </Button>
               )}
@@ -186,76 +184,87 @@ export default async function BrokerServiciosPage({
         <MonthlyServiceManager
           properties={properties}
           defaultPropertyId={filterProperty?.id ?? filterPropertyId ?? null}
-          title="Registrar servicios para arrendatarios"
-          description="Úsalo para cargar cargos y boletas cuando la propiedad esté bajo tu administración."
+          title="Registrar servicios del mes"
+          description="Como corredor administrador puedes informar cargos y boletas para que el arrendatario sepa exactamente qué debe pagar."
         />
       )}
 
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-[#FAF6F2]">Registros mensuales</CardTitle>
+          <CardTitle>Registros mensuales</CardTitle>
         </CardHeader>
         <CardContent>
           {services.length === 0 ? (
-            <p className="py-8 text-center text-sm text-[#9C8578]">
-              No hay registros de servicios aún para tus propiedades administradas.
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No hay registros de servicios aún para esta cartera.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#D5C3B6]/10 text-left">
+                  <tr className="border-b border-border text-left">
                     {!filterProperty && (
-                      <th className="py-3 px-2 font-semibold text-[#FAF6F2]">
-                        Propiedad
-                      </th>
+                      <th className="px-2 py-3 font-semibold text-foreground">Propiedad</th>
                     )}
-                    <th className="py-3 px-2 font-semibold text-[#FAF6F2]">Período</th>
-                    <th className="py-3 px-2 font-semibold text-[#FAF6F2]">Agua</th>
-                    <th className="py-3 px-2 font-semibold text-[#FAF6F2]">Electricidad</th>
-                    <th className="py-3 px-2 font-semibold text-[#FAF6F2]">Gas</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Período</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Arrendatario</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Agua</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Electricidad</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Gas</th>
+                    <th className="px-2 py-3 font-semibold text-foreground">Cargos extra</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-[#D5C3B6]/10 hover:bg-[#1C1917]/60"
-                    >
-                      {!filterProperty && (
-                        <td className="py-3 px-2">
-                          <Link
-                            href={`/broker/servicios?property=${row.property.id}`}
-                            className="font-medium text-[#5E8B8C] hover:underline"
-                          >
-                            {row.property.name || row.property.address}
-                          </Link>
-                          <p className="text-xs text-[#9C8578]">{row.property.commune}</p>
+                  {services.map((row) => {
+                    const label = row.property.name || row.property.address
+                    const extraTotal =
+                      row.garbage + row.commonExpenses + row.other
+                    return (
+                      <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+                        {!filterProperty && (
+                          <td className="px-2 py-3">
+                            <Link
+                              href={`/broker/servicios?property=${row.property.id}`}
+                              className="font-medium text-[#5E8B8C] hover:underline"
+                            >
+                              {label}
+                            </Link>
+                            <p className="text-xs text-muted-foreground">{row.property.commune}</p>
+                          </td>
+                        )}
+                        <td className="px-2 py-3 text-muted-foreground">
+                          {monthNames[row.month - 1]} {row.year}
                         </td>
-                      )}
-                      <td className="py-3 px-2 text-[#9C8578]">
-                        {monthNames[row.month - 1]} {row.year}
-                      </td>
-                      <td className="py-3 px-2 text-[#FAF6F2]">
-                        <span className="inline-flex items-center gap-1">
-                          <Droplets className="h-3.5 w-3.5 text-sky-500" />
-                          {row.water}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-[#FAF6F2]">
-                        <span className="inline-flex items-center gap-1">
-                          <Zap className="h-3.5 w-3.5 text-amber-500" />
-                          {row.electricity}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-[#FAF6F2]">
-                        <span className="inline-flex items-center gap-1">
-                          <Flame className="h-3.5 w-3.5 text-orange-500" />
-                          {row.gas}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-2 py-3 text-foreground">
+                          {row.property.tenant?.name || "Sin arrendatario"}
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <Droplets className="h-3.5 w-3.5 text-sky-500" />
+                            {row.water}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <Zap className="h-3.5 w-3.5 text-amber-500" />
+                            {row.electricity}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <Flame className="h-3.5 w-3.5 text-orange-500" />
+                            {row.gas}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <BadgeDollarSign className="h-3.5 w-3.5 text-[#B8965A]" />
+                            {extraTotal}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
