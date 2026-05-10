@@ -263,15 +263,15 @@ export default function BrokerMandatosPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Mandatos</h1>
-          <p className="text-sm text-[#9C8578] mt-0.5">Gestiona tus acuerdos de administración con propietarios</p>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Mandatos</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">Solicitudes de administración y mandatos activos</p>
         </div>
         <Link href="/broker/mandatos/nuevo">
-          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] shrink-0">
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Solicitud
+            Nuevo mandato
           </Button>
         </Link>
       </div>
@@ -288,35 +288,30 @@ export default function BrokerMandatosPage() {
       {/* Permiso general por propietario (antes de mandatos por propiedad) */}
       {permissions.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-[#D5C3B6] mb-2">Permiso con propietarios</h2>
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Solicitudes a propietarios</p>
           <p className="text-sm text-[#9C8578] mb-4">
-            El propietario debe aprobar este acceso general; luego puedes solicitar mandatos por cada propiedad en Nueva solicitud.
+            El propietario debe aprobar este acceso general; luego puedes solicitar mandatos por cada propiedad en Nuevo mandato.
           </p>
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {permissions.map((permission) => {
               const permStatus = permissionStatusConfig[permission.status]
               return (
                 <Card key={permission.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-[#9C8578]" />
-                          <h3 className="text-lg font-semibold text-[#FAF6F2]">
-                            {permission.landlord.name || permission.landlord.email}
-                          </h3>
-                        </div>
-                        <p className="text-sm text-[#9C8578]">{permission.landlord.email}</p>
-                        <div className="flex items-center gap-2 text-sm text-[#9C8578] mt-2">
-                          <Calendar className="w-4 h-4" />
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+                        <span className="flex items-center gap-2 font-semibold text-[#FAF6F2]">
+                          <User className="h-4 w-4 shrink-0 text-[#9C8578]" />
+                          <span className="truncate">{permission.landlord.name || permission.landlord.email}</span>
+                        </span>
+                        <span className="text-sm text-[#9C8578]">{permission.landlord.email}</span>
+                        <Badge className={permStatus.badge}>{permStatus.label}</Badge>
+                        <span className="flex items-center gap-1.5 text-xs text-[#9C8578]">
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />
                           Solicitado el {formatDate(permission.createdAt)}
-                        </div>
+                        </span>
                       </div>
-
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <Badge className={permStatus.badge}>
-                          {permStatus.label}
-                        </Badge>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
                         {permission.status === 'PENDING' && (
                           <Button
                             onClick={() => handleDeletePermission(permission.id)}
@@ -355,20 +350,19 @@ export default function BrokerMandatosPage() {
         </div>
       )}
 
-      {/* Mandatos Activos */}
       <div>
-        <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Mandatos Activos</h2>
+        <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Mandatos activos</p>
         {mandates.length === 0 ? (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
-                <FileText className="h-8 w-8 text-[#5E8B8C]/50" />
+            <CardContent className="p-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-6 w-6 text-[#5E8B8C]/50" />
               </div>
-              <h3 className="text-[#FAF6F2] font-medium mb-2">Aún no tienes mandatos activos</h3>
-              <p className="text-[#9C8578] text-sm max-w-xl mx-auto mb-6">
+              <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">Aún no tienes mandatos activos</h3>
+              <p className="text-sm text-[#9C8578] max-w-xl mx-auto mb-5">
                 Para comenzar, solicita permiso general al propietario y luego crea una solicitud por cada propiedad que quieras administrar.
               </p>
-              <div className="mb-6 text-sm text-[#D5C3B6]">
+              <div className="mb-5 space-y-1 text-sm text-[#9C8578] max-w-md mx-auto text-left">
                 <p>1. Invita al propietario o busca su correo en el sistema.</p>
                 <p>2. Espera su aprobación para quedar habilitado.</p>
                 <p>3. Crea la solicitud de mandato de la propiedad.</p>
@@ -387,47 +381,44 @@ export default function BrokerMandatosPage() {
               const status = mandateStatus[mandate.status as keyof typeof mandateStatus]
               return (
                 <Card key={mandate.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                      {/* Property Info */}
-                      <div className="flex-1 space-y-3">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+                      <div className="flex-1 space-y-3 min-w-0">
                         <div>
                           <h3 className="text-lg font-semibold text-[#FAF6F2]">
                             {mandate.property.name || mandate.property.address}
                           </h3>
                           <div className="flex items-center gap-2 text-[#9C8578] text-sm mt-1">
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-4 w-4 shrink-0" />
                             {mandate.property.commune}
                           </div>
                         </div>
 
-                        {/* Owner Info */}
                         <div className="flex items-center gap-2 text-sm text-[#9C8578]">
-                          <User className="h-4 w-4" />
+                          <User className="h-4 w-4 shrink-0" />
                           <span>{mandate.owner.name || mandate.owner.email}</span>
                         </div>
 
-                        {/* Dates */}
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-[#9C8578]">Solicitud</p>
-                            <div className="flex items-center gap-1 text-[#FAF6F2] mt-1">
-                              <Calendar className="h-4 w-4" />
+                        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                          <span className="text-[#9C8578]">
+                            Solicitud{' '}
+                            <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
+                              <Calendar className="h-3.5 w-3.5" />
                               {formatDate(mandate.createdAt)}
-                            </div>
-                          </div>
+                            </span>
+                          </span>
                           {mandate.status === 'ACTIVE' && (
-                            <div>
-                              <p className="text-[#9C8578]">Activado desde</p>
-                              <div className="flex items-center gap-1 text-[#FAF6F2] mt-1">
-                                <Calendar className="h-4 w-4" />
+                            <span className="text-[#9C8578]">
+                              Activado desde{' '}
+                              <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
+                                <Calendar className="h-3.5 w-3.5" />
                                 {formatDate(mandate.startsAt)}
-                              </div>
-                            </div>
+                              </span>
+                            </span>
                           )}
-                          <div>
-                            <p className="text-[#9C8578]">Comisión</p>
-                            <div className="mt-1 text-[#FAF6F2]">
+                          <span className="text-[#9C8578]">
+                            Comisión{' '}
+                            <span className="text-[#FAF6F2]">
                               {mandate.commissionRate != null
                                 ? `${mandate.commissionRate}% (${mandate.commissionType === 'MONTHLY'
                                     ? 'Mensual'
@@ -435,18 +426,17 @@ export default function BrokerMandatosPage() {
                                       ? 'Única vez'
                                       : 'Anual'})`
                                 : 'No definida'}
-                            </div>
-                          </div>
+                            </span>
+                          </span>
                         </div>
                       </div>
 
-                      {/* Status and Actions */}
-                      <div className="flex flex-col items-end gap-3">
+                      <div className="flex flex-col items-stretch lg:items-end gap-3 shrink-0">
                         <Badge className={status.badge}>
                           {mandateLabels[mandate.status] ?? status.label}
                         </Badge>
 
-                        <div className="flex flex-wrap justify-end gap-2">
+                        <div className="flex flex-wrap gap-2 justify-end">
                           <Button
                             asChild
                             variant="outline"
@@ -482,30 +472,31 @@ export default function BrokerMandatosPage() {
                               </Link>
                             </Button>
                           )}
-                        </div>
-
-                        {mandate.status === 'PENDING' && (
-                          <Button
-                            onClick={() => handleDeleteMandate(mandate.id)}
-                            disabled={deletingMandateId === mandate.id}
-                            variant="outline"
-                            className="border-red-600/30 text-red-600 hover:bg-red-600/10"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {deletingMandateId === mandate.id ? 'Eliminando...' : 'Eliminar solicitud'}
-                          </Button>
-                        )}
-
-                        {mandate.status === 'ACTIVE' && (
-                          <Link href={`/broker/propiedades/${mandate.property.id}`}>
-                            <Button 
+                          {mandate.status === 'ACTIVE' && (
+                            <Button
+                              asChild
                               variant="outline"
+                              size="sm"
                               className="text-[#FAF6F2] border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/10"
                             >
-                              Ver Detalles
+                              <Link href={`/broker/propiedades/${mandate.property.id}`}>
+                                Ver Detalles
+                              </Link>
                             </Button>
-                          </Link>
-                        )}
+                          )}
+                          {mandate.status === 'PENDING' && (
+                            <Button
+                              onClick={() => handleDeleteMandate(mandate.id)}
+                              disabled={deletingMandateId === mandate.id}
+                              variant="outline"
+                              size="sm"
+                              className="border-red-600/30 text-red-600 hover:bg-red-600/10"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {deletingMandateId === mandate.id ? 'Eliminando...' : 'Eliminar solicitud'}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>

@@ -16,13 +16,14 @@ export default async function BrokerContratosPage({
   const { property } = await searchParams
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Contratos</h1>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Contratos</h1>
         <p className="text-sm text-[#9C8578] mt-0.5">
           Gestiona y descarga los contratos de las propiedades que administras
         </p>
       </div>
+      <div className="h-px bg-[#D5C3B6]/10" />
       <ContractWorkspace
         actorRole={session.user.role}
         userId={session.user.id}

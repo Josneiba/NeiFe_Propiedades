@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import type { MaintenanceStatus, Prisma } from "@prisma/client"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -70,11 +71,12 @@ const categoryConfig: Record<string, { icon: string; label: string }> = {
   OTHER: { icon: "📋", label: "Otro" },
 }
 
-function mantencionesQueryHref(status: string, propertyId?: string) {
-  const q = new URLSearchParams()
-  if (propertyId) q.set("property", propertyId)
-  if (status !== "all") q.set("status", status)
-  const s = q.toString()
+function mantencionesQueryHref(status: string, propertyId?: string, qParam?: string) {
+  const qs = new URLSearchParams()
+  if (propertyId) qs.set("property", propertyId)
+  if (status !== "all") qs.set("status", status)
+  if (qParam) qs.set("q", qParam)
+  const s = qs.toString()
   return `/broker/mantenciones${s ? `?${s}` : ""}`
 }
 
@@ -136,6 +138,13 @@ export default async function BrokerMantencionesPage({
     orderBy: { createdAt: "desc" },
   })
 
+  const activeMaintenanceCount = await prisma.maintenanceRequest.count({
+    where: {
+      property: basePropertyWhere,
+      status: { notIn: ["COMPLETED", "REJECTED"] },
+    },
+  })
+
   const requests: MaintenanceWithProperty[] = await prisma.maintenanceRequest.findMany({
     where: {
       property: {
@@ -159,27 +168,59 @@ export default async function BrokerMantencionesPage({
     },
   })
 
+  const statusTabs = [
+    { id: "all", label: "Todos" },
+    { id: "REQUESTED", label: "Solicitadas" },
+    { id: "REVIEWING", label: "En revisión" },
+    { id: "APPROVED", label: "Aprobadas" },
+    { id: "IN_PROGRESS", label: "En ejecución" },
+    { id: "COMPLETED", label: "Completadas" },
+    { id: "REJECTED", label: "Rechazadas" },
+  ]
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Mantenciones gestionadas</h1>
-        <p className="text-muted-foreground">
-          Aprueba, asigna y sigue las mantenciones de tu cartera administrada.
-        </p>
-        {filterProperty && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <span className="text-foreground">
-              Filtrado por:{" "}
-              <strong>{filterProperty.name || filterProperty.address}</strong>
-            </span>
-            <Button variant="outline" size="sm" className="border-border" asChild>
-              <a href={mantencionesQueryHref(statusFilter)}>Quitar filtro de propiedad</a>
-            </Button>
-            <Button variant="outline" size="sm" className="border-border" asChild>
-              <a href={`/broker/propiedades/${filterProperty.id}`}>Ir al detalle</a>
-            </Button>
-          </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Mantenciones</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">
+            Solicitudes de reparación de tus propiedades administradas
+          </p>
+        </div>
+        {activeMaintenanceCount > 0 && (
+          <span className="text-sm text-[#9C8578] shrink-0">{activeMaintenanceCount} solicitud(es)</span>
         )}
+      </div>
+
+      {filterProperty && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917]/40 px-4 py-3 text-sm">
+          <span className="text-[#FAF6F2]">
+            Filtrado por: <strong>{filterProperty.name || filterProperty.address}</strong>
+          </span>
+          <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
+            <a href={mantencionesQueryHref(statusFilter, undefined, q)}>Quitar filtro de propiedad</a>
+          </Button>
+          <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
+            <a href={`/broker/propiedades/${filterProperty.id}`}>Ir al detalle</a>
+          </Button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {statusTabs.map((tab) => {
+          const active = statusFilter === tab.id
+          return (
+            <Link
+              key={tab.id}
+              href={mantencionesQueryHref(tab.id, filterPropertyId, q)}
+              className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                active ? "bg-[#5E8B8C]/20 text-[#5E8B8C]" : "text-[#9C8578] hover:text-[#D5C3B6]"
+              }`}
+            >
+              {tab.label}
+            </Link>
+          )
+        })}
       </div>
 
       <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-4">
@@ -239,14 +280,14 @@ export default async function BrokerMantencionesPage({
       <div className="space-y-4">
         {requests.length === 0 ? (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardContent className="p-16 text-center">
-              <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
-                <Wrench className="h-12 w-12 text-[#5E8B8C]" />
+            <CardContent className="p-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
+                <Wrench className="h-6 w-6 text-[#5E8B8C]/50" />
               </div>
-              <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
+              <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">
                 Sin mantenciones activas
               </h3>
-              <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
+              <p className="text-sm text-[#9C8578] max-w-md mx-auto">
                 Cuando un arrendatario reporte una falla o necesites coordinar un trabajo, lo verás aquí.
               </p>
             </CardContent>
@@ -258,19 +299,19 @@ export default async function BrokerMantencionesPage({
             const category = categoryConfig[request.category] || categoryConfig.OTHER
 
             return (
-              <Card key={request.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+              <Card key={request.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#D5C3B6]/20 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-[#2D3C3C] flex items-center justify-center text-2xl">
+                      <div className="w-10 h-10 rounded-lg bg-[#1C1917] flex items-center justify-center text-xl">
                         {category.icon}
                       </div>
                       <div>
-                        <CardTitle className="text-lg text-foreground">
+                        <CardTitle className="text-base font-semibold text-[#FAF6F2]">
                           {category.label}
                         </CardTitle>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Building2 className="h-4 w-4" />
+                        <div className="flex items-center gap-2 text-xs text-[#9C8578]">
+                          <Building2 className="h-4 w-4 shrink-0" />
                           {request.property.address}
                         </div>
                       </div>
@@ -293,29 +334,29 @@ export default async function BrokerMantencionesPage({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-foreground">{request.description}</p>
+                  <p className="text-[#FAF6F2]">{request.description}</p>
 
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4" />
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#9C8578]">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 shrink-0" />
                       {request.property.tenant?.name || "Sin arrendatario"}
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 shrink-0" />
                       {request.createdAt.toLocaleDateString("es-CL")}
                     </div>
                     {request.photos && request.photos.length > 0 && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ImageIcon className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 shrink-0" />
                         {request.photos.length} foto(s)
                       </div>
                     )}
                   </div>
 
                   {request.status === "IN_PROGRESS" && request.provider && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Proveedor asignado:</p>
-                      <p className="font-medium text-foreground">{request.provider.name}</p>
+                    <div className="rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917]/60 p-3">
+                      <p className="text-xs text-[#9C8578]">Proveedor asignado:</p>
+                      <p className="font-medium text-[#FAF6F2]">{request.provider.name}</p>
                     </div>
                   )}
 

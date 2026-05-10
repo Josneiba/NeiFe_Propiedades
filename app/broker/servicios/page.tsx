@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MonthlyServiceManager } from "@/components/services/monthly-service-manager"
 import { Droplets, Zap, Flame, BadgeDollarSign } from "lucide-react"
@@ -89,41 +89,39 @@ export default async function BrokerServiciosPage({
     take: 120,
   })
 
+  const inputFilterClass =
+    "w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Servicios básicos</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Servicios básicos</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">
           Carga cuentas de agua, luz, gas y cargos comunes para que el arrendatario vea el detalle completo.
         </p>
         {filterProperty && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <span className="text-foreground">
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917]/40 px-4 py-3 text-sm">
+            <span className="text-[#FAF6F2]">
               Filtrado por: <strong>{filterProperty.name || filterProperty.address}</strong>
             </span>
-            <Button variant="outline" size="sm" className="border-border" asChild>
+            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
               <Link href="/broker/servicios">Ver todas las propiedades</Link>
             </Button>
-            <Button variant="outline" size="sm" className="border-border" asChild>
+            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
               <Link href={`/broker/propiedades/${filterProperty.id}`}>Ir al detalle</Link>
             </Button>
           </div>
         )}
       </div>
 
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardContent className="p-4">
           <form className="grid gap-4 md:grid-cols-4" action="/broker/servicios" method="GET">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm text-muted-foreground" htmlFor="property">
+              <label className="text-xs font-medium uppercase tracking-wider text-[#9C8578]" htmlFor="property">
                 Propiedad
               </label>
-              <select
-                id="property"
-                name="property"
-                defaultValue={filterPropertyId ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
+              <select id="property" name="property" defaultValue={filterPropertyId ?? ""} className={inputFilterClass}>
                 <option value="">Todas</option>
                 {properties.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -133,15 +131,10 @@ export default async function BrokerServiciosPage({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="month">
+              <label className="text-xs font-medium uppercase tracking-wider text-[#9C8578]" htmlFor="month">
                 Mes
               </label>
-              <select
-                id="month"
-                name="month"
-                defaultValue={monthFilter ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
-              >
+              <select id="month" name="month" defaultValue={monthFilter ?? ""} className={inputFilterClass}>
                 <option value="">Todos</option>
                 {monthNames.map((m, idx) => (
                   <option key={idx} value={idx + 1}>
@@ -151,7 +144,7 @@ export default async function BrokerServiciosPage({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground" htmlFor="year">
+              <label className="text-xs font-medium uppercase tracking-wider text-[#9C8578]" htmlFor="year">
                 Año
               </label>
               <input
@@ -162,16 +155,16 @@ export default async function BrokerServiciosPage({
                 min="2000"
                 max="2100"
                 defaultValue={yearFilter ?? ""}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                className={inputFilterClass}
                 placeholder="Todos"
               />
             </div>
             <div className="flex gap-3 pt-1 md:col-span-4">
-              <Button type="submit" className="bg-[#5E8B8C] text-white hover:bg-[#5E8B8C]/90">
+              <Button type="submit" className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
                 Aplicar filtros
               </Button>
               {(filterPropertyId || monthFilter || yearFilter) && (
-                <Button variant="outline" className="border-border" asChild>
+                <Button variant="outline" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
                   <Link href="/broker/servicios">Limpiar</Link>
                 </Button>
               )}
@@ -189,29 +182,27 @@ export default async function BrokerServiciosPage({
         />
       )}
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle>Registros mensuales</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Registros mensuales</p>
           {services.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-6 text-center text-sm text-[#9C8578]">
               No hay registros de servicios aún para esta cartera.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left">
+                  <tr className="border-b border-[#D5C3B6]/10 text-left">
                     {!filterProperty && (
-                      <th className="px-2 py-3 font-semibold text-foreground">Propiedad</th>
+                      <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Propiedad</th>
                     )}
-                    <th className="px-2 py-3 font-semibold text-foreground">Período</th>
-                    <th className="px-2 py-3 font-semibold text-foreground">Arrendatario</th>
-                    <th className="px-2 py-3 font-semibold text-foreground">Agua</th>
-                    <th className="px-2 py-3 font-semibold text-foreground">Electricidad</th>
-                    <th className="px-2 py-3 font-semibold text-foreground">Gas</th>
-                    <th className="px-2 py-3 font-semibold text-foreground">Cargos extra</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Período</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Arrendatario</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Agua</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Electricidad</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gas</th>
+                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Cargos extra</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -220,44 +211,44 @@ export default async function BrokerServiciosPage({
                     const extraTotal =
                       row.garbage + row.commonExpenses + row.other
                     return (
-                      <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <tr key={row.id} className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5 transition-colors">
                         {!filterProperty && (
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3">
                             <Link
                               href={`/broker/servicios?property=${row.property.id}`}
                               className="font-medium text-[#5E8B8C] hover:underline"
                             >
                               {label}
                             </Link>
-                            <p className="text-xs text-muted-foreground">{row.property.commune}</p>
+                            <p className="text-xs text-[#9C8578]">{row.property.commune}</p>
                           </td>
                         )}
-                        <td className="px-2 py-3 text-muted-foreground">
+                        <td className="px-3 py-3 text-[#9C8578]">
                           {monthNames[row.month - 1]} {row.year}
                         </td>
-                        <td className="px-2 py-3 text-foreground">
+                        <td className="px-3 py-3 text-[#FAF6F2]">
                           {row.property.tenant?.name || "Sin arrendatario"}
                         </td>
-                        <td className="px-2 py-3">
-                          <span className="inline-flex items-center gap-1 text-foreground">
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
                             <Droplets className="h-3.5 w-3.5 text-sky-500" />
                             {row.water}
                           </span>
                         </td>
-                        <td className="px-2 py-3">
-                          <span className="inline-flex items-center gap-1 text-foreground">
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
                             <Zap className="h-3.5 w-3.5 text-amber-500" />
                             {row.electricity}
                           </span>
                         </td>
-                        <td className="px-2 py-3">
-                          <span className="inline-flex items-center gap-1 text-foreground">
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
                             <Flame className="h-3.5 w-3.5 text-orange-500" />
                             {row.gas}
                           </span>
                         </td>
-                        <td className="px-2 py-3">
-                          <span className="inline-flex items-center gap-1 text-foreground">
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
                             <BadgeDollarSign className="h-3.5 w-3.5 text-[#B8965A]" />
                             {extraTotal}
                           </span>

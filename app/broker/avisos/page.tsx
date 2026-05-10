@@ -59,7 +59,8 @@ export default async function BrokerAvisosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Avisos al arrendatario</h1>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Avisos</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Envía notificaciones y comunicados a tus arrendatarios</p>
       </div>
 
       <BrokerMessageCenter

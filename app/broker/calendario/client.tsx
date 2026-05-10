@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -295,11 +295,19 @@ export default function BrokerCalendarClient() {
     )
   }
 
+  const filterBtnClass = (active: boolean) =>
+    active
+      ? "border-[#5E8B8C]/40 bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/25"
+      : "border-[#D5C3B6]/20 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
+
+  const fieldClass =
+    "w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Calendario</h1>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Calendario</h1>
           <p className="text-sm text-[#9C8578] mt-0.5">Vista de vencimientos y eventos de tu cartera</p>
         </div>
         <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
@@ -323,7 +331,7 @@ export default function BrokerCalendarClient() {
                   id="property"
                   value={newEvent.propertyId}
                   onChange={(e) => setNewEvent(prev => ({ ...prev, propertyId: e.target.value }))}
-                  className="w-full p-2 rounded bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  className={fieldClass}
                 >
                   <option value="">Selecciona una propiedad</option>
                   {properties.map(property => (
@@ -339,7 +347,7 @@ export default function BrokerCalendarClient() {
                   id="type"
                   value={newEvent.type}
                   onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="w-full p-2 rounded bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  className={fieldClass}
                 >
                   <option value="INSPECTION">Inspección</option>
                   <option value="PAYMENT_DUE">Recordatorio de Pago</option>
@@ -355,7 +363,7 @@ export default function BrokerCalendarClient() {
                   value={newEvent.title}
                   onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Título del evento"
-                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  className={fieldClass}
                 />
               </div>
               <div>
@@ -365,7 +373,7 @@ export default function BrokerCalendarClient() {
                   type="date"
                   value={newEvent.date}
                   onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
-                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  className={fieldClass}
                 />
               </div>
               <div>
@@ -376,7 +384,7 @@ export default function BrokerCalendarClient() {
                   onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descripción del evento"
                   rows={3}
-                  className="w-full p-2 rounded bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  className={fieldClass}
                 />
               </div>
               <div className="flex gap-2">
@@ -403,40 +411,39 @@ export default function BrokerCalendarClient() {
         </Dialog>
       </div>
 
-      {/* Filter Buttons */}
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={filter === "ALL" ? "default" : "outline"}
+          variant="outline"
           onClick={() => setFilter("ALL")}
-          className={filter === "ALL" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
+          className={filterBtnClass(filter === "ALL")}
         >
           Todos
         </Button>
         <Button
-          variant={filter === "INSPECTION" ? "default" : "outline"}
+          variant="outline"
           onClick={() => setFilter("INSPECTION")}
-          className={filter === "INSPECTION" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
+          className={filterBtnClass(filter === "INSPECTION")}
         >
           Inspecciones
         </Button>
         <Button
-          variant={filter === "IPC" ? "default" : "outline"}
+          variant="outline"
           onClick={() => setFilter("IPC")}
-          className={filter === "IPC" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
+          className={filterBtnClass(filter === "IPC")}
         >
           Reajustes IPC
         </Button>
         <Button
-          variant={filter === "CONTRACT" ? "default" : "outline"}
+          variant="outline"
           onClick={() => setFilter("CONTRACT")}
-          className={filter === "CONTRACT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
+          className={filterBtnClass(filter === "CONTRACT")}
         >
           Contratos
         </Button>
         <Button
-          variant={filter === "PAYMENT" ? "default" : "outline"}
+          variant="outline"
           onClick={() => setFilter("PAYMENT")}
-          className={filter === "PAYMENT" ? "bg-[#5E8B8C] text-[#FAF6F2]" : "border border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6] hover:border-[#D5C3B6]/40 bg-transparent"}
+          className={filterBtnClass(filter === "PAYMENT")}
         >
           Pagos
         </Button>
@@ -446,16 +453,19 @@ export default function BrokerCalendarClient() {
       <div className="grid gap-4">
         {filteredEvents.length === 0 ? (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardContent className="p-12 text-center">
-              <Calendar className="h-12 w-12 text-[#9C8578] mx-auto mb-3 opacity-50" />
-              <p className="text-[#9C8578] mb-4">
+            <CardContent className="p-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-6 w-6 text-[#5E8B8C]/50" />
+              </div>
+              <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">Sin eventos</h3>
+              <p className="text-sm text-[#9C8578] max-w-sm mx-auto">
                 {filter === "ALL" ? "No hay eventos programados" : `No hay eventos de tipo ${filter}`}
               </p>
             </CardContent>
           </Card>
         ) : (
           filteredEvents.map((event) => (
-            <Card key={event.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10 rounded-xl">
+            <Card key={event.id} className="rounded-xl border border-[#5E8B8C]/30 bg-[#5E8B8C]/15 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -516,10 +526,10 @@ export default function BrokerCalendarClient() {
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-          <CardHeader>
-            <CardTitle className="text-[#FAF6F2] text-lg">Resumen de próximos 30 días</CardTitle>
+          <CardHeader className="pb-2">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A]">Próximos 30 días</p>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-0">
             <div className="flex justify-between">
               <span className="text-[#9C8578]">Inspecciones:</span>
               <span className="font-semibold text-[#FAF6F2]">{next30Counts.inspections}</span>
@@ -540,10 +550,10 @@ export default function BrokerCalendarClient() {
         </Card>
 
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-          <CardHeader>
-            <CardTitle className="text-[#FAF6F2] text-lg">Eventos urgentes</CardTitle>
+          <CardHeader className="pb-2">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A]">Eventos urgentes</p>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-0">
             {urgentEvents.slice(0, 5).map((event) => {
               const daysFromNow = Math.floor(
                 (new Date(event.date).getTime() - new Date().getTime()) /
@@ -554,7 +564,7 @@ export default function BrokerCalendarClient() {
                 <div key={event.id} className="flex items-center gap-2 text-sm">
                   <div
                     className={`w-2 h-2 rounded-full ${
-                      daysFromNow < 0 ? "bg-red-500" : "bg-yellow-500"
+                      daysFromNow < 0 ? "bg-[#C27F79]" : "bg-[#F2C94C]"
                     }`}
                   />
                   <span className="text-[#9C8578]">{event.title}</span>

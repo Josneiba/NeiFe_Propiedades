@@ -73,8 +73,15 @@ export default async function BrokerRendicionesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Rendiciones</h1>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Rendiciones</h1>
         <p className="text-sm text-[#9C8578] mt-0.5">Genera el cierre mensual y descárgalo en PDF para el propietario</p>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-xl border border-[#B8965A]/20 bg-[#B8965A]/5 px-4 py-3">
+        <span className="text-[#B8965A] mt-0.5">ⓘ</span>
+        <p className="text-sm text-[#D5C3B6]">
+          Las rendiciones generadas quedan guardadas y el propietario puede descargar el PDF desde su panel.
+        </p>
       </div>
 
       <BrokerStatementManager
