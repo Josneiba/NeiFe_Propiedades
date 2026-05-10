@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield, FileText, Sparkles, CreditCard } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 export default function LoginClient() {
   const router = useRouter()
@@ -185,44 +186,86 @@ export default function LoginClient() {
     }
   }
 
+  const roleOptions = [
+    {
+      key: 'landlord' as const,
+      label: 'Arrendador',
+      short: 'Panel de gestión de propiedades',
+      accent: 'border-[#75524C]',
+      ring: 'focus-visible:ring-[#75524C]',
+    },
+    {
+      key: 'tenant' as const,
+      label: 'Arrendatario',
+      short: 'Administra tu pago y contrato',
+      accent: 'border-[#5E8B8C]',
+      ring: 'focus-visible:ring-[#5E8B8C]',
+    },
+    {
+      key: 'broker' as const,
+      label: 'Corredor',
+      short: 'Gestiona propiedades de tus clientes',
+      accent: 'border-[#B8965A]',
+      ring: 'focus-visible:ring-[#B8965A]',
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-[#1C1917] flex">
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="absolute inset-0 bg-linear-to-br from-[#2D3C3C] to-[#1C1917]">
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
-          <h2 className="text-4xl font-serif font-semibold text-[#FAF6F2] mb-4">
-            Bienvenido a NeiFe
-          </h2>
-          <p className="text-[#9C8578] text-lg max-w-md">
-            La plataforma premium para gestión de arriendos en Chile
-          </p>
-          <div className="mt-12 flex items-center gap-6">
-            <div className="h-px w-16 bg-[#B8965A]/40" />
-            <span className="text-xs uppercase tracking-widest text-[#B8965A]">Gestión Inteligente</span>
-            <div className="h-px w-16 bg-[#B8965A]/40" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2D3C3C] to-[#1C1917]" />
+        <svg
+          className="absolute inset-0 h-full w-full text-[#D5C3B6]/[0.06]"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden
+        >
+          <defs>
+            <pattern id="login-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#login-grid)" />
+        </svg>
+        <div className="relative z-10 flex flex-col justify-between p-12 text-left w-full max-w-lg mx-auto">
+          <div>
+            <p className="text-4xl md:text-5xl font-serif font-semibold text-[#FAF6F2] tracking-tight">
+              NeiFe<span className="text-[#B8965A]">.</span>
+            </p>
+            <ul className="mt-10 space-y-5">
+              {[
+                { icon: Shield, text: "Contratos y datos alineados a la legislación chilena." },
+                { icon: FileText, text: "Documentación y pagos organizados en un solo lugar." },
+                { icon: CreditCard, text: "Seguimiento de arriendos sin hojas de cálculo dispersas." },
+                { icon: Building2, text: "Paneles claros para cada rol del ecosistema." },
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-[#D5C3B6] text-sm leading-relaxed">
+                  <item.icon className="h-4 w-4 text-[#B8965A] shrink-0 mt-0.5" strokeWidth={2} />
+                  <span>{item.text}</span>
+                </li>
+              ))}
+            </ul>
           </div>
+          <p className="text-sm italic text-[#9C8578] border-t border-[#D5C3B6]/10 pt-8">
+            La gestión de arriendos que no te complica la vida.
+          </p>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center p-5 sm:p-8 lg:p-12 py-8 lg:py-12">
         <div className="w-full max-w-3xl">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-8 transition-colors duration-300"
+            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-5 transition-colors duration-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al inicio
           </Link>
 
-          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardHeader className="text-center pb-2">
-              <div className="flex items-center justify-center gap-2 mb-4 lg:hidden">
-                <div className="w-12 h-12 rounded-lg bg-[#75524C] flex items-center justify-center shadow-lg">
-                  <span className="text-lg font-semibold text-[#D5C3B6]">Ne</span>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 shadow-2xl shadow-black/20">
+            <CardHeader className="text-center pb-2 pt-6 px-6">
+              <div className="flex items-center justify-center gap-2 mb-3 lg:hidden">
+                <div className="rounded-lg bg-[#75524C]/90 px-3 py-2 shadow-md">
+                  <span className="text-lg font-serif font-semibold text-[#FAF6F2]">NeiFe<span className="text-[#B8965A]">.</span></span>
                 </div>
               </div>
               <CardTitle className="text-2xl font-serif text-[#FAF6F2]">Iniciar Sesión</CardTitle>
@@ -230,79 +273,65 @@ export default function LoginClient() {
                 Selecciona tu rol y accede con demo o con tu cuenta
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-                {[
-                  {
-                    key: 'landlord',
-                    label: 'Arrendador',
-                    icon: Building2,
-                    color: 'border-[#75524C] bg-[#75524C]/20 text-[#D5C3B6] hover:bg-[#75524C]/25'
-                  },
-                  {
-                    key: 'tenant',
-                    label: 'Arrendatario',
-                    icon: Home,
-                    color: 'border-[#5E8B8C] bg-[#5E8B8C]/20 text-[#D5C3B6] hover:bg-[#5E8B8C]/25'
-                  },
-                  {
-                    key: 'broker',
-                    label: 'Corredor',
-                    icon: Briefcase,
-                    color: 'border-[#B8965A] bg-[#B8965A]/20 text-[#D5C3B6] hover:bg-[#B8965A]/25'
-                  },
-                ].map((roleOption) => {
-                  const Icon = roleOption.icon
+            <CardContent className="px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                {roleOptions.map((roleOption) => {
+                  const Icon =
+                    roleOption.key === "landlord"
+                      ? Building2
+                      : roleOption.key === "tenant"
+                        ? Home
+                        : Briefcase
                   const isSelected = selectedDemoRole === roleOption.key
                   return (
                     <div
                       key={roleOption.key}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setSelectedDemoRole(roleOption.key as 'landlord' | 'tenant' | 'broker')}
-                      onKeyDown={(event) => handleRoleCardKeyDown(event, roleOption.key as 'landlord' | 'tenant' | 'broker')}
+                      onClick={() => setSelectedDemoRole(roleOption.key)}
+                      onKeyDown={(event) => handleRoleCardKeyDown(event, roleOption.key)}
                       aria-pressed={isSelected}
-                      className={`cursor-pointer flex flex-col items-center justify-between rounded-3xl border p-6 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] ${roleOption.color} ${isSelected ? 'border-current bg-opacity-30 shadow-lg shadow-current/15' : 'border-[#D5C3B6]/20'}`}
-                    >
-                      <div className="flex flex-col items-center gap-3 w-full">
-                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-current">
-                          <Icon className="h-6 w-6" />
-                        </span>
-                        <span className="text-base font-semibold text-[#FAF6F2]">{roleOption.label}</span>
-                      </div>
-                      <p className="mt-4 text-sm text-[#D5C3B6]">
-                        {roleOption.key === 'landlord'
-                          ? 'Panel de gestión de propiedades'
-                          : roleOption.key === 'tenant'
-                            ? 'Administra tu pago y contrato'
-                            : 'Gestiona propiedades de tus clientes'}
-                      </p>
-                      {isSelected && (
-                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#FAF6F2]">
-                          <Check className="h-4 w-4" />
-                          Seleccionado
-                        </div>
+                      className={cn(
+                        "relative cursor-pointer rounded-xl border-2 bg-[#1C1917]/40 p-4 text-left transition-all duration-300 outline-none min-h-[120px] flex flex-col justify-between",
+                        roleOption.ring,
+                        isSelected ? cn(roleOption.accent, "shadow-md") : "border-[#D5C3B6]/15 hover:border-[#D5C3B6]/25"
                       )}
+                    >
+                      {isSelected ? (
+                        <span className="absolute top-2.5 right-2.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#FAF6F2]/10 text-[#FAF6F2]">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      ) : null}
+                      <div className="flex items-start gap-2.5 pr-6">
+                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[#D5C3B6]">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <span className="block text-sm font-semibold text-[#FAF6F2]">{roleOption.label}</span>
+                          <p className="mt-1 text-xs leading-snug text-[#9C8578]">{roleOption.short}</p>
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={handleDemoLogin}
                   disabled={isLoading}
-                  className="w-full rounded-xl bg-[#5E8B8C] px-4 py-3 text-sm font-semibold text-[#FAF6F2] shadow-lg shadow-[#5E8B8C]/20 transition-colors duration-300 hover:bg-[#5E8B8C]/90 disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#5E8B8C] px-4 py-2.5 text-sm font-semibold text-[#FAF6F2] shadow-lg shadow-[#5E8B8C]/20 transition-colors duration-300 hover:bg-[#5E8B8C]/90 disabled:opacity-50"
                 >
+                  <Sparkles className="h-4 w-4 shrink-0" />
                   {isLoading ? 'Cargando demo...' : `Iniciar demo ${selectedDemoRole === 'landlord' ? 'arrendador' : selectedDemoRole === 'tenant' ? 'arrendatario' : 'corredor'}`}
                 </button>
-                <div className="flex items-center justify-center text-xs text-[#9C8578] px-4">
+                <div className="flex items-center justify-center text-[11px] text-[#9C8578] px-2 text-center sm:text-left">
                   Usa el selector de arriba para ver un demo rápido de cada rol.
                 </div>
               </div>
 
-              <div className="relative mb-6">
+              <div className="relative mb-5">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-[#D5C3B6]/10" />
                 </div>
@@ -321,7 +350,7 @@ export default function LoginClient() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50 focus:border-[#5E8B8C] h-12"
+                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50 focus:border-[#5E8B8C] h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -334,7 +363,7 @@ export default function LoginClient() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
-                      className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50 focus:border-[#5E8B8C] h-12 pr-10"
+                      className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50 focus:border-[#5E8B8C] h-11 pr-10"
                     />
                     <button
                       type="button"
@@ -347,10 +376,10 @@ export default function LoginClient() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] h-12 text-base shadow-lg shadow-[#75524C]/20 transition-all duration-300"
+                  className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] h-11 text-base shadow-lg shadow-[#75524C]/20 transition-all duration-300"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Ingresando..." : "Iniciar Sesión"}
+                  {isLoading ? "Ingresando..." : "Entrar"}
                 </Button>
               </form>
 
@@ -370,9 +399,9 @@ export default function LoginClient() {
                 </div>
               ) : null}
 
-              <div className="mt-6 text-center text-sm">
-                <span className="text-[#9C8578]">¿No tienes cuenta? </span>
-                <Link href="/registro" className="text-[#5E8B8C] hover:text-[#5E8B8C]/80 font-medium transition-colors">
+              <div className="mt-6 border-t border-[#D5C3B6]/10 pt-6 text-center text-sm">
+                <span className="text-[#D5C3B6]">¿No tienes cuenta? </span>
+                <Link href="/registro" className="font-medium text-[#5E8B8C] hover:text-[#FAF6F2] transition-colors">
                   Regístrate
                 </Link>
               </div>

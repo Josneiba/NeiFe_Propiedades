@@ -5,6 +5,7 @@ import { useState, type KeyboardEvent, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield, Mail, Loader2 } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield, Mail, Loader2, FileText, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
@@ -29,6 +30,9 @@ import {
 } from "@/lib/identity-documents"
 
 type Role = "landlord" | "tenant" | "broker"
+
+const inputClass =
+  "bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50 focus:border-[#5E8B8C] h-11"
 
 export default function RegistroClient() {
   const router = useRouter()
@@ -240,61 +244,91 @@ export default function RegistroClient() {
     }
   }
 
+  const roleCards = [
+    {
+      key: "landlord" as const,
+      title: "Arrendador",
+      description: "Gestiona propiedades",
+      icon: Building2,
+      selectedColor: "border-[#75524C]",
+      defaultColor: "border-[#D5C3B6]/15",
+    },
+    {
+      key: "tenant" as const,
+      title: "Arrendatario",
+      description: "Administra tus pagos y contratos",
+      icon: Home,
+      selectedColor: "border-[#5E8B8C]",
+      defaultColor: "border-[#D5C3B6]/15",
+    },
+    {
+      key: "broker" as const,
+      title: "Corredor",
+      description: "Administro propiedades de mis clientes",
+      icon: Briefcase,
+      selectedColor: "border-[#B8965A]",
+      defaultColor: "border-[#D5C3B6]/15",
+    },
+  ]
+
+  const submitDisabled = !selectedRole || !allPrivacyAccepted || isLoading || !documentValid
+
   return (
     <div className="min-h-screen bg-[#1C1917] flex">
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2D3C3C] to-[#1C1917]">
-          <div
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-            }}
-          />
-        </div>
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
-          <h2 className="text-4xl font-serif font-semibold text-[#FAF6F2] mb-4">
-            Únete a NeiFe
-          </h2>
-          <p className="text-[#9C8578] text-lg max-w-md mb-8">
-            Digitaliza la gestión de tus arriendos con la plataforma más completa de Chile
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2D3C3C] to-[#1C1917]" />
+        <svg
+          className="absolute inset-0 h-full w-full text-[#D5C3B6]/[0.06]"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden
+        >
+          <defs>
+            <pattern id="registro-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#registro-grid)" />
+        </svg>
+        <div className="relative z-10 flex flex-col justify-between p-12 text-left w-full max-w-lg mx-auto">
+          <div>
+            <p className="text-4xl md:text-5xl font-serif font-semibold text-[#FAF6F2] tracking-tight">
+              NeiFe<span className="text-[#B8965A]">.</span>
+            </p>
+            <ul className="mt-10 space-y-5">
+              {[
+                { icon: Shield, text: "Registro seguro y trazable para cada parte del arriendo." },
+                { icon: FileText, text: "Contratos y documentos en línea desde el primer día." },
+                { icon: CreditCard, text: "Pagos y recordatorios sin perder el hilo contable." },
+                { icon: Building2, text: "Un solo lugar para propietarios, inquilinos y corredores." },
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-[#D5C3B6] text-sm leading-relaxed">
+                  <item.icon className="h-4 w-4 text-[#B8965A] shrink-0 mt-0.5" strokeWidth={2} />
+                  <span>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-sm italic text-[#9C8578] border-t border-[#D5C3B6]/10 pt-8">
+            3 minutos para digitalizar tus arriendos.
           </p>
-          <div className="space-y-4 text-left max-w-sm">
-            {[
-              "Contratos digitales con firma electrónica",
-              "Pagos y servicios en un solo lugar",
-              "Cumplimiento con Ley 18.101 y 21.461",
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center">
-                  <Check className="h-3 w-3 text-[#5E8B8C]" />
-                </div>
-                <span className="text-[#D5C3B6] text-sm">{item}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-12 flex items-center gap-6">
-            <div className="h-px w-16 bg-[#B8965A]/40" />
-            <Shield className="h-4 w-4 text-[#B8965A]" />
-            <div className="h-px w-16 bg-[#B8965A]/40" />
-          </div>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-3xl py-8">
+      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center p-5 sm:p-8 lg:p-12 py-8 lg:py-12 overflow-y-auto">
+        <div className="w-full max-w-3xl py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-8 transition-colors duration-300"
+            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-5 transition-colors duration-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al inicio
           </Link>
 
-          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-            <CardHeader className="text-center pb-2">
-              <div className="flex items-center justify-center gap-2 mb-4 lg:hidden">
-                <div className="w-12 h-12 rounded-lg bg-[#75524C] flex items-center justify-center shadow-lg">
-                  <span className="text-lg font-semibold text-[#D5C3B6]">Ne</span>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 shadow-2xl shadow-black/20">
+            <CardHeader className="text-center pb-2 pt-6 px-6">
+              <div className="flex items-center justify-center gap-2 mb-3 lg:hidden">
+                <div className="rounded-lg bg-[#75524C]/90 px-3 py-2 shadow-md">
+                  <span className="text-lg font-serif font-semibold text-[#FAF6F2]">NeiFe<span className="text-[#B8965A]">.</span></span>
                 </div>
               </div>
               <CardTitle className="text-2xl font-serif text-[#FAF6F2]">Crear cuenta</CardTitle>
@@ -302,9 +336,9 @@ export default function RegistroClient() {
                 Selecciona tu rol y completa tus datos
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-6 pb-6">
               {showVerify ? (
-                <div className="space-y-6 text-center">
+                <div className="border border-[#5E8B8C]/20 rounded-2xl p-8 space-y-6 text-center">
                   <div className="w-16 h-16 bg-[#5E8B8C]/15 rounded-full flex items-center justify-center mx-auto">
                     <Mail className="h-8 w-8 text-[#5E8B8C]" />
                   </div>
@@ -321,14 +355,17 @@ export default function RegistroClient() {
                     value={verifyCode}
                     onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="000000"
-                    className="text-center text-2xl font-mono tracking-widest h-14 bg-background border-input text-foreground"
+                    className={cn(
+                      "text-center text-2xl font-mono tracking-widest h-14",
+                      inputClass
+                    )}
                     maxLength={6}
                   />
                   {verifyError && <p className="text-xs text-[#C27F79]">{verifyError}</p>}
                   <Button
                     onClick={handleVerify}
                     disabled={verifyCode.length !== 6 || verifyLoading}
-                    className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] h-12"
+                    className="w-full bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] h-11"
                   >
                     {verifyLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Verificar cuenta
@@ -336,286 +373,270 @@ export default function RegistroClient() {
                 </div>
               ) : (
                 <>
-              <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-3">
-                {[
-                  {
-                    key: "landlord",
-                    title: "Arrendador",
-                    description: "Gestiona propiedades",
-                    icon: Building2,
-                    selectedColor: "border-[#75524C] bg-[#75524C]/20",
-                    defaultColor: "border-[#D5C3B6]/10 bg-[#1C1917]/50",
-                  },
-                  {
-                    key: "tenant",
-                    title: "Arrendatario",
-                    description: "Administra tus pagos y contratos",
-                    icon: Home,
-                    selectedColor: "border-[#5E8B8C] bg-[#5E8B8C]/20",
-                    defaultColor: "border-[#D5C3B6]/10 bg-[#1C1917]/50",
-                  },
-                  {
-                    key: "broker",
-                    title: "Corredor",
-                    description: "Administro propiedades de mis clientes",
-                    icon: Briefcase,
-                    selectedColor: "border-[#B8965A] bg-[#B8965A]/20",
-                    defaultColor: "border-[#D5C3B6]/10 bg-[#1C1917]/50",
-                  },
-                ].map((option) => {
-                  const Icon = option.icon
-                  const isSelected = selectedRole === option.key
+                  <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-3">
+                    {roleCards.map((option) => {
+                      const Icon = option.icon
+                      const isSelected = selectedRole === option.key
 
-                  return (
-                    <div
-                      key={option.key}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedRole(option.key as Role)}
-                      onKeyDown={(event) => handleRoleCardKeyDown(event, option.key as Role)}
-                      aria-pressed={isSelected}
-                      className={cn(
-                        "cursor-pointer flex flex-col items-center justify-between min-h-[180px] rounded-3xl border-2 p-6 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] shadow-sm",
-                        isSelected
-                          ? `${option.selectedColor} shadow-[#D5C3B6]/10`
-                          : `${option.defaultColor} hover:border-current`
-                      )}
-                    >
-                      <div className="flex flex-col items-center gap-4">
+                      return (
                         <div
+                          key={option.key}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedRole(option.key)}
+                          onKeyDown={(event) => handleRoleCardKeyDown(event, option.key)}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "inline-flex h-12 w-12 items-center justify-center rounded-2xl",
-                            isSelected ? "bg-current text-[#1C1917]" : "bg-white/10 text-current"
+                            "relative cursor-pointer flex flex-col justify-between min-h-[120px] rounded-xl border-2 p-4 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#D5C3B6] bg-[#1C1917]/40",
+                            isSelected
+                              ? cn(option.selectedColor, "bg-opacity-30 shadow-md")
+                              : cn(option.defaultColor, "hover:border-[#D5C3B6]/25")
                           )}
                         >
-                          <Icon className="h-6 w-6" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-[#FAF6F2]">{option.title}</h3>
-                        <p className="text-sm leading-6 text-[#D5C3B6]">{option.description}</p>
-                      </div>
-                      {isSelected && (
-                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#FAF6F2]">
-                          <Check className="h-4 w-4" />
-                          Seleccionado
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              <form className="space-y-4" onSubmit={handleSubmit}>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre completo</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                      className="bg-background border-input text-foreground"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Correo</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                      className="bg-background border-input text-foreground"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="documentCountry">Pais</Label>
-                    <Select
-                      value={documentCountry}
-                      onValueChange={(value) => setDocumentCountry(value as DocumentCountryCode)}
-                    >
-                      <SelectTrigger className="w-full bg-background border-input text-foreground">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        {DOCUMENT_COUNTRIES.map((country) => (
-                          <SelectItem key={country.value} value={country.value}>
-                            {country.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="documentType">Tipo</Label>
-                    <Select
-                      value={documentType}
-                      onValueChange={(value) => {
-                        setDocumentType(value as DocumentTypeCode)
-                        setDocumentValid(false)
-                        setDocumentError(null)
-                        setFormData((prev) => ({ ...prev, documentNumber: "" }))
-                      }}
-                    >
-                      <SelectTrigger className="w-full bg-background border-input text-foreground">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        {documentTypeOptions.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="documentNumber">{documentLabel}</Label>
-                    <div className="relative">
-                      <Input
-                        id="documentNumber"
-                        value={formData.documentNumber}
-                        onChange={(e) => {
-                          const value = e.target.value.toUpperCase()
-                          setFormData((prev) => ({ ...prev, documentNumber: value }))
-                          validateCurrentDocument(value)
-                        }}
-                        onBlur={() => {
-                          const result = validateCurrentDocument(formData.documentNumber)
-                          if (result.isValid && result.formatted) {
-                            setFormData((prev) => ({ ...prev, documentNumber: result.formatted }))
-                          }
-                        }}
-                        placeholder={getDocumentPlaceholder(documentCountry, documentType)}
-                        maxLength={20}
-                        className={cn(
-                          "bg-background border-input text-foreground pr-10",
-                          documentError && "border-[#C27F79] focus-visible:ring-[#C27F79]",
-                          documentValid && !documentError && "border-[#5E8B8C] focus-visible:ring-[#5E8B8C]"
-                        )}
-                        required
-                      />
-
-                      {formData.documentNumber.length > 0 && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {documentValid ? (
-                            <Check className="h-4 w-4 text-[#5E8B8C]" />
-                          ) : documentError ? (
-                            <span className="text-[#C27F79] text-sm font-semibold">X</span>
+                          {isSelected ? (
+                            <span className="absolute top-2.5 right-2.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#FAF6F2]/10 text-[#FAF6F2]">
+                              <Check className="h-3 w-3" />
+                            </span>
                           ) : null}
+                          <div className="flex flex-col items-center gap-2 w-full pt-1">
+                            <div
+                              className={cn(
+                                "inline-flex h-9 w-9 items-center justify-center rounded-lg",
+                                isSelected ? "bg-white/15 text-[#FAF6F2]" : "bg-white/10 text-[#D5C3B6]"
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-[#FAF6F2]">{option.title}</h3>
+                            <p className="text-xs leading-snug text-[#9C8578]">{option.description}</p>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    {documentError && <p className="text-xs text-[#C27F79]">{documentError}</p>}
-                    {documentValid && (
-                      <p className="text-xs text-[#5E8B8C]">{documentLabel} valido</p>
-                    )}
-                    <p className="text-xs text-[#9C8578]">
-                      Se valida localmente y no se puede repetir en otra cuenta.
-                    </p>
+                      )
+                    })}
                   </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                      className="bg-background border-input text-foreground"
-                    />
+                  <div className="relative mb-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#D5C3B6]/15" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#9C8578] whitespace-nowrap">
+                      Completa tus datos
+                    </span>
+                    <div className="h-px flex-1 bg-[#D5C3B6]/15" />
                   </div>
-                </div>
 
-                {selectedRole === "broker" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Empresa corredora (opcional)</Label>
-                    <Input
-                      id="company"
-                      value={formData.company}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
-                      className="bg-background border-input text-foreground"
-                    />
-                  </div>
-                )}
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Contraseña</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                        className="bg-background border-input text-foreground pr-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute inset-y-0 right-3 flex items-center text-muted-foreground"
-                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-                    <Input
-                      id="confirmPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))
-                      }
-                      className="bg-background border-input text-foreground"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm text-[#9C8578]">Privacidad y consentimientos</Label>
-                  <div className="space-y-2 text-sm text-[#D5C3B6]">
-                    {[
-                      { key: "terms", label: "Acepto los Términos y Condiciones" },
-                      { key: "privacyPolicy", label: "Acepto la Política de Privacidad" },
-                      {
-                        key: "dataConsent",
-                        label: "Autorizo el uso de mis datos para la prestación del servicio",
-                      },
-                    ].map((item) => (
-                      <label key={item.key} className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={(privacy as Record<string, boolean>)[item.key]}
-                          onChange={(e) =>
-                            setPrivacy((prev) => ({ ...prev, [item.key]: e.target.checked }))
-                          }
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-[#D5C3B6] text-sm">Nombre completo</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                          className={inputClass}
                           required
                         />
-                        <span>{item.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-[#D5C3B6] text-sm">Correo</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                          className={inputClass}
+                          required
+                        />
+                      </div>
+                    </div>
 
-                <Button
-                  type="submit"
-                  disabled={!selectedRole || !allPrivacyAccepted || isLoading || !documentValid}
-                  className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
-                >
-                  {isLoading ? "Creando cuenta..." : "Crear cuenta"}
-                </Button>
-              </form>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[#B8965A] mb-3">Identificación</p>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="documentCountry" className="text-[#D5C3B6] text-sm">Pais</Label>
+                          <Select
+                            value={documentCountry}
+                            onValueChange={(value) => setDocumentCountry(value as DocumentCountryCode)}
+                          >
+                            <SelectTrigger id="documentCountry" className={cn(inputClass, "w-full")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+                              {DOCUMENT_COUNTRIES.map((country) => (
+                                <SelectItem key={country.value} value={country.value}>
+                                  {country.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="documentType" className="text-[#D5C3B6] text-sm">Tipo</Label>
+                          <Select
+                            value={documentType}
+                            onValueChange={(value) => {
+                              setDocumentType(value as DocumentTypeCode)
+                              setDocumentValid(false)
+                              setDocumentError(null)
+                              setFormData((prev) => ({ ...prev, documentNumber: "" }))
+                            }}
+                          >
+                            <SelectTrigger id="documentType" className={cn(inputClass, "w-full")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+                              {documentTypeOptions.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-1">
+                          <Label htmlFor="documentNumber" className="text-[#D5C3B6] text-sm">{documentLabel}</Label>
+                          <div className="relative">
+                            <Input
+                              id="documentNumber"
+                              value={formData.documentNumber}
+                              onChange={(e) => {
+                                const value = e.target.value.toUpperCase()
+                                setFormData((prev) => ({ ...prev, documentNumber: value }))
+                                validateCurrentDocument(value)
+                              }}
+                              onBlur={() => {
+                                const result = validateCurrentDocument(formData.documentNumber)
+                                if (result.isValid && result.formatted) {
+                                  setFormData((prev) => ({ ...prev, documentNumber: result.formatted }))
+                                }
+                              }}
+                              placeholder={getDocumentPlaceholder(documentCountry, documentType)}
+                              maxLength={20}
+                              className={cn(
+                                inputClass,
+                                "pr-10",
+                                documentError && "border-[#C27F79] focus-visible:ring-[#C27F79]",
+                                documentValid && !documentError && "border-[#5E8B8C] focus-visible:ring-[#5E8B8C]"
+                              )}
+                              required
+                            />
+
+                            {formData.documentNumber.length > 0 && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {documentValid ? (
+                                  <Check className="h-4 w-4 text-[#5E8B8C]" />
+                                ) : documentError ? (
+                                  <span className="text-[#C27F79] text-sm font-semibold">X</span>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                          {documentError && <p className="text-xs text-[#C27F79]">{documentError}</p>}
+                          {documentValid && (
+                            <p className="text-xs text-[#5E8B8C]">{documentLabel} valido</p>
+                          )}
+                          <p className="text-xs text-[#9C8578]">
+                            Se valida localmente y no se puede repetir en otra cuenta.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-[#D5C3B6] text-sm">Teléfono</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    {selectedRole === "broker" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="company" className="text-[#D5C3B6] text-sm">Empresa corredora (opcional)</Label>
+                        <Input
+                          id="company"
+                          value={formData.company}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
+                          className={inputClass}
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-[#D5C3B6] text-sm">Contraseña</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.password}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                            className={cn(inputClass, "pr-10")}
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute inset-y-0 right-3 flex items-center text-[#9C8578] hover:text-[#D5C3B6]"
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword" className="text-[#D5C3B6] text-sm">Confirmar contraseña</Label>
+                        <Input
+                          id="confirmPassword"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                          }
+                          className={inputClass}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      <Label className="text-sm text-[#D5C3B6]">Privacidad y consentimientos</Label>
+                      <div className="space-y-3 text-sm text-[#D5C3B6]">
+                        {[
+                          { key: "terms" as const, label: "Acepto los Términos y Condiciones" },
+                          { key: "privacyPolicy" as const, label: "Acepto la Política de Privacidad" },
+                          {
+                            key: "dataConsent" as const,
+                            label: "Autorizo el uso de mis datos para la prestación del servicio",
+                          },
+                        ].map((item) => (
+                          <label key={item.key} className="flex items-start gap-3 cursor-pointer">
+                            <Checkbox
+                              checked={privacy[item.key]}
+                              onCheckedChange={(checked) =>
+                                setPrivacy((prev) => ({ ...prev, [item.key]: checked === true }))
+                              }
+                              className="mt-0.5 border-[#D5C3B6]/40 data-[state=checked]:bg-[#5E8B8C] data-[state=checked]:border-[#5E8B8C] data-[state=checked]:text-[#FAF6F2]"
+                            />
+                            <span className="leading-snug">{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={submitDisabled}
+                      className="w-full h-11 bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? "Creando cuenta..." : "Crear cuenta"}
+                    </Button>
+                  </form>
                 </>
               )}
             </CardContent>
