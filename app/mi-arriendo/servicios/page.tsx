@@ -43,11 +43,11 @@ export default async function ServiciosPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Servicios Básicos</h1>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Servicios Básicos</h1>
         </div>
-        <Card className="bg-card border-border">
-          <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">No tienes una propiedad asignada</p>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-10 text-center">
+            <p className="text-[#9C8578]">No tienes una propiedad asignada</p>
           </CardContent>
         </Card>
       </div>
@@ -126,22 +126,22 @@ export default async function ServiciosPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Servicios Básicos</h1>
-        <p className="text-muted-foreground">Consumo y boletas de agua, luz, gas y otros cargos del arriendo</p>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Servicios Básicos</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Consumo y boletas de agua, luz, gas y otros cargos del arriendo</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-6">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Droplets className="h-6 w-6 text-blue-600" />
+                <div className="w-9 h-9 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
+                  <Droplets className="h-4 w-4 text-[#5E8B8C]" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Agua - Este mes</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs text-[#9C8578]">Agua - Este mes</p>
+                  <p className="text-xl font-semibold text-[#FAF6F2]">
                     ${(lastService?.water || 0).toLocaleString("es-CL")}
                   </p>
                 </div>
@@ -159,22 +159,22 @@ export default async function ServiciosPage() {
                 </div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Promedio ultimos {services.length} meses: ${avgWater.toLocaleString("es-CL")}
+            <p className="text-xs text-[#9C8578]">
+              Promedio últimos {services.length} meses: ${avgWater.toLocaleString("es-CL")}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
-          <CardContent className="p-6">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-yellow-600" />
+                <div className="w-9 h-9 rounded-lg bg-[#F2C94C]/20 flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-[#F2C94C]" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Luz - Este mes</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs text-[#9C8578]">Luz - Este mes</p>
+                  <p className="text-xl font-semibold text-[#FAF6F2]">
                     ${(lastService?.electricity || 0).toLocaleString("es-CL")}
                   </p>
                 </div>
@@ -192,8 +192,8 @@ export default async function ServiciosPage() {
                 </div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Promedio ultimos {services.length} meses: ${avgElectricity.toLocaleString("es-CL")}
+            <p className="text-xs text-[#9C8578]">
+              Promedio últimos {services.length} meses: ${avgElectricity.toLocaleString("es-CL")}
             </p>
           </CardContent>
         </Card>
@@ -201,70 +201,66 @@ export default async function ServiciosPage() {
 
       {/* Chart */}
       {chartData.length > 0 && (
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Consumo Mensual</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Consumo mensual</p>
             <ConsumoServiciosChart data={chartData} />
           </CardContent>
         </Card>
       )}
 
       {/* History Table */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Historial de Servicios</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Historial de servicios</p>
           {services.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay historial de servicios registrado</p>
+              <p className="text-[#9C8578]">No hay historial de servicios registrado</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Mes</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Agua</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Luz</th>
+                  <tr className="border-b border-[#D5C3B6]/10">
+                    <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Mes</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Agua</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Luz</th>
                     {services.some(s => s.gas && s.gas > 0) && (
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gas</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gas</th>
                     )}
                     {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gasto común</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gasto común</th>
                     )}
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total servicios</th>
-                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Boletas</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Total servicios</th>
+                    <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Boletas</th>
                   </tr>
                 </thead>
                 <tbody>
                   {services.map((service, index) => (
                     <tr 
                       key={index} 
-                      className="border-b border-border/50 hover:bg-muted/20"
+                      className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5"
                     >
-                      <td className="py-4 px-4 font-medium text-foreground">
+                      <td className="py-4 px-4 font-medium text-[#FAF6F2]">
                         {getMonthName(service.month)} {service.year}
                       </td>
-                      <td className="py-4 px-4 text-right text-foreground">
+                      <td className="py-4 px-4 text-right text-[#FAF6F2]">
                         ${service.water.toLocaleString("es-CL")}
                       </td>
-                      <td className="py-4 px-4 text-right text-foreground">
+                      <td className="py-4 px-4 text-right text-[#FAF6F2]">
                         ${service.electricity.toLocaleString("es-CL")}
                       </td>
                       {services.some(s => s.gas && s.gas > 0) && (
-                        <td className="py-4 px-4 text-right text-foreground">
+                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
                           ${(service.gas || 0).toLocaleString("es-CL")}
                         </td>
                       )}
                       {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
-                        <td className="py-4 px-4 text-right text-foreground">
+                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
                           ${(service.commonExpenses || 0).toLocaleString("es-CL")}
                         </td>
                       )}
-                      <td className="py-4 px-4 text-right font-semibold text-foreground">
+                      <td className="py-4 px-4 text-right font-semibold text-[#FAF6F2]">
                         ${(
                           service.water +
                           service.electricity +
@@ -277,28 +273,28 @@ export default async function ServiciosPage() {
                       <td className="py-4 px-4 text-center">
                         <div className="flex flex-wrap justify-center gap-2">
                           {service.waterBillUrl ? (
-                            <Button variant="outline" size="sm" asChild>
+                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
                               <a href={service.waterBillUrl} target="_blank" rel="noopener noreferrer">
                                 Agua
                               </a>
                             </Button>
                           ) : null}
                           {service.lightBillUrl ? (
-                            <Button variant="outline" size="sm" asChild>
+                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
                               <a href={service.lightBillUrl} target="_blank" rel="noopener noreferrer">
                                 Luz
                               </a>
                             </Button>
                           ) : null}
                           {service.gasBillUrl ? (
-                            <Button variant="outline" size="sm" asChild>
+                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
                               <a href={service.gasBillUrl} target="_blank" rel="noopener noreferrer">
                                 Gas
                               </a>
                             </Button>
                           ) : null}
                           {service.commonBillUrl ? (
-                            <Button variant="outline" size="sm" asChild>
+                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
                               <a href={service.commonBillUrl} target="_blank" rel="noopener noreferrer">
                                 GC
                               </a>

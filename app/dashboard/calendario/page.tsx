@@ -359,7 +359,7 @@ export default function CalendarioPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-[#5E8B8C]" />
       </div>
     )
@@ -370,12 +370,12 @@ export default function CalendarioPage() {
       {/* Header with Create Event Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Calendario</h1>
-          <p className="text-muted-foreground">Vista consolidada de eventos próximos</p>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Calendario</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">Vista consolidada de eventos próximos</p>
         </div>
         <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+            <Button className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]">
               <Plus className="h-4 w-4 mr-2" />
               Nuevo evento
             </Button>
@@ -613,8 +613,8 @@ export default function CalendarioPage() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg transition font-medium text-sm ${
               filter === f
-                ? "bg-[#5E8B8C] text-white shadow-md"
-                : "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
+                ? "bg-[#5E8B8C] text-[#FAF6F2] shadow-sm"
+                : "bg-[#2D3C3C] text-[#9C8578] hover:text-[#D5C3B6] border border-[#D5C3B6]/10 hover:border-[#D5C3B6]/20"
             }`}
           >
             {f === "ALL" && "Todos"}
@@ -627,20 +627,13 @@ export default function CalendarioPage() {
       </div>
 
       {/* Events list */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">
-            Próximos {filteredEvents.length} evento(s)
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {filteredEvents.length === 0 && "No hay eventos próximos"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Próximos {filteredEvents.length} evento(s)</p>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No hay eventos para este filtro</p>
+              <AlertCircle className="h-12 w-12 text-[#9C8578]/50 mx-auto mb-3" />
+              <p className="text-[#9C8578]">No hay eventos para este filtro</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -675,13 +668,13 @@ export default function CalendarioPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-foreground">{event.title}</h3>
+                            <h3 className="font-semibold text-[#FAF6F2]">{event.title}</h3>
                             <Badge className={`${style.badge} uppercase tracking-wide text-[10px] font-semibold`}>
                               {badgeText}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <p className="text-xs text-[#9C8578] mb-2">{event.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-[#9C8578]">
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
                               <span>
@@ -694,7 +687,7 @@ export default function CalendarioPage() {
                               </span>
                             </div>
                             <span>•</span>
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-[#D5C3B6]">
                               {daysFromNow < 0 
                                 ? `Hace ${Math.abs(daysFromNow)} días`
                                 : daysFromNow === 0 
@@ -743,58 +736,58 @@ export default function CalendarioPage() {
 
       {/* Summary cards */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground text-lg">Resumen de próximos 30 días</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Inspecciones:</span>
-              <span className="font-semibold text-foreground">
-                {next30Counts.inspections}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Reajustes IPC:</span>
-              <span className="font-semibold text-foreground">
-                {next30Counts.ipc}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Contratos por vencer:</span>
-              <span className="font-semibold text-foreground">
-                {next30Counts.contracts}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pagos:</span>
-              <span className="font-semibold text-foreground">
-                {next30Counts.payments}
-              </span>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Resumen de próximos 30 días</p>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[#9C8578]">Inspecciones:</span>
+                <span className="font-semibold text-[#FAF6F2]">
+                  {next30Counts.inspections}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#9C8578]">Reajustes IPC:</span>
+                <span className="font-semibold text-[#FAF6F2]">
+                  {next30Counts.ipc}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#9C8578]">Contratos por vencer:</span>
+                <span className="font-semibold text-[#FAF6F2]">
+                  {next30Counts.contracts}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#9C8578]">Pagos:</span>
+                <span className="font-semibold text-[#FAF6F2]">
+                  {next30Counts.payments}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground text-lg">Eventos urgentes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {urgentEvents
-              .slice(0, 5)
-              .map(event => {
-                const daysFromNow = Math.floor((new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                return (
-                  <div key={event.id} className="flex items-center gap-2 text-sm">
-                    <div className={`w-2 h-2 rounded-full ${daysFromNow < 0 ? "bg-red-500" : "bg-yellow-500"}`}></div>
-                    <span className="text-muted-foreground">{event.title}</span>
-                  </div>
-                )
-              })
-            }
-            {urgentEvents.length === 0 && (
-              <p className="text-sm text-muted-foreground">No hay eventos urgentes</p>
-            )}
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Eventos urgentes</p>
+            <div className="space-y-2">
+              {urgentEvents
+                .slice(0, 5)
+                .map(event => {
+                  const daysFromNow = Math.floor((new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                  return (
+                    <div key={event.id} className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${daysFromNow < 0 ? "bg-[#C27F79]" : "bg-[#F2C94C]"}`}></div>
+                      <span className="text-[#D5C3B6]">{event.title}</span>
+                    </div>
+                  )
+                })
+              }
+              {urgentEvents.length === 0 && (
+                <p className="text-sm text-[#9C8578]">No hay eventos urgentes</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

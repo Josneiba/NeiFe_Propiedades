@@ -164,9 +164,9 @@ export default function TenantPagosPage() {
     return (
       <div className="space-y-6">
         <PageHeader title="Mis Pagos" description="Historial de pagos y pagos pendientes" />
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">Cargando información de pagos...</p>
+            <p className="text-[#9C8578]">Cargando información de pagos...</p>
           </CardContent>
         </Card>
       </div>
@@ -180,36 +180,34 @@ export default function TenantPagosPage() {
 
       {/* Current Payment */}
       {pendingPayment && (
-        <Card className="bg-[#2A2520] border-border border-l-4 border-l-[#C27F79]">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-foreground">
+        <Card className="bg-[#2A2520] border border-[#C27F79]/30 border-l-4 border-l-[#C27F79]">
+          <CardContent>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[#FAF6F2]">
                 Pago Pendiente - {getMonthName(pendingPayment.month)} {pendingPayment.year}
-              </CardTitle>
+              </h3>
               <Badge className={pendingPayment.status === 'OVERDUE' ? 'bg-[#C27F79]/20 text-[#C27F79]' : 'bg-[#F2C94C]/20 text-[#F2C94C]'}>
                 <Clock className="h-3 w-3 mr-1" />
                 {pendingPayment.status === 'OVERDUE' ? 'Atrasado' : 'Pendiente'}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div>
-                <p className="text-sm text-muted-foreground">Arriendo</p>
-                <p className="font-semibold text-foreground font-mono">
+                <p className="text-xs text-[#9C8578]">Arriendo</p>
+                <p className="font-semibold text-[#FAF6F2] font-mono">
                   {formatCLP(property?.monthlyRent || 0)}
                 </p>
               </div>
               {(pendingPayment.serviceItems || []).slice(0, 3).map((item) => (
                 <div key={item.label}>
-                  <p className="text-sm text-muted-foreground">{item.label}</p>
-                  <p className="font-semibold text-foreground font-mono">
+                  <p className="text-xs text-[#9C8578]">{item.label}</p>
+                  <p className="font-semibold text-[#FAF6F2] font-mono">
                     {formatCLP(item.amount)}
                   </p>
                 </div>
               ))}
               <div>
-                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-xs text-[#9C8578]">Total</p>
                 <p className="text-xl font-bold text-[#5E8B8C]">
                   {formatCLP(getTotal(pendingPayment))}
                 </p>
@@ -218,9 +216,9 @@ export default function TenantPagosPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 {paymentSummary?.totalOutstandingCLP ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#9C8578]">
                     Total pendiente acumulado:{" "}
-                    <span className="font-semibold text-foreground">
+                    <span className="font-semibold text-[#FAF6F2]">
                       {formatCLP(paymentSummary.totalOutstandingCLP)}
                     </span>
                   </p>
@@ -232,7 +230,7 @@ export default function TenantPagosPage() {
                 ) : null}
               </div>
               <Button
-                className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#D5C3B6]"
+                className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
                 onClick={() => {
                   setSelectedPayment(pendingPayment)
                   setIsPaymentOpen(true)
@@ -247,13 +245,13 @@ export default function TenantPagosPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Pagar este mes</p>
-            <p className="mt-2 text-2xl font-bold text-foreground">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Pagar este mes</p>
+            <p className="mt-2 text-xl font-semibold text-[#FAF6F2]">
               {formatCLP(paymentSummary?.currentMonthDueCLP ?? 0)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-[#9C8578]">
               {paymentSummary?.currentMonthLabel
                 ? `Corresponde a ${paymentSummary.currentMonthLabel}`
                 : 'Sin cargo pendiente actual'}
@@ -261,13 +259,13 @@ export default function TenantPagosPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Total pendiente</p>
-            <p className="mt-2 text-2xl font-bold text-foreground">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Total pendiente</p>
+            <p className="mt-2 text-xl font-semibold text-[#FAF6F2]">
               {formatCLP(paymentSummary?.totalOutstandingCLP ?? 0)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-[#9C8578]">
               {paymentSummary?.paymentsPendingCount
                 ? `${paymentSummary.paymentsPendingCount} mes(es) por regularizar`
                 : 'Sin deuda acumulada'}
@@ -275,25 +273,25 @@ export default function TenantPagosPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Pagos en revisión</p>
-            <p className="mt-2 text-2xl font-bold text-foreground">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Pagos en revisión</p>
+            <p className="mt-2 text-xl font-semibold text-[#FAF6F2]">
               {paymentSummary?.paymentsProcessingCount ?? 0}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-[#9C8578]">
               Comprobantes enviados pendientes de confirmación
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Saldo de garantía</p>
-            <p className="mt-2 text-2xl font-bold text-foreground">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Saldo de garantía</p>
+            <p className="mt-2 text-xl font-semibold text-[#FAF6F2]">
               {formatCLP(securityDepositBalance)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-[#9C8578]">
               {securityDeposit
                 ? securityDeposit.status === 'HELD'
                   ? 'Garantía retenida vigente'
@@ -305,27 +303,25 @@ export default function TenantPagosPage() {
       </div>
 
       {/* Payment History */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Historial de Pagos</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Historial de pagos</p>
           {payments.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay pagos registrados</p>
+              <p className="text-[#9C8578]">No hay pagos registrados</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Mes</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Arriendo</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Servicios</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total</th>
-                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Estado</th>
-                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Comprobante</th>
-                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Acción</th>
+                  <tr className="border-b border-[#D5C3B6]/10">
+                    <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Mes</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Arriendo</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Servicios</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Total</th>
+                    <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Estado</th>
+                    <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Comprobante</th>
+                    <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -335,27 +331,27 @@ export default function TenantPagosPage() {
                     return (
                       <tr 
                         key={payment.id} 
-                        className={`border-b border-border ${
-                          payment.status === 'PENDING' || payment.status === 'OVERDUE' ? 'bg-muted/30' : ''
+                        className={`border-b border-[#D5C3B6]/10 ${
+                          payment.status === 'PENDING' || payment.status === 'OVERDUE' ? 'bg-[#C27F79]/5' : ''
                         }`}
                       >
                         <td className="py-4 px-4">
-                          <p className="font-medium text-foreground">
+                          <p className="font-medium text-[#FAF6F2]">
                             {getMonthName(payment.month)} {payment.year}
                           </p>
                           {payment.createdAt && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-[#9C8578]">
                               {new Date(payment.createdAt).toLocaleDateString('es-CL')}
                             </p>
                           )}
                         </td>
-                        <td className="py-4 px-4 text-right text-foreground">
+                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
                           {formatCLP(payment.amountCLP)}
                         </td>
-                        <td className="py-4 px-4 text-right text-foreground">
+                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
                           {formatCLP(payment.serviceTotalCLP ?? 0)}
                         </td>
-                        <td className="py-4 px-4 text-right font-semibold text-foreground">
+                        <td className="py-4 px-4 text-right font-semibold text-[#FAF6F2]">
                           {formatCLP(getTotal(payment))}
                         </td>
                         <td className="py-4 px-4 text-center">
@@ -378,7 +374,7 @@ export default function TenantPagosPage() {
                               </a>
                             </Button>
                           ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
+                            <span className="text-[#9C8578] text-sm">—</span>
                           )}
                         </td>
                         <td className="py-4 px-4 text-center">
@@ -394,7 +390,7 @@ export default function TenantPagosPage() {
                               Pagar {getMonthName(payment.month)}
                             </Button>
                           ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
+                            <span className="text-[#9C8578] text-sm">—</span>
                           )}
                         </td>
                       </tr>
@@ -408,16 +404,16 @@ export default function TenantPagosPage() {
       </Card>
 
       {/* Info Card */}
-      <Card className="bg-card border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-[#5E8B8C]" />
+              <div className="w-9 h-9 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-[#5E8B8C]" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Transferencia bancaria</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold text-[#FAF6F2]">Transferencia bancaria</h3>
+                <p className="text-sm text-[#9C8578]">
                   Realiza una transferencia bancaria e incluye tu documento en el mensaje
                 </p>
               </div>

@@ -101,21 +101,21 @@ export default function PropertyAccessRequestsPage() {
     switch (status) {
       case 'PENDING':
         return (
-          <Badge variant="outline" className="gap-1 text-orange-600 border-orange-600">
+          <Badge className="bg-[#F2C94C]/15 text-[#F2C94C] border border-[#F2C94C]/30 gap-1">
             <Clock className="h-3 w-3" />
             Pendiente
           </Badge>
         )
       case 'APPROVED':
         return (
-          <Badge variant="outline" className="gap-1 text-green-600 border-green-600">
+          <Badge className="bg-[#5E8B8C]/15 text-[#5E8B8C] border border-[#5E8B8C]/30 gap-1">
             <Check className="h-3 w-3" />
             Aprobada
           </Badge>
         )
       case 'REJECTED':
         return (
-          <Badge variant="outline" className="gap-1 text-red-600 border-red-600">
+          <Badge className="bg-[#C27F79]/15 text-[#C27F79] border border-[#C27F79]/30 gap-1">
             <X className="h-3 w-3" />
             Rechazada
           </Badge>
@@ -140,7 +140,7 @@ export default function PropertyAccessRequestsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-[#5E8B8C]" />
       </div>
     )
@@ -151,53 +151,53 @@ export default function PropertyAccessRequestsPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/dashboard">
-          <Button variant="ghost" size="icon" className="text-foreground">
+          <Button variant="ghost" size="icon" className="text-[#FAF6F2]">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Solicitudes de Acceso a Propiedades</h1>
-          <p className="text-muted-foreground">
-            Gestiona las solicitudes de corredores para administrar tus propiedades
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Solicitudes de acceso</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">
+            Corredores que han solicitado acceso a tus propiedades
           </p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-orange-600" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <UserPlus className="h-5 w-5 text-[#F2C94C]" />
               <div>
-                <p className="text-2xl font-bold">{pendingRequests.length}</p>
-                <p className="text-sm text-muted-foreground">Solicitudes pendientes</p>
+                <p className="text-xl font-semibold text-[#FAF6F2]">{pendingRequests.length}</p>
+                <p className="text-xs text-[#9C8578]">Solicitudes pendientes</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Check className="h-5 w-5 text-[#5E8B8C]" />
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-semibold text-[#FAF6F2]">
                   {requests.filter(r => r.status === 'APPROVED').length}
                 </p>
-                <p className="text-sm text-muted-foreground">Aprobadas</p>
+                <p className="text-xs text-[#9C8578]">Aprobadas</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <X className="h-5 w-5 text-red-600" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <X className="h-5 w-5 text-[#C27F79]" />
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-semibold text-[#FAF6F2]">
                   {requests.filter(r => r.status === 'REJECTED').length}
                 </p>
-                <p className="text-sm text-muted-foreground">Rechazadas</p>
+                <p className="text-xs text-[#9C8578]">Rechazadas</p>
               </div>
             </div>
           </CardContent>
@@ -206,51 +206,44 @@ export default function PropertyAccessRequestsPage() {
 
       {/* Pending Requests */}
       {pendingRequests.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-600" />
-              Solicitudes Pendientes
-            </CardTitle>
-            <CardDescription>
-              Revisa y aprueba o rechaza las solicitudes de acceso
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Solicitudes pendientes</p>
+            <div className="space-y-4">
             {pendingRequests.map((request) => (
               <div
                 key={request.id}
-                className="border rounded-lg p-4 space-y-4 hover:bg-muted/50 transition-colors"
+                className="border border-[#D5C3B6]/10 rounded-lg p-4 space-y-4 hover:bg-[#D5C3B6]/5 transition-colors"
               >
                 {/* Header with status and date */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-[#5E8B8C] text-white">
+                      <AvatarFallback className="bg-[#5E8B8C]/20 text-[#5E8B8C]">
                         {request.broker.name?.substring(0, 2).toUpperCase() || 
                          request.broker.email.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-semibold text-[#FAF6F2]">
                         {request.broker.name || request.broker.email}
                       </p>
                       {request.broker.company && (
-                        <p className="text-sm text-muted-foreground">{request.broker.company}</p>
+                        <p className="text-sm text-[#9C8578]">{request.broker.company}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">{request.broker.email}</p>
+                      <p className="text-xs text-[#9C8578]">{request.broker.email}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {getStatusBadge(request.status)}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-[#9C8578]">
                       {formatDate(request.createdAt)}
                     </p>
                   </div>
                 </div>
 
                 {/* Property info */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
+                <div className="flex items-center gap-2 text-xs text-[#9C8578] bg-[#1C1917]/60 border border-[#D5C3B6]/10 rounded-lg px-3 py-2">
                   <Building2 className="h-4 w-4" />
                   <span>{request.property.name || request.property.address}</span>
                   <MapPin className="h-4 w-4" />
@@ -260,11 +253,11 @@ export default function PropertyAccessRequestsPage() {
                 {/* Message */}
                 {request.message && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 text-sm font-medium text-[#FAF6F2]">
                       <MessageSquare className="h-4 w-4" />
                       Mensaje del corredor:
                     </div>
-                    <div className="bg-muted p-3 rounded text-sm">
+                    <div className="bg-[#1C1917]/60 border border-[#D5C3B6]/10 p-3 rounded text-sm text-[#9C8578]">
                       {request.message}
                     </div>
                   </div>
@@ -302,57 +295,51 @@ export default function PropertyAccessRequestsPage() {
                 </div>
               </div>
             ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Processed Requests */}
       {processedRequests.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
-              Historial de Solicitudes
-            </CardTitle>
-            <CardDescription>
-              Solicitudes ya procesadas (aprobadas o rechazadas)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Historial de solicitudes</p>
+            <div className="space-y-4">
             {processedRequests.map((request) => (
               <div
                 key={request.id}
-                className="border rounded-lg p-4 space-y-4 opacity-75"
+                className="border border-[#D5C3B6]/10 rounded-lg p-4 space-y-4 opacity-75"
               >
                 {/* Header with status and date */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-gray-500 text-white">
+                      <AvatarFallback className="bg-[#5E8B8C]/20 text-[#5E8B8C]">
                         {request.broker.name?.substring(0, 2).toUpperCase() || 
                          request.broker.email.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-semibold text-[#FAF6F2]">
                         {request.broker.name || request.broker.email}
                       </p>
                       {request.broker.company && (
-                        <p className="text-sm text-muted-foreground">{request.broker.company}</p>
+                        <p className="text-sm text-[#9C8578]">{request.broker.company}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">{request.broker.email}</p>
+                      <p className="text-xs text-[#9C8578]">{request.broker.email}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {getStatusBadge(request.status)}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-[#9C8578]">
                       {formatDate(request.createdAt)}
                     </p>
                   </div>
                 </div>
 
                 {/* Property info */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
+                <div className="flex items-center gap-2 text-xs text-[#9C8578] bg-[#1C1917]/60 border border-[#D5C3B6]/10 rounded-lg px-3 py-2">
                   <Building2 className="h-4 w-4" />
                   <span>{request.property.name || request.property.address}</span>
                   <MapPin className="h-4 w-4" />
@@ -360,7 +347,7 @@ export default function PropertyAccessRequestsPage() {
                 </div>
 
                 {/* Processing info */}
-                <div className="text-sm text-muted-foreground pt-2 border-t">
+                <div className="text-sm text-[#9C8578] pt-2 border-t border-[#D5C3B6]/10">
                   {request.status === 'APPROVED' ? (
                     <p>Se aprobó el acceso y se creó un mandato automáticamente</p>
                   ) : (
@@ -374,17 +361,18 @@ export default function PropertyAccessRequestsPage() {
                 </div>
               </div>
             ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Empty state */}
       {requests.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <UserPlus className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No hay solicitudes de acceso</h3>
-            <p className="text-muted-foreground">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="text-center p-10">
+            <UserPlus className="h-10 w-10 mx-auto mb-4 text-[#9C8578]/40" />
+            <h3 className="text-base font-medium text-[#FAF6F2] mb-2">No hay solicitudes de acceso</h3>
+            <p className="text-sm text-[#9C8578]">
               Los corredores pueden solicitar acceso a tus propiedades desde la página de detalles de cada propiedad.
             </p>
           </CardContent>

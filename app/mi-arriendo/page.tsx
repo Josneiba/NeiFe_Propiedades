@@ -64,15 +64,15 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
   if (!property) {
     return (
       <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
-        <CardContent className="p-16 text-center">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#5E8B8C]/20">
-            <Home className="h-12 w-12 text-[#5E8B8C]" />
+        <CardContent className="p-10 text-center">
+          <div className="mx-auto mb-4 flex w-12 h-12 items-center justify-center rounded-full bg-[#5E8B8C]/20">
+            <Home className="h-6 w-6 text-[#5E8B8C]" />
           </div>
-          <h3 className="mb-3 text-2xl font-semibold text-[#FAF6F2]">
-            No estas vinculado a ninguna propiedad
+          <h3 className="mb-2 text-lg font-medium text-[#FAF6F2]">
+            No estás vinculado a ninguna propiedad
           </h3>
-          <p className="mx-auto mb-8 max-w-md text-[#9C8578]">
-            El propietario debe enviarte una invitacion por email para conectarte a tu arriendo.
+          <p className="mx-auto mb-8 max-w-md text-sm text-[#9C8578]">
+            El propietario debe enviarte una invitación por email para conectarte a tu arriendo.
           </p>
         </CardContent>
       </Card>
@@ -354,10 +354,9 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
       </div>
 
       <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
-        <CardHeader>
-          <CardTitle className="text-[#FAF6F2]">Pagos Recientes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Pagos recientes</p>
+          <div className="space-y-3">
           {recentPayments.length === 0 ? (
             <p className="py-4 text-center text-[#9C8578]">No hay pagos registrados</p>
           ) : (
@@ -375,6 +374,7 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
               </div>
             ))
           )}
+        </div>
         </CardContent>
       </Card>
     </div>
@@ -396,10 +396,9 @@ async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
 
   return (
     <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
-      <CardHeader>
-        <CardTitle className="text-[#FAF6F2]">Mantenciones Recientes</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="p-5">
+        <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Mantenciones recientes</p>
+        <div className="space-y-3">
         {recentMaintenance.length === 0 ? (
           <p className="py-4 text-center text-[#9C8578]">No hay mantenciones registradas</p>
         ) : (
@@ -414,10 +413,10 @@ async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
               <Badge
                 className={
                   maintenance.status === "COMPLETED"
-                    ? "bg-[#5E8B8C] text-white"
+                    ? "bg-[#5E8B8C] text-[#FAF6F2]"
                     : maintenance.status === "IN_PROGRESS"
                       ? "bg-[#F2C94C] text-[#1C1917]"
-                      : "bg-[#C27F79] text-white"
+                      : "bg-[#C27F79] text-[#FAF6F2]"
                 }
               >
                 {maintenance.status === "COMPLETED"
@@ -429,6 +428,7 @@ async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
             </div>
           ))
         )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -448,7 +448,7 @@ export default async function MiArriendoPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Mi Arriendo</h1>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Mi Arriendo</h1>
         </div>
         <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-[#2A2520]" />}>
           <TenantPropertyInfo tenantId={session.user.id} />
@@ -555,9 +555,9 @@ export default async function MiArriendoPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <Link href="/mi-arriendo/pagos">
-          <div className="group rounded-xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/5 p-6 transition-all hover:border-[#5E8B8C]/50 hover:bg-[#5E8B8C]/10">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#5E8B8C]/20 group-hover:bg-[#5E8B8C]/30">
-              <CreditCard className="h-6 w-6 text-[#5E8B8C]" />
+          <div className="group rounded-xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/5 p-4 sm:p-6 transition-all hover:border-[#5E8B8C]/50 hover:bg-[#5E8B8C]/10">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#5E8B8C]/20 group-hover:bg-[#5E8B8C]/30">
+              <CreditCard className="h-5 w-5 text-[#5E8B8C]" />
             </div>
             <p className="font-semibold text-[#FAF6F2]">Pagos</p>
             <p className="mt-1 text-xs text-[#9C8578]">Ver historial y comprobar pago</p>
@@ -565,9 +565,9 @@ export default async function MiArriendoPage() {
         </Link>
 
         <Link href="/mi-arriendo/servicios">
-          <div className="group rounded-xl border border-[#B8965A]/20 bg-[#B8965A]/5 p-6 transition-all hover:border-[#B8965A]/50 hover:bg-[#B8965A]/10">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#B8965A]/20 group-hover:bg-[#B8965A]/30">
-              <AlertCircle className="h-6 w-6 text-[#B8965A]" />
+          <div className="group rounded-xl border border-[#B8965A]/20 bg-[#B8965A]/5 p-4 sm:p-6 transition-all hover:border-[#B8965A]/50 hover:bg-[#B8965A]/10">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#B8965A]/20 group-hover:bg-[#B8965A]/30">
+              <AlertCircle className="h-5 w-5 text-[#B8965A]" />
             </div>
             <p className="font-semibold text-[#FAF6F2]">Servicios</p>
             <p className="mt-1 text-xs text-[#9C8578]">Agua, luz y gas del mes</p>
@@ -575,9 +575,9 @@ export default async function MiArriendoPage() {
         </Link>
 
         <Link href="/mi-arriendo/mantenciones">
-          <div className="group rounded-xl border border-[#F2C94C]/20 bg-[#F2C94C]/5 p-6 transition-all hover:border-[#F2C94C]/50 hover:bg-[#F2C94C]/10">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2C94C]/20 group-hover:bg-[#F2C94C]/30">
-              <Wrench className="h-6 w-6 text-[#F2C94C]" />
+          <div className="group rounded-xl border border-[#F2C94C]/20 bg-[#F2C94C]/5 p-4 sm:p-6 transition-all hover:border-[#F2C94C]/50 hover:bg-[#F2C94C]/10">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#F2C94C]/20 group-hover:bg-[#F2C94C]/30">
+              <Wrench className="h-5 w-5 text-[#F2C94C]" />
             </div>
             <p className="font-semibold text-[#FAF6F2]">Mantenciones</p>
             <p className="mt-1 text-xs text-[#9C8578]">Reportar problemas</p>
@@ -585,9 +585,9 @@ export default async function MiArriendoPage() {
         </Link>
 
         <Link href="/mi-arriendo/contrato">
-          <div className="group rounded-xl border border-[#D5C3B6]/20 bg-[#D5C3B6]/5 p-6 transition-all hover:border-[#D5C3B6]/50 hover:bg-[#D5C3B6]/10">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[#D5C3B6]/20 group-hover:bg-[#D5C3B6]/30">
-              <FileText className="h-6 w-6 text-[#D5C3B6]" />
+          <div className="group rounded-xl border border-[#D5C3B6]/20 bg-[#D5C3B6]/5 p-4 sm:p-6 transition-all hover:border-[#D5C3B6]/50 hover:bg-[#D5C3B6]/10">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#D5C3B6]/20 group-hover:bg-[#D5C3B6]/30">
+              <FileText className="h-5 w-5 text-[#D5C3B6]" />
             </div>
             <p className="font-semibold text-[#FAF6F2]">Contrato</p>
             <p className="mt-1 text-xs text-[#9C8578]">Descargar o ver documento</p>

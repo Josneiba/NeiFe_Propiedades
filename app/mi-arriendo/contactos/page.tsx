@@ -47,17 +47,17 @@ export default async function ContactosPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Contactos de Confianza</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Contactos de Confianza</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">
             Proveedores verificados por tu arrendador para mantenciones
           </p>
         </div>
 
-        <Card className="bg-[#2A2520] border-border">
-          <CardContent className="p-12 text-center">
-            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground">No tienes una propiedad asignada aún</p>
-            <p className="text-sm text-muted-foreground mt-2">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-10 text-center">
+            <Home className="h-10 w-10 text-[#9C8578]/40 mx-auto mb-3" />
+            <p className="text-[#9C8578]">No tienes una propiedad asignada aún</p>
+            <p className="text-xs text-[#9C8578] mt-2">
               Tu arrendador debe asignarte una propiedad para que puedas ver los contactos de confianza disponibles.
             </p>
           </CardContent>
@@ -73,8 +73,8 @@ export default async function ContactosPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Contactos de Confianza</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Contactos de Confianza</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">
           Proveedores verificados y contactos clave para tu arriendo
         </p>
       </div>
@@ -85,8 +85,8 @@ export default async function ContactosPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-[#F2C94C] mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Importante</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-medium text-[#FAF6F2]">Importante</p>
+              <p className="text-sm text-[#9C8578]">
                 Para solicitar mantenciones, usa el módulo de Mantenciones de la plataforma.
                 {broker
                   ? " Si esta propiedad está administrada por un corredor, ese será tu contacto principal."
@@ -98,26 +98,26 @@ export default async function ContactosPage() {
       </Card>
 
       {broker && (
-        <Card className="bg-[#2A2520] border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-foreground">Tu Corredor Administrador</CardTitle>
+              <CardTitle className="text-[#FAF6F2]">Tu Corredor Administrador</CardTitle>
               <Badge className="bg-[#5E8B8C]/20 text-[#5E8B8C]">Contacto principal</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-[#5E8B8C] flex items-center justify-center">
-                <span className="text-xl font-bold text-white">
+                <span className="text-xl font-bold text-[#FAF6F2]">
                   {broker.name?.substring(0, 2).toUpperCase() || 'CO'}
                 </span>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground text-lg">{broker.name}</h3>
+                <h3 className="text-base font-semibold text-[#FAF6F2]">{broker.name}</h3>
                 {broker.company && (
-                  <p className="text-sm text-muted-foreground mt-1">{broker.company}</p>
+                  <p className="text-sm text-[#9C8578] mt-1">{broker.company}</p>
                 )}
-                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap gap-4 mt-2 text-sm text-[#9C8578]">
                   {broker.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
@@ -139,22 +139,22 @@ export default async function ContactosPage() {
 
       {/* Landlord Contact */}
       {landlord && (
-        <Card className="bg-[#2A2520] border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardHeader>
-            <CardTitle className="text-foreground">
+            <CardTitle className="text-[#FAF6F2]">
               {broker ? "Propietario" : "Tu Arrendador"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-[#75524C] flex items-center justify-center">
-                <span className="text-xl font-bold text-[#D5C3B6]">
+                <span className="text-xl font-bold text-[#FAF6F2]">
                   {landlord.name?.substring(0, 2).toUpperCase() || 'AR'}
                 </span>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground text-lg">{landlord.name}</h3>
-                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                <h3 className="text-base font-semibold text-[#FAF6F2]">{landlord.name}</h3>
+                <div className="flex flex-wrap gap-4 mt-2 text-sm text-[#9C8578]">
                   {landlord.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
@@ -176,13 +176,13 @@ export default async function ContactosPage() {
 
       {/* Providers */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Proveedores de Mantención</h2>
+        <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Proveedores de mantención</p>
         {providers.length === 0 ? (
-          <Card className="bg-[#2A2520] border-border">
-            <CardContent className="p-12 text-center">
-              <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground mb-2">Tu arrendador aún no ha asignado contactos de mantención</p>
-              <p className="text-sm text-muted-foreground">
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-10 text-center">
+              <Wrench className="h-10 w-10 text-[#9C8578]/40 mx-auto mb-3" />
+              <p className="text-[#9C8578] mb-2">Tu arrendador aún no ha asignado contactos de mantención</p>
+              <p className="text-xs text-[#9C8578]">
                 Los proveedores aparecerán aquí cuando tu arrendador los asigne a tu propiedad
               </p>
             </CardContent>
@@ -190,7 +190,7 @@ export default async function ContactosPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {providers.map((provider) => (
-              <Card key={provider.id} className="bg-card border-border">
+              <Card key={provider.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-[#2D3C3C] flex items-center justify-center flex-shrink-0">
@@ -199,11 +199,11 @@ export default async function ContactosPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
-                          <h3 className="font-semibold text-foreground truncate">
+                          <h3 className="font-semibold text-[#FAF6F2] truncate">
                             {provider.name}
                           </h3>
                           {provider.specialty && (
-                            <Badge className={specialtyColors[provider.specialty] || "bg-muted"}>
+                            <Badge className={specialtyColors[provider.specialty] || "bg-[#D5C3B6]/15 text-[#D5C3B6]"}>
                               {provider.specialty}
                             </Badge>
                           )}
@@ -211,18 +211,18 @@ export default async function ContactosPage() {
                         {provider.rating && (
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Star className="h-4 w-4 text-[#F2C94C] fill-[#F2C94C]" />
-                            <span className="text-sm font-medium text-foreground">{provider.rating}</span>
+                            <span className="text-sm font-medium text-[#FAF6F2]">{provider.rating}</span>
                           </div>
                         )}
                       </div>
                       
                       {provider.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        <p className="text-xs text-[#9C8578] mb-3 line-clamp-2">
                           {provider.description}
                         </p>
                       )}
 
-                      <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="space-y-1 text-xs text-[#9C8578]">
                         {provider.phone && (
                           <div className="flex items-center gap-2">
                             <Phone className="h-4 w-4" />
@@ -246,9 +246,9 @@ export default async function ContactosPage() {
       </div>
 
       {/* How it works */}
-      <Card className="bg-[#2A2520] border-border">
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
             <Wrench className="h-5 w-5 text-[#5E8B8C]" />
             ¿Cómo funciona?
           </CardTitle>
@@ -257,44 +257,44 @@ export default async function ContactosPage() {
           <ol className="space-y-4">
             <li className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-[#5E8B8C] flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">1</span>
+                <span className="text-sm font-bold text-[#FAF6F2]">1</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">Reporta la falla</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-[#FAF6F2]">Reporta la falla</p>
+                <p className="text-sm text-[#9C8578]">
                   Usa el módulo de Mantenciones para describir el problema y adjuntar fotos.
                 </p>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-[#5E8B8C] flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">2</span>
+                <span className="text-sm font-bold text-[#FAF6F2]">2</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">El arrendador revisa</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-[#FAF6F2]">El arrendador revisa</p>
+                <p className="text-sm text-[#9C8578]">
                   Tu arrendador evaluará la solicitud y determinará la responsabilidad según la ley.
                 </p>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-[#5E8B8C] flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">3</span>
+                <span className="text-sm font-bold text-[#FAF6F2]">3</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">Se asigna un proveedor</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-[#FAF6F2]">Se asigna un proveedor</p>
+                <p className="text-sm text-[#9C8578]">
                   Si se aprueba, el arrendador asignará un proveedor de confianza para realizar el trabajo.
                 </p>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-[#5E8B8C] flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">4</span>
+                <span className="text-sm font-bold text-[#FAF6F2]">4</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">Seguimiento en la plataforma</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-[#FAF6F2]">Seguimiento en la plataforma</p>
+                <p className="text-sm text-[#9C8578]">
                   Podrás ver el estado de la mantención en todo momento desde tu panel.
                 </p>
               </div>

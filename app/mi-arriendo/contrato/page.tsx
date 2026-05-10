@@ -101,13 +101,13 @@ export default async function ContratoPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mi Contrato</h1>
-          <p className="text-muted-foreground">Información de tu contrato de arriendo</p>
+          <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Mi Contrato</h1>
+          <p className="text-sm text-[#9C8578] mt-0.5">Información de tu contrato de arriendo</p>
         </div>
-        <Card className="bg-[#2A2520] border-border">
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground">No tienes un contrato asignado</p>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-10 text-center">
+            <FileText className="h-10 w-10 text-[#9C8578]/40 mx-auto mb-3" />
+            <p className="text-[#9C8578]">No tienes un contrato asignado</p>
           </CardContent>
         </Card>
       </div>
@@ -167,30 +167,30 @@ export default async function ContratoPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mi Contrato</h1>
-        <p className="text-muted-foreground">Información de tu contrato de arriendo</p>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Mi Contrato</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Información de tu contrato de arriendo</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="contract" className="space-y-6">
-            <TabsList className="bg-muted">
-              <TabsTrigger value="contract" className="data-[state=active]:bg-card">
+            <TabsList className="bg-[#2D3C3C] border border-[#D5C3B6]/10">
+              <TabsTrigger value="contract" className="data-[state=active]:bg-[#1C1917] data-[state=active]:text-[#FAF6F2] text-[#9C8578]">
                 <FileText className="h-4 w-4 mr-2" />
                 Contrato
               </TabsTrigger>
-              <TabsTrigger value="photos" className="data-[state=active]:bg-card">
+              <TabsTrigger value="photos" className="data-[state=active]:bg-[#1C1917] data-[state=active]:text-[#FAF6F2] text-[#9C8578]">
                 <Camera className="h-4 w-4 mr-2" />
                 Fotos
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="contract" className="space-y-6">
-              <Card className="bg-[#2A2520] border-border">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-foreground">Contrato de Arriendo</CardTitle>
-                    <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-[#C27F79]/20 text-[#C27F79]"}>
+                    <CardTitle className="text-[#FAF6F2]">Contrato de Arriendo</CardTitle>
+                    <Badge className={isActive ? "bg-[#5E8B8C] text-[#FAF6F2]" : "bg-[#C27F79]/20 text-[#C27F79]"}>
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       {isActive ? "Vigente" : "Vencido"}
                     </Badge>
@@ -198,17 +198,17 @@ export default async function ContratoPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
-                    <div className="p-4 rounded-lg bg-muted/50">
-                      <p className="text-sm text-muted-foreground mb-1">Arrendador</p>
-                      <p className="font-medium text-foreground">{contract.landlord}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="p-4 rounded-lg bg-[#1C1917]/60 border border-[#D5C3B6]/10">
+                      <p className="text-xs text-[#9C8578] mb-1">Arrendador</p>
+                      <p className="font-medium text-[#FAF6F2]">{contract.landlord}</p>
+                      <p className="text-xs text-[#9C8578]">
                         {contract.landlordIdentity.label}: {contract.landlordIdentity.value || "No especificado"}
                       </p>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/50">
-                      <p className="text-sm text-muted-foreground mb-1">Arrendatario</p>
-                      <p className="font-medium text-foreground">{contract.tenant}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="p-4 rounded-lg bg-[#1C1917]/60 border border-[#D5C3B6]/10">
+                      <p className="text-xs text-[#9C8578] mb-1">Arrendatario</p>
+                      <p className="font-medium text-[#FAF6F2]">{contract.tenant}</p>
+                      <p className="text-xs text-[#9C8578]">
                         {contract.tenantIdentity.label}: {contract.tenantIdentity.value || "No especificado"}
                       </p>
                     </div>
@@ -216,29 +216,29 @@ export default async function ContratoPage() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Propiedad</p>
-                      <p className="font-medium text-foreground text-sm">{contract.property}</p>
+                      <p className="text-xs text-[#9C8578]">Propiedad</p>
+                      <p className="text-sm font-medium text-[#FAF6F2]">{contract.property}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Arriendo mensual</p>
-                      <p className="font-medium text-foreground">
+                      <p className="text-xs text-[#9C8578]">Arriendo mensual</p>
+                      <p className="text-sm font-medium text-[#FAF6F2]">
                         ${contract.monthlyRent.toLocaleString("es-CL")}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Garantía</p>
-                      <p className="font-medium text-foreground">
+                      <p className="text-xs text-[#9C8578]">Garantía</p>
+                      <p className="text-sm font-medium text-[#FAF6F2]">
                         ${contract.deposit.toLocaleString("es-CL")}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Fecha de firma</p>
-                      <p className="font-medium text-foreground">{contract.signedAt}</p>
+                      <p className="text-xs text-[#9C8578]">Fecha de firma</p>
+                      <p className="text-sm font-medium text-[#FAF6F2]">{contract.signedAt}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Estado de firmas</p>
+                    <p className="text-xs font-medium uppercase tracking-wider text-[#9C8578] mb-3">Estado de firmas</p>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div
                         className={`flex items-center gap-3 p-3 rounded-lg ${
@@ -251,10 +251,10 @@ export default async function ContratoPage() {
                           <AlertCircle className="h-5 w-5 text-[#F2C94C]" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="text-sm font-medium text-[#FAF6F2]">
                             {property.managedByUser?.name ? "Firma Arrendador / Corredor" : "Firma Arrendador"}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-[#9C8578]">
                             {landlordSigned ? `Firmado el ${contract.signedAt}` : "Pendiente de firma"}
                           </p>
                         </div>
@@ -270,8 +270,8 @@ export default async function ContratoPage() {
                           <AlertCircle className="h-5 w-5 text-[#F2C94C]" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-foreground">Firma Arrendatario</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm font-medium text-[#FAF6F2]">Firma Arrendatario</p>
+                          <p className="text-xs text-[#9C8578]">
                             {tenantSigned ? `Firmado el ${contract.signedAt}` : "Pendiente de firma"}
                           </p>
                         </div>
@@ -296,33 +296,33 @@ export default async function ContratoPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-[#2A2520] border-border">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardHeader>
-                  <CardTitle className="text-foreground text-lg">Información Legal</CardTitle>
+                  <CardTitle className="text-sm font-medium text-[#FAF6F2]">Información Legal</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <CardContent className="space-y-3 text-sm text-[#9C8578]">
                   <p>
-                    Este contrato se rige por la <strong className="text-foreground">Ley 18.101</strong> sobre
-                    arrendamiento de predios urbanos y la <strong className="text-foreground">Ley 21.461</strong>
+                    Este contrato se rige por la <strong className="text-[#FAF6F2]">Ley 18.101</strong> sobre
+                    arrendamiento de predios urbanos y la <strong className="text-[#FAF6F2]">Ley 21.461</strong>
                     ("Devuélveme mi casa").
                   </p>
                   <p>
                     El contrato incluye firma electrónica con validez legal según la
-                    <strong className="text-foreground"> Ley 19.799</strong> sobre documentos electrónicos.
+                    <strong className="text-[#FAF6F2]"> Ley 19.799</strong> sobre documentos electrónicos.
                   </p>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="photos" className="space-y-6">
-              <Card className="bg-[#2A2520] border-border">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-foreground flex items-center gap-2">
-                      <Badge className="bg-[#5E8B8C] text-white">Check-in</Badge>
+                    <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
+                      <Badge className="bg-[#5E8B8C] text-[#FAF6F2]">Check-in</Badge>
                       Fotos de entrada
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-[#9C8578]">
                       {checkInPhotos[0] ? formatTimestamp(checkInPhotos[0].takenAt) : "Sin registro"}
                     </p>
                   </div>
@@ -346,18 +346,18 @@ export default async function ContratoPage() {
                             />
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium text-foreground">{photo.room}</p>
+                            <p className="text-sm font-medium text-[#FAF6F2]">{photo.room}</p>
                             {photo.caption && (
-                              <p className="text-xs text-muted-foreground">{photo.caption}</p>
+                              <p className="text-xs text-[#9C8578]">{photo.caption}</p>
                             )}
                           </div>
                         </a>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-8 rounded-lg border-2 border-dashed border-border text-center">
-                      <Camera className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">
+                    <div className="p-8 rounded-lg border-2 border-dashed border-[#D5C3B6]/15 text-center">
+                      <Camera className="h-10 w-10 mx-auto text-[#9C8578]/50 mb-2" />
+                      <p className="text-[#9C8578]">
                         Aún no hay fotos de check-in registradas para esta propiedad
                       </p>
                     </div>
@@ -365,10 +365,10 @@ export default async function ContratoPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-[#2A2520] border-border">
+              <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
                 <CardHeader>
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <Badge className="bg-[#C27F79] text-white">Check-out</Badge>
+                  <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
+                    <Badge className="bg-[#C27F79] text-[#FAF6F2]">Check-out</Badge>
                     Fotos de salida
                   </CardTitle>
                 </CardHeader>
@@ -391,18 +391,18 @@ export default async function ContratoPage() {
                             />
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium text-foreground">{photo.room}</p>
+                            <p className="text-sm font-medium text-[#FAF6F2]">{photo.room}</p>
                             {photo.caption && (
-                              <p className="text-xs text-muted-foreground">{photo.caption}</p>
+                              <p className="text-xs text-[#9C8578]">{photo.caption}</p>
                             )}
                           </div>
                         </a>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-8 rounded-lg border-2 border-dashed border-border text-center">
-                      <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">
+                    <div className="p-8 rounded-lg border-2 border-dashed border-[#D5C3B6]/15 text-center">
+                      <ImageIcon className="h-10 w-10 mx-auto text-[#9C8578]/50 mb-2" />
+                      <p className="text-[#9C8578]">
                         Las fotos de check-out aparecerán aquí cuando exista un registro de salida
                       </p>
                     </div>
@@ -415,9 +415,9 @@ export default async function ContratoPage() {
 
         <div className="space-y-6">
           {contractDates && (
-            <Card className="bg-[#2A2520] border-border">
+            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
               <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
+                <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-[#5E8B8C]" />
                   Duración del Contrato
                 </CardTitle>
@@ -432,58 +432,58 @@ export default async function ContratoPage() {
             </Card>
           )}
 
-          <Card className="bg-[#2A2520] border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-lg">Resumen</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Arriendo</span>
-                <span className="font-medium text-foreground">
-                  ${contract.monthlyRent.toLocaleString("es-CL")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Garantía</span>
-                <span className="font-medium text-foreground">
-                  ${contract.deposit.toLocaleString("es-CL")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Inicio</span>
-                <span className="font-medium text-foreground">
-                  {formatContractDate(contract.startDate)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Término</span>
-                <span className="font-medium text-foreground">
-                  {formatContractDate(contract.endDate)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Duración</span>
-                <span className="font-medium text-foreground">
-                  {contractDates
-                    ? `${Math.round(
-                        (contractDates.end.getTime() - contractDates.start.getTime()) /
-                          (1000 * 60 * 60 * 24 * 30)
-                      )} meses`
-                    : "No disponible"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado</span>
-                <Badge className={isActive ? "bg-[#5E8B8C] text-white" : "bg-[#C27F79]/20 text-[#C27F79]"}>
-                  {isActive ? "Vigente" : "Vencido"}
-                </Badge>
-              </div>
-              {!isActive && daysLeft < 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm">Contrato vencido hace {Math.abs(daysLeft)} días</span>
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-5">
+              <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Resumen</p>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Arriendo</span>
+                  <span className="font-medium text-[#FAF6F2]">
+                    ${contract.monthlyRent.toLocaleString("es-CL")}
+                  </span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Garantía</span>
+                  <span className="font-medium text-[#FAF6F2]">
+                    ${contract.deposit.toLocaleString("es-CL")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Inicio</span>
+                  <span className="font-medium text-[#FAF6F2]">
+                    {formatContractDate(contract.startDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Término</span>
+                  <span className="font-medium text-[#FAF6F2]">
+                    {formatContractDate(contract.endDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Duración</span>
+                  <span className="font-medium text-[#FAF6F2]">
+                    {contractDates
+                      ? `${Math.round(
+                          (contractDates.end.getTime() - contractDates.start.getTime()) /
+                            (1000 * 60 * 60 * 24 * 30)
+                        )} meses`
+                      : "No disponible"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#9C8578]">Estado</span>
+                  <Badge className={isActive ? "bg-[#5E8B8C] text-[#FAF6F2]" : "bg-[#C27F79]/20 text-[#C27F79]"}>
+                    {isActive ? "Vigente" : "Vencido"}
+                  </Badge>
+                </div>
+                {!isActive && daysLeft < 0 && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-[#C27F79]/10 border border-[#C27F79]/20 text-[#C27F79]">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">Contrato vencido hace {Math.abs(daysLeft)} días</span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

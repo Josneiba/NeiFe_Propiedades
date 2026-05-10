@@ -144,12 +144,12 @@ async function DashboardKPIs({ landlordId }: { landlordId: string }) {
             stat.urgency === 'high' && "border-[#C27F79]/40 shadow-lg shadow-[#C27F79]/10"
           )}
         >
-          <CardContent className="p-3 sm:p-4 md:p-6">
+          <CardContent className="p-3 sm:p-4 md:p-5">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div
-                className={`w-10 sm:w-12 h-10 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center flex-shrink-0`}
+                className={`w-9 h-9 rounded-xl ${stat.bgColor} flex items-center justify-center shrink-0`}
               >
-                <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`} />
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
               <div className="flex items-center gap-2">
                 {stat.urgency === 'high' && (
@@ -162,11 +162,11 @@ async function DashboardKPIs({ landlordId }: { landlordId: string }) {
                 )}
               </div>
             </div>
-            <p className="text-xl sm:text-2xl font-semibold text-[#FAF6F2] truncate money">
+            <p className="text-2xl font-semibold text-[#FAF6F2]">
               {stat.value}
             </p>
-            <p className="text-xs sm:text-sm text-[#9C8578] truncate money">{stat.subValue}</p>
-            <p className="text-xs text-[#9C8578] mt-1 sm:mt-2 line-clamp-2">{stat.title}</p>
+            <p className="text-xs text-[#9C8578]">{stat.subValue}</p>
+            <p className="text-xs text-[#9C8578] mt-1">{stat.title}</p>
             {stat.change && (
               <p
                 className={cn(
@@ -284,13 +284,13 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
   return (
     <>
       <Card className="mt-6 border-[#D5C3B6]/5 bg-[#1C1917]/50 backdrop-blur-sm">
-        <CardContent className="p-6">
-          <h2 className="mb-4 text-lg font-semibold text-[#D5C3B6]">Metricas del Portafolio</h2>
+        <CardContent className="p-5">
+          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-[#B8965A]">Métricas del portafolio</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#2A2520] p-4">
-              <p className="mb-2 text-xs uppercase tracking-wider text-[#9C8578]">Ocupacion</p>
+              <p className="mb-2 text-xs uppercase tracking-wider text-[#9C8578]">Ocupación</p>
               <div className="mb-2 flex items-end gap-2">
-                <span className="text-3xl font-bold text-[#FAF6F2]">{occupancyRate}%</span>
+                <span className="text-2xl font-semibold text-[#FAF6F2]">{occupancyRate}%</span>
                 <span className="mb-1 text-sm text-[#9C8578]">de propiedades</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[#1C1917]">
@@ -309,7 +309,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
               <div className="mb-2 flex items-end gap-2">
                 <span
                   className={cn(
-                    "text-3xl font-bold",
+                    "text-2xl font-semibold",
                     collectionRate >= 80
                       ? 'text-[#5E8B8C]'
                       : collectionRate >= 50
@@ -345,7 +345,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
               <p className="mb-2 text-xs uppercase tracking-wider text-[#9C8578]">
                 Cobrado en {currentYear}
               </p>
-              <p className="mb-1 text-2xl font-bold text-[#FAF6F2]">{formatCLP(totalCollectedYear)}</p>
+              <p className="mb-1 text-2xl font-semibold text-[#FAF6F2]">{formatCLP(totalCollectedYear)}</p>
               <p className="text-xs text-[#9C8578]">
                 {allPaymentsYear.length} pago{allPaymentsYear.length !== 1 ? 's' : ''} registrado
                 {allPaymentsYear.length !== 1 ? 's' : ''}
@@ -376,12 +376,11 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
         <div className="space-y-6">
           {brokerStatements.length > 0 && (
             <Card id="rendiciones-recibidas" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-[#5E8B8C]">
-                    <Building2 className="h-5 w-5" />
+                  <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A]">
                     Rendiciones recibidas de corredores
-                  </h2>
+                  </p>
                   {newStatementsCount > 0 && (
                     <Badge className="bg-[#B8965A]/20 text-[#B8965A]">
                       {newStatementsCount} nueva{newStatementsCount > 1 ? 's' : ''}
@@ -430,7 +429,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
                             href={`/api/broker/statements/${statement.id}/pdf`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-lg bg-[#B8965A]/20 px-3 py-1.5 text-xs font-medium text-[#B8965A] transition-colors hover:bg-[#B8965A]/30"
+                            className="inline-flex items-center gap-2 rounded-md bg-[#B8965A]/20 px-3 py-1.5 text-xs font-medium text-[#B8965A] transition-colors hover:bg-[#B8965A]/30"
                           >
                             Ver PDF
                           </a>
@@ -446,11 +445,10 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
           {/* Broker-Managed Properties */}
           {properties.some((p) => p.mandates.length > 0) && (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-[#5E8B8C] mb-4 flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Propiedades Administradas por Corredor
-                </h2>
+              <CardContent className="p-5">
+                <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">
+                  Propiedades administradas por corredor
+                </p>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {properties
                     .filter((p) => p.mandates.length > 0)
@@ -470,8 +468,10 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
           {/* Owner-Managed Properties */}
           {properties.some((p) => p.mandates.length === 0) && (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-[#FAF6F2] mb-4">Propiedades que Gestionas</h2>
+              <CardContent className="p-5">
+                <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">
+                  Propiedades que gestionas
+                </p>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {properties
                     .filter((p) => p.mandates.length === 0)
@@ -492,9 +492,9 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
 
       {properties.length === 0 && (
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-          <CardContent className="p-12 text-center">
-            <Building2 className="h-12 w-12 text-[#9C8578] mx-auto mb-4 opacity-50" />
-            <p className="text-[#9C8578] text-lg mb-4">
+          <CardContent className="p-10 text-center">
+            <Building2 className="h-10 w-10 text-[#9C8578] mx-auto mb-4 opacity-50" />
+            <p className="text-[#9C8578] text-base mb-4">
               No tienes propiedades registradas aún
             </p>
             <Link href="/dashboard/propiedades">

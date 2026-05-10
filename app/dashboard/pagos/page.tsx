@@ -150,11 +150,11 @@ export default async function PagosPage({
       />
 
       {session.user.role === "OWNER" && (
-        <Card className="bg-card border-border">
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="font-medium text-foreground">Generación manual de pagos</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-medium text-[#FAF6F2]">Generación manual de pagos</p>
+              <p className="text-sm text-[#9C8578]">
                 Úsalo para crear los pagos del mes sin esperar al cron del día 1.
               </p>
             </div>
@@ -208,45 +208,45 @@ export default async function PagosPage({
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-[#5E8B8C]" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-[#5E8B8C]" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total esperado</p>
-                <p className="text-2xl font-bold text-foreground font-mono">
+                <p className="text-xs text-[#9C8578]">Total esperado</p>
+                <p className="text-xl font-semibold text-[#FAF6F2] font-mono">
                   ${stats.total.toLocaleString("es-CL")}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <Check className="h-6 w-6 text-green-600" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#5E8B8C]/20 flex items-center justify-center">
+                <Check className="h-4 w-4 text-[#5E8B8C]" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-2xl font-bold text-foreground font-mono">
+                <p className="text-xs text-[#9C8578]">Pagado</p>
+                <p className="text-xl font-semibold text-[#FAF6F2] font-mono">
                   ${stats.paid.toLocaleString("es-CL")}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#C27F79]/20 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-[#C27F79]" />
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#C27F79]/20 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-[#C27F79]" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className="text-2xl font-bold text-foreground font-mono">
+                <p className="text-xs text-[#9C8578]">Pendiente</p>
+                <p className="text-xl font-semibold text-[#FAF6F2] font-mono">
                   ${stats.pending.toLocaleString("es-CL")}
                 </p>
               </div>
@@ -256,72 +256,68 @@ export default async function PagosPage({
       </div>
 
       {/* Payments Table */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle>Historial de Pagos</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Historial de pagos</p>
           {payments.length === 0 ? (
-            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardContent className="p-16 text-center">
-                <div className="w-24 h-24 rounded-full bg-[#5E8B8C]/20 flex items-center justify-center mx-auto mb-6">
-                  <CreditCard className="h-12 w-12 text-[#5E8B8C]" />
-                </div>
-                <h3 className="text-2xl font-semibold text-[#FAF6F2] mb-3">
-                  {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
-                    ? "No se encontraron pagos con los filtros aplicados"
-                    : "Sin pagos registrados"}
-                </h3>
-                <p className="text-[#9C8578] mb-8 max-w-md mx-auto">
-                  {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
-                    ? "Intenta cambiar los filtros para ver más resultados."
-                    : "Los pagos aparecerán aquí una vez que configures una propiedad con arrendatario."}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="p-10 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#5E8B8C]/10 flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="h-6 w-6 text-[#5E8B8C]/50" />
+              </div>
+              <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">
+                {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
+                  ? "No se encontraron pagos con los filtros aplicados"
+                  : "Sin pagos registrados"}
+              </h3>
+              <p className="text-sm text-[#9C8578] max-w-sm mx-auto">
+                {filterPropertyId || statusFilter !== "ALL" || behaviorFilter !== "ALL"
+                  ? "Intenta cambiar los filtros para ver más resultados."
+                  : "Los pagos aparecerán aquí una vez que configures una propiedad con arrendatario."}
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-2 font-semibold text-foreground">Propiedad</th>
-                    <th className="text-left py-3 px-2 font-semibold text-foreground">Arrendatario</th>
-                    <th className="text-left py-3 px-2 font-semibold text-foreground">Período</th>
-                    <th className="text-right py-3 px-2 font-semibold text-foreground">Monto</th>
-                    <th className="text-center py-3 px-2 font-semibold text-foreground">Estado</th>
-                    <th className="text-right py-3 px-2 font-semibold text-foreground">Acciones</th>
+                  <tr className="border-b border-[#D5C3B6]/10">
+                    <th className="text-left py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Propiedad</th>
+                    <th className="text-left py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Arrendatario</th>
+                    <th className="text-left py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Período</th>
+                    <th className="text-right py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Monto</th>
+                    <th className="text-center py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Estado</th>
+                    <th className="text-right py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.map((payment) => (
-                    <tr key={payment.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-4 px-2">
+                    <tr key={payment.id} className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5 transition-colors">
+                      <td className="py-3 px-3">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-foreground font-medium truncate max-w-xs">
+                          <Building2 className="h-4 w-4 text-[#9C8578]" />
+                          <span className="text-[#FAF6F2] font-medium truncate max-w-xs">
                             {payment.property.address}
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 px-2 text-muted-foreground">
+                      <td className="py-3 px-3 text-[#9C8578]">
                         {payment.property.tenant?.name || "Sin asignar"}
                       </td>
-                      <td className="py-4 px-2 text-muted-foreground">
+                      <td className="py-3 px-3 text-[#9C8578]">
                         {getMonthName(payment.month)} {payment.year}
                       </td>
-                      <td className="py-4 px-2 text-right font-medium text-foreground font-mono">
+                      <td className="py-3 px-3 text-right font-medium text-[#FAF6F2] font-mono">
                         ${payment.amountCLP.toLocaleString("es-CL")}
                       </td>
-                      <td className="py-4 px-2 text-center">
+                      <td className="py-3 px-3 text-center">
                         {getStatusBadge(payment.status)}
                       </td>
-                      <td className="py-4 px-2 text-right space-x-2 flex justify-end">
+                      <td className="py-3 px-3 text-right space-x-2 flex justify-end">
                         {payment.status === "PROCESSING" && payment.receipt && (
                           <>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-border text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
+                              className="border-[#D5C3B6]/20 text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
                               asChild
                             >
                               <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
@@ -335,7 +331,7 @@ export default async function PagosPage({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-border text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
+                            className="border-[#D5C3B6]/20 text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
                             asChild
                           >
                             <a href={payment.receipt} target="_blank" rel="noopener noreferrer">

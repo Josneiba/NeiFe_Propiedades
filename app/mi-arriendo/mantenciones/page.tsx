@@ -84,9 +84,9 @@ export default async function TenantMantencionesPage() {
     return (
       <div className="space-y-6">
         <PageHeader title="Mantenciones" description="Reporta fallas y sigue el estado de tus solicitudes" />
-        <Card className="bg-[#2A2520] border-border">
-          <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">No tienes una propiedad asignada</p>
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardContent className="p-10 text-center">
+            <p className="text-[#9C8578]">No tienes una propiedad asignada</p>
           </CardContent>
         </Card>
       </div>
@@ -136,13 +136,13 @@ export default async function TenantMantencionesPage() {
       {/* Active Requests */}
       {activeRequests.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Solicitudes Activas</h2>
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Solicitudes activas</p>
           {activeRequests.map((request) => {
             const status = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.REQUESTED
             const StatusIcon = status.icon
             return (
-              <Card key={request.id} className="bg-card border-border border-l-4 border-l-[#F2C94C]">
-                <CardContent className="p-6">
+              <Card key={request.id} className="bg-[#2D3C3C] border border-[#F2C94C]/20 border-l-4 border-l-[#F2C94C]">
+                <CardContent className="p-5">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -150,12 +150,12 @@ export default async function TenantMantencionesPage() {
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {status.label}
                         </Badge>
-                        <Badge variant="outline" className="border-border text-foreground">
+                        <Badge variant="outline" className="border-[#D5C3B6]/20 text-[#D5C3B6]">
                           {request.category}
                         </Badge>
                       </div>
-                      <p className="text-foreground mb-2">{request.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <p className="text-[#FAF6F2] mb-2 text-sm">{request.description}</p>
+                      <div className="flex flex-wrap gap-4 text-xs text-[#9C8578]">
                         <span>Reportado: {request.createdAt.toLocaleDateString("es-CL")}</span>
                         {request.photos && request.photos.length > 0 && (
                           <span className="flex items-center gap-1">
@@ -165,9 +165,9 @@ export default async function TenantMantencionesPage() {
                         )}
                       </div>
                       {request.provider && (
-                        <div className="mt-3 p-3 rounded-lg bg-muted/50">
-                          <p className="text-sm text-muted-foreground">Proveedor asignado:</p>
-                          <p className="font-medium text-foreground">{request.provider.name}</p>
+                        <div className="mt-3 p-3 rounded-lg bg-[#1C1917]/60 border border-[#D5C3B6]/10">
+                          <p className="text-xs text-[#9C8578]">Proveedor asignado:</p>
+                          <p className="text-sm font-medium text-[#FAF6F2]">{request.provider.name}</p>
                         </div>
                       )}
 
@@ -175,8 +175,8 @@ export default async function TenantMantencionesPage() {
                         <div className="flex items-start gap-2">
                           <AlertCircle className="h-4 w-4 text-[#5E8B8C] mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs font-medium text-foreground">Información legal</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs font-medium text-[#FAF6F2]">Información legal</p>
+                            <p className="text-xs text-[#9C8578] mt-1">
                               {legalInfo[request.category] || legalInfo.Otro}
                             </p>
                           </div>
@@ -203,21 +203,19 @@ export default async function TenantMantencionesPage() {
       )}
 
       {/* History */}
-      <Card className="bg-[#2A2520] border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Historial de Mantenciones</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardContent className="p-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Historial</p>
           {completedRequests.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay mantenciones completadas aún</p>
+            <div className="text-center py-10">
+              <p className="text-[#9C8578]">No hay mantenciones completadas aún</p>
             </div>
           ) : (
             <div className="space-y-4">
               {completedRequests.map((request) => (
                 <div 
                   key={request.id} 
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
+                  className="flex items-center justify-between p-4 rounded-lg bg-[#1C1917]/60"
                 >
                   <div className="flex items-center gap-4 flex-1">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -233,18 +231,18 @@ export default async function TenantMantencionesPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-foreground">{request.category}</p>
+                        <p className="text-sm font-medium text-[#FAF6F2]">{request.category}</p>
                         <Badge className={request.status === "COMPLETED" 
-                          ? "bg-[#5E8B8C] text-white text-xs" 
-                          : "bg-[#C27F79] text-white text-xs"
+                          ? "bg-[#5E8B8C] text-[#FAF6F2] text-xs" 
+                          : "bg-[#C27F79] text-[#FAF6F2] text-xs"
                         }>
                           {request.status === "COMPLETED" ? "Completado" : "Rechazado"}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
+                      <p className="text-xs text-[#9C8578] line-clamp-1">
                         {request.description}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-[#9C8578] mt-1">
                         {request.status === "COMPLETED" 
                           ? `Completado: ${request.updatedAt?.toLocaleDateString("es-CL")}`
                           : `Rechazado: ${request.updatedAt?.toLocaleDateString("es-CL")}`

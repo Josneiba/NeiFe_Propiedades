@@ -262,11 +262,11 @@ export default function SolicitudesCorredoresPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary">Pendiente</Badge>
+        return <Badge className="bg-[#F2C94C]/15 text-[#F2C94C] border border-[#F2C94C]/30">Pendiente</Badge>
       case 'APPROVED':
-        return <Badge variant="default" className="bg-green-600">Aprobado</Badge>
+        return <Badge className="bg-[#5E8B8C]/15 text-[#5E8B8C] border border-[#5E8B8C]/30">Aprobado</Badge>
       case 'REJECTED':
-        return <Badge variant="destructive">Rechazado</Badge>
+        return <Badge className="bg-[#C27F79]/15 text-[#C27F79] border border-[#C27F79]/30">Rechazado</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -290,8 +290,8 @@ export default function SolicitudesCorredoresPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[#FAF6F2]">Solicitudes de Corredores</h1>
-        <p className="text-[#9C8578]">Gestiona permisos generales y accesos a propiedades específicas de tus corredores</p>
+        <h1 className="text-2xl font-serif font-semibold text-[#FAF6F2]">Solicitudes de corredores</h1>
+        <p className="text-sm text-[#9C8578] mt-0.5">Gestiona permisos generales y accesos a propiedades específicas de tus corredores</p>
       </div>
 
       <Tabs key={currentTab} defaultValue={currentTab} className="w-full">
@@ -309,10 +309,9 @@ export default function SolicitudesCorredoresPage() {
 
           {pendingMandates.length > 0 && (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardHeader>
-                <CardTitle className="text-[#FAF6F2]">Solicitudes pendientes de administración</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-5">
+                <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">Solicitudes pendientes de administración</p>
+                <div className="space-y-3">
                 {pendingMandates.map((mandate) => (
                   <div
                     key={mandate.id}
@@ -338,7 +337,7 @@ export default function SolicitudesCorredoresPage() {
                     </div>
 
                     {mandate.notes && (
-                      <div className="rounded-lg bg-[#1E2A2A] p-3 text-sm text-[#D5C3B6]">
+                      <div className="rounded-lg bg-[#1C1917]/60 border border-[#D5C3B6]/10 p-3 text-sm text-[#D5C3B6]">
                         {mandate.notes}
                       </div>
                     )}
@@ -384,6 +383,7 @@ export default function SolicitudesCorredoresPage() {
                     </div>
                   </div>
                 ))}
+              </div>
               </CardContent>
             </Card>
           )}
@@ -397,10 +397,10 @@ export default function SolicitudesCorredoresPage() {
         <TabsContent value="corredores" className="space-y-4">
           {permissions.length === 0 ? (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
-              <CardContent className="p-8 text-center">
-                <User className="w-16 h-16 text-[#9C8578]/40 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-[#FAF6F2] mb-2">No hay solicitudes</h3>
-                <p className="text-[#9C8578]">Cuando los corredores te envíen solicitudes de permiso general, aparecerán aquí.</p>
+              <CardContent className="p-10 text-center">
+                <User className="w-12 h-12 text-[#9C8578]/40 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">No hay solicitudes</h3>
+                <p className="text-sm text-[#9C8578]">Cuando los corredores te envíen solicitudes de permiso general, aparecerán aquí.</p>
               </CardContent>
             </Card>
           ) : (
