@@ -58,6 +58,7 @@ export default function ReajustesPage() {
   const [adjustments, setAdjustments] = useState<IpcAdjustment[]>([])
   const [property, setProperty] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -65,35 +66,44 @@ export default function ReajustesPage() {
     ipcRate: ""
   })
 
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+      const [adjustmentsRes, propertyRes] = await Promise.all([
+        fetch(`/api/properties/${propertyId}/ipc-adjustments`, { cache: "no-store" }),
+        fetch(`/api/properties/${propertyId}`, { cache: "no-store" })
+      ])
+
+      const adjustmentsData = await adjustmentsRes.json()
+      const propertyData = await propertyRes.json()
+
+      if (!adjustmentsRes.ok) {
+        throw new Error(adjustmentsData.error || "No se pudieron cargar los reajustes")
+      }
+      if (!propertyRes.ok) {
+        throw new Error(propertyData.error || "No se pudo cargar la propiedad")
+      }
+      
+      setAdjustments(Array.isArray(adjustmentsData.adjustments) ? adjustmentsData.adjustments : [])
+      setProperty(propertyData.property ?? propertyData)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudieron cargar los datos"
+      setErrorMessage(message)
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Load data
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [adjustmentsRes, propertyRes] = await Promise.all([
-          fetch(`/api/properties/${propertyId}/ipc-adjustments`),
-          fetch(`/api/properties/${propertyId}`)
-        ])
-
-        if (!adjustmentsRes.ok || !propertyRes.ok) throw new Error("Failed to load data")
-        
-        const adjustmentsData = await adjustmentsRes.json()
-        const propertyData = await propertyRes.json()
-        
-        setAdjustments(Array.isArray(adjustmentsData.adjustments) ? adjustmentsData.adjustments : [])
-        setProperty(propertyData.property ?? propertyData)
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos",
-          variant: "destructive"
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadData()
-  }, [propertyId, toast])
+    void loadData()
+  }, [propertyId])
 
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,7 +146,7 @@ export default function ReajustesPage() {
       setAdjustments([created, ...adjustments])
       
       // Refresh property to get updated rent
-      const propertyRes = await fetch(`/api/properties/${propertyId}`)
+      const propertyRes = await fetch(`/api/properties/${propertyId}`, { cache: "no-store" })
       if (propertyRes.ok) {
         const updatedProperty = await propertyRes.json()
         setProperty(updatedProperty.property ?? updatedProperty)
@@ -164,6 +174,29 @@ export default function ReajustesPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#5E8B8C]" />
+      </div>
+    )
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Reajuste por IPC</h1>
+          <p className="text-muted-foreground">Gestiona los reajustes de arriendo por IPC</p>
+        </div>
+        <Card className="bg-card border-border">
+          <CardContent className="py-10 text-center space-y-4">
+            <AlertCircle className="h-10 w-10 text-[#C27F79] mx-auto" />
+            <div>
+              <p className="font-medium text-foreground">No pudimos cargar los reajustes</p>
+              <p className="text-sm text-muted-foreground">{errorMessage}</p>
+            </div>
+            <Button onClick={() => void loadData()} className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }

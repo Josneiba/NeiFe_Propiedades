@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { generateMonthlyPaymentsForPeriod } from '@/lib/monthly-payments'
 
 export const runtime = 'nodejs'
@@ -7,9 +8,9 @@ export const maxDuration = 60
 
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
+  if (!cronSecret || !hasSafeCronSecret()) {
     return NextResponse.json(
-      { error: 'CRON_SECRET no está configurado' },
+      { error: getCronSecretConfigError() },
       { status: 500 }
     )
   }

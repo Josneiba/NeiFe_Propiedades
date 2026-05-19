@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { normalizeRut, validateRut } from '@/lib/validate-rut'
 import { createNotification } from '@/lib/notifications'
@@ -15,6 +16,71 @@ const createApplicationSchema = z.object({
   message: z.string().max(1200).optional(),
   documents: z.array(z.string().url()).max(6).default([]),
 })
+
+export async function GET(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  if (
+    session.user.role !== 'LANDLORD' &&
+    session.user.role !== 'OWNER' &&
+    session.user.role !== 'BROKER'
+  ) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+  }
+
+  try {
+    const status = req.nextUrl.searchParams.get('status')
+
+    const applications = await prisma.tenantApplication.findMany({
+      where: {
+        ...(status ? { status: status as any } : {}),
+        property:
+          session.user.role === 'BROKER'
+            ? {
+                isActive: true,
+                OR: [
+                  { managedBy: session.user.id },
+                  {
+                    mandates: {
+                      some: {
+                        brokerId: session.user.id,
+                        status: 'ACTIVE',
+                      },
+                    },
+                  },
+                ],
+              }
+            : {
+                landlordId: session.user.id,
+                isActive: true,
+              },
+      },
+      include: {
+        property: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            commune: true,
+            applicationOpen: true,
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    })
+
+    return NextResponse.json({ applications })
+  } catch (error) {
+    console.error('Error fetching tenant applications:', error)
+    return NextResponse.json(
+      { error: 'Error al obtener las postulaciones' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {

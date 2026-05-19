@@ -50,6 +50,7 @@ interface UserProfile {
   documentCountry: DocumentCountryCode | null
   documentType: DocumentTypeCode | null
   documentNumber: string | null
+  company: string | null
   bankName: string | null
   bankAccountType: string | null
   bankAccountNumber: string | null
@@ -160,6 +161,7 @@ export default function ConfiguracionPage() {
           documentCountry,
           documentType,
           documentNumber,
+          company: profile.company,
         })
       })
 
@@ -444,6 +446,15 @@ export default function ConfiguracionPage() {
                 id="phone"
                 value={profile?.phone || ""}
                 onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                className="bg-background border-input text-foreground"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company" className="text-foreground">Empresa o razón social</Label>
+              <Input
+                id="company"
+                value={profile?.company || ""}
+                onChange={(e) => setProfile(prev => prev ? { ...prev, company: e.target.value } : null)}
                 className="bg-background border-input text-foreground"
               />
             </div>

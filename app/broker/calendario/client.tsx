@@ -195,6 +195,7 @@ export default function BrokerCalendarClient() {
   const filteredEvents = useMemo(() => (
     filter === "ALL" ? events : events.filter((event) => event.type === filter)
   ), [events, filter])
+  const hasProperties = properties.length > 0
 
   const next30Counts = useMemo(() => {
     const now = Date.now()
@@ -459,7 +460,11 @@ export default function BrokerCalendarClient() {
               </div>
               <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">Sin eventos</h3>
               <p className="text-sm text-[#9C8578] max-w-sm mx-auto">
-                {filter === "ALL" ? "No hay eventos programados" : `No hay eventos de tipo ${filter}`}
+                {!hasProperties
+                  ? "Todavía no tienes propiedades mandatadas o activas para mostrar eventos."
+                  : filter === "ALL"
+                    ? "No hay eventos programados por ahora."
+                    : `No hay eventos de tipo ${filter}`}
               </p>
             </CardContent>
           </Card>

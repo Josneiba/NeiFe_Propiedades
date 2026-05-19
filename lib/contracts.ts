@@ -5,6 +5,10 @@ export function canManageContracts(role: Role) {
   return role === 'LANDLORD' || role === 'OWNER' || role === 'BROKER'
 }
 
+export function canViewContracts(role: Role) {
+  return canManageContracts(role) || role === 'TENANT'
+}
+
 export function getManagedPropertiesWhere(userId: string, role: Role) {
   if (role === 'BROKER') {
     return {

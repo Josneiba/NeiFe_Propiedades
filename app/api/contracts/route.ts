@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import {
   canManageContracts,
+  canViewContracts,
   getManagedPropertiesWhere,
   notifyContractSigned,
   notifyTenantContractSent,
@@ -26,11 +27,37 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  if (!canManageContracts(session.user.role)) {
+  if (!canViewContracts(session.user.role)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
   }
 
   const propertyId = req.nextUrl.searchParams.get('propertyId')
+
+  if (session.user.role === 'TENANT') {
+    const contracts = await prisma.contract.findMany({
+      where: {
+        property: {
+          tenantId: session.user.id,
+          isActive: true,
+          ...(propertyId ? { id: propertyId } : {}),
+        },
+      },
+      include: {
+        property: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            commune: true,
+            tenant: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json({ contracts })
+  }
 
   const contracts = await prisma.contract.findMany({
     where: {

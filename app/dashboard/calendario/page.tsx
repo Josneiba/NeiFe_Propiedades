@@ -191,6 +191,7 @@ export default function CalendarioPage() {
   const filteredEvents = useMemo(() => (
     filter === "ALL" ? events : events.filter((event) => event.type === filter)
   ), [events, filter])
+  const hasProperties = properties.length > 0
 
   const next30Counts = useMemo(() => {
     const now = Date.now()
@@ -633,7 +634,13 @@ export default function CalendarioPage() {
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="h-12 w-12 text-[#9C8578]/50 mx-auto mb-3" />
-              <p className="text-[#9C8578]">No hay eventos para este filtro</p>
+              <p className="text-[#9C8578]">
+                {!hasProperties
+                  ? "Todavía no tienes propiedades activas para mostrar en el calendario."
+                  : filter === "ALL"
+                    ? "No hay eventos aún. Puedes crear uno manualmente o esperar próximos hitos de pagos, contratos o inspecciones."
+                    : "No hay eventos para este filtro."}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">

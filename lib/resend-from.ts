@@ -5,7 +5,7 @@
  */
 export function getResendFrom(): string {
   const from = process.env.RESEND_FROM?.trim()
-  if (from) return from
+  if (from && !/tudominio\.cl/i.test(from)) return from
   return 'NeiFe <onboarding@resend.dev>'
 }
 
@@ -15,4 +15,8 @@ export function isResendSandboxFrom(from = getResendFrom()): boolean {
 
 export function getResendDomainHelpMessage(): string {
   return 'Resend está usando resend.dev en modo prueba. Para enviar a destinatarios reales debes verificar un dominio en Resend y configurar RESEND_FROM con ese dominio.'
+}
+
+export function isPlaceholderResendFrom(from = process.env.RESEND_FROM?.trim() || ''): boolean {
+  return /tudominio\.cl/i.test(from)
 }

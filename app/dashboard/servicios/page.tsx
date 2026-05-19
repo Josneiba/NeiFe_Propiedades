@@ -187,7 +187,7 @@ export default async function DashboardServiciosPage({
               <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">No hay registros de servicios</h3>
               <p className="text-sm text-[#9C8578] max-w-sm mx-auto">
                 {!filterProperty
-                  ? "Puedes filtrar desde el detalle de cada propiedad o cargar datos vía API."
+                  ? "Puedes registrar cargos y subir boletas directamente desde el formulario superior."
                   : "No hay registros para esta propiedad con los filtros aplicados."}
               </p>
             </div>

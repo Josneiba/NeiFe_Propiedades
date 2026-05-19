@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth-session'
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 const publicPathnames = ['/', '/login', '/registro', '/privacidad', '/terminos', '/legal']
@@ -10,7 +11,7 @@ function isPublicPath(pathname: string) {
   )
 }
 
-export default auth((req) => {
+export const proxy = auth((req: NextRequest & { auth?: any }) => {
   const { pathname } = req.nextUrl
   const session = req.auth
   const role = session?.user?.role

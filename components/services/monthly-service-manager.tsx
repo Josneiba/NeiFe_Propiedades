@@ -79,10 +79,15 @@ export function MonthlyServiceManager({
         month: Number(form.month),
         year: Number(form.year),
         water: Number(form.water) || 0,
+        waterBillUrl: billUrls.water,
         electricity: Number(form.electricity) || 0,
+        lightBillUrl: billUrls.electricity,
         gas: Number(form.gas) || 0,
+        gasBillUrl: billUrls.gas,
         garbage: Number(form.garbage) || 0,
+        garbageBillUrl: billUrls.garbage,
         commonExpenses: Number(form.commonExpenses) || 0,
+        commonBillUrl: billUrls.commonExpenses,
         other: Number(form.other) || 0,
         otherLabel: form.otherLabel || undefined,
         notes: form.notes || undefined,
@@ -97,27 +102,6 @@ export function MonthlyServiceManager({
       const createData = await createRes.json()
       if (!createRes.ok) {
         throw new Error(createData.error || 'No se pudo guardar el registro de servicios')
-      }
-
-      for (const [type, url] of Object.entries(billUrls) as Array<[BillType, string | undefined]>) {
-        if (!url) continue
-
-        const fd = new FormData()
-        fd.append('file', await fetch(url).then(r => r.blob()))
-        fd.append('propertyId', form.propertyId)
-        fd.append('month', form.month)
-        fd.append('year', form.year)
-        fd.append('type', type)
-
-        const uploadRes = await fetch('/api/services/upload', {
-          method: 'POST',
-          body: fd,
-        })
-
-        const uploadData = await uploadRes.json()
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || `No se pudo subir ${billLabels[type]}`)
-        }
       }
 
       toast({

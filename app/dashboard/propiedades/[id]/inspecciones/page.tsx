@@ -76,6 +76,7 @@ export default function InspeccionesPage() {
 
   const [inspections, setInspections] = useState<Inspection[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -86,27 +87,31 @@ export default function InspeccionesPage() {
     notes: ""
   })
 
+  const loadInspections = async () => {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+      const res = await fetch(`/api/properties/${propertyId}/inspections`, { cache: "no-store" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "No se pudieron cargar las inspecciones")
+      setInspections(Array.isArray(data.inspections) ? data.inspections : [])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudieron cargar las inspecciones"
+      setErrorMessage(message)
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Load inspections
   useEffect(() => {
-    const loadInspections = async () => {
-      try {
-        const res = await fetch(`/api/properties/${propertyId}/inspections`)
-        if (!res.ok) throw new Error("Failed to load inspections")
-        const data = await res.json()
-        setInspections(data)
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar las inspecciones",
-          variant: "destructive"
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadInspections()
-  }, [propertyId, toast])
+    void loadInspections()
+  }, [propertyId])
 
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,7 +142,8 @@ export default function InspeccionesPage() {
 
       if (!res.ok) throw new Error("Failed to create inspection")
       
-      const newInspection = await res.json()
+      const payload = await res.json()
+      const newInspection = payload.inspection ?? payload
       setInspections([newInspection, ...inspections])
       
       toast({
@@ -195,7 +201,8 @@ export default function InspeccionesPage() {
 
       if (!res.ok) throw new Error("Failed to update status")
 
-      const updated = await res.json()
+      const payload = await res.json()
+      const updated = payload.inspection ?? payload
       setInspections(inspections.map(i => i.id === inspectionId ? updated : i))
 
       toast({
@@ -222,7 +229,8 @@ export default function InspeccionesPage() {
 
       if (!res.ok) throw new Error("Failed to update report")
 
-      const updated = await res.json()
+      const payload = await res.json()
+      const updated = payload.inspection ?? payload
       setInspections(inspections.map(i => i.id === inspectionId ? updated : i))
 
       toast({
@@ -242,6 +250,29 @@ export default function InspeccionesPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#5E8B8C]" />
+      </div>
+    )
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Inspecciones</h1>
+          <p className="text-muted-foreground">Gestiona las inspecciones de la propiedad</p>
+        </div>
+        <Card className="bg-card border-border">
+          <CardContent className="py-10 text-center space-y-4">
+            <AlertCircle className="h-10 w-10 text-[#C27F79] mx-auto" />
+            <div>
+              <p className="font-medium text-foreground">No pudimos cargar las inspecciones</p>
+              <p className="text-sm text-muted-foreground">{errorMessage}</p>
+            </div>
+            <Button onClick={() => void loadInspections()} className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white">
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }

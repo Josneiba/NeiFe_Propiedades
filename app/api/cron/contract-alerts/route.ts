@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
+import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
 
 export const runtime = 'nodejs'
@@ -84,9 +85,9 @@ function getContractAlertEmailHtml(params: {
 
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
+  if (!cronSecret || !hasSafeCronSecret()) {
     return NextResponse.json(
-      { error: 'CRON_SECRET no está configurado' },
+      { error: getCronSecretConfigError() },
       { status: 500 }
     )
   }

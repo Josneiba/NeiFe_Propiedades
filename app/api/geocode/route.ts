@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 
 // Rate limit simple en memoria para Nominatim (máx 1 req/seg por su política)
 let lastRequest = 0
