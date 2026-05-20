@@ -4,12 +4,12 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { PaymentReceiptDownload } from "@/components/payments/payment-receipt-download"
 import { ConfirmPaymentButton } from "@/components/payments/confirm-payment-button"
 import { GenerateMonthlyPaymentsButton } from "@/components/payments/generate-monthly-payments-button"
 import { PageHeader } from "@/components/ui/page-header"
 import { NativeSelect } from "@/components/ui/native-select"
 import { paymentStatusConfig } from "@/lib/status-config"
+import { getDocumentKindLabel, getDocumentViewUrl } from "@/lib/document-utils"
 import { 
   Building2,
   Check,
@@ -312,56 +312,20 @@ export default async function PagosPage({
                         {getStatusBadge(payment.status)}
                       </td>
                       <td className="py-3 px-3 text-right space-x-2 flex justify-end">
-                        {payment.status === "PROCESSING" && payment.receipt && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-[#D5C3B6]/20 text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
-                              asChild
-                            >
-                              <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                            <ConfirmPaymentButton paymentId={payment.id} />
-                          </>
-                        )}
-                        {payment.status === "PAID" && payment.receipt && (
+                        {payment.receipt && (
                           <Button
                             variant="outline"
                             size="sm"
                             className="border-[#D5C3B6]/20 text-[#5E8B8C] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
                             asChild
                           >
-                            <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4" />
+                            <a href={getDocumentViewUrl(payment.receipt) ?? payment.receipt} target="_blank" rel="noopener noreferrer">
+                              <Download className="mr-2 h-4 w-4" />
+                              Ver {getDocumentKindLabel(payment.receipt).toLowerCase()}
                             </a>
                           </Button>
                         )}
-                        {payment.status === "PAID" && (
-                          <PaymentReceiptDownload
-                            payment={{
-                              id: payment.id,
-                              month: payment.month,
-                              year: payment.year,
-                              amountCLP: payment.amountCLP,
-                              amountUF: payment.amountUF,
-                              paidAt: payment.paidAt?.toISOString() || null,
-                              createdAt: payment.createdAt.toISOString(),
-                              method: payment.method,
-                              notes: payment.notes,
-                              property: {
-                                address: payment.property.address,
-                                commune: payment.property.commune,
-                                tenant: payment.property.tenant
-                                  ? { name: payment.property.tenant.name }
-                                  : null,
-                              },
-                            }}
-                            landlordName={session.user.name || "Arrendador"}
-                          />
-                        )}
+                        {payment.status === "PROCESSING" && payment.receipt && <ConfirmPaymentButton paymentId={payment.id} />}
                       </td>
                     </tr>
                   ))}

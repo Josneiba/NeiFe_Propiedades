@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Upload, X, Eye, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
+import { getDocumentKindLabel, getDocumentViewUrl } from '@/lib/document-utils'
 
 interface DocumentUploaderProps {
   label: string
@@ -31,13 +32,13 @@ export function DocumentUploader({
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [url, setUrl] = useState(currentUrl ?? null)
-  const isPdf = url?.includes('.pdf') || url?.includes('/raw/')
 
   useEffect(() => {
     setUrl(currentUrl ?? null)
   }, [currentUrl])
 
-  const viewUrl: string | null = isPdf && url ? `/api/pdf?url=${encodeURIComponent(url)}` : url
+  const viewUrl = getDocumentViewUrl(url)
+  const kindLabel = getDocumentKindLabel(url)
 
   const handleFile = async (file: File) => {
     const maxBytes = maxSizeMB * 1024 * 1024
@@ -97,7 +98,7 @@ export function DocumentUploader({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-[#FAF6F2] truncate">
-              {isPdf ? 'Documento PDF subido' : 'Imagen subida'}
+              {kindLabel} subido
             </p>
             <p className="text-xs text-[#9C8578]">Listo para usar</p>
           </div>

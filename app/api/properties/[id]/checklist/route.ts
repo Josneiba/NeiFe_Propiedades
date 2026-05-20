@@ -4,19 +4,8 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { assertPropertyAccess } from '@/lib/permissions'
 
-const DEFAULT_ROOMS = [
-  'Living/Comedor',
-  'Cocina',
-  'Baño principal',
-  'Dormitorio 1',
-  'Dormitorio 2',
-  'Pasillo',
-  'Terraza/Balcón',
-  'Estacionamiento',
-]
-
 const roomSchema = z.object({
-  room: z.string().min(1),
+  room: z.string().trim().min(1).max(80),
   condition: z.enum(['EXCELENTE', 'BUENA', 'REGULAR', 'MALA']),
   notes: z.string().optional().default(''),
   photos: z.array(z.string().url()).default([]),
@@ -52,7 +41,7 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ checklists, defaultRooms: DEFAULT_ROOMS })
+    return NextResponse.json({ checklists })
   } catch (error) {
     console.error('Error fetching checklists:', error)
     return NextResponse.json(
@@ -82,13 +71,24 @@ export async function POST(
     const body = await req.json()
     const data = createChecklistSchema.parse(body)
 
+    const normalizedRooms = data.rooms
+      .map((room) => ({
+        ...room,
+        room: room.room.trim(),
+        notes: room.notes?.trim() ?? '',
+      }))
+      .filter(
+        (room, index, array) =>
+          array.findIndex((item) => item.room.toLowerCase() === room.room.toLowerCase()) === index
+      )
+
     const checklist = await prisma.propertyChecklist.create({
       data: {
         propertyId: id,
         type: data.type,
         completedBy: session.user.id,
-        rooms: data.rooms,
-        overallCondition: data.overallCondition,
+        rooms: normalizedRooms,
+        overallCondition: data.overallCondition?.trim() || null,
         tenantSignature: data.tenantSignature,
         landlordSignature: data.landlordSignature,
         completedAt: new Date(),

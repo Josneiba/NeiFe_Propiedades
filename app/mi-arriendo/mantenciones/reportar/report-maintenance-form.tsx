@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, CheckCircle2, ImagePlus, Loader2, Upload, Wrench } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Loader2, Upload, Wrench } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -259,7 +259,7 @@ export function ReportMaintenanceForm({ property }: ReportMaintenanceFormProps) 
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
+                <div>
                   <div>
                     <Label htmlFor="photos" className="text-[#D5C3B6]">
                       Fotos de apoyo
@@ -268,15 +268,6 @@ export function ReportMaintenanceForm({ property }: ReportMaintenanceFormProps) 
                       Puedes subir hasta 5 imágenes para mostrar mejor el problema.
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-[#D5C3B6]/20 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10 hover:text-[#FAF6F2]"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                    Agregar fotos
-                  </Button>
                 </div>
 
                 <input

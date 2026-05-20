@@ -167,6 +167,19 @@ export default async function TenantMantencionesPage() {
                           </span>
                         )}
                       </div>
+                      {request.photos && request.photos.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {request.photos.map((photo) => (
+                            <a key={photo} href={photo} target="_blank" rel="noopener noreferrer" className="block">
+                              <img
+                                src={photo}
+                                alt="Foto del problema reportado"
+                                className="h-20 w-20 rounded-lg border border-[#D5C3B6]/10 object-cover"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                       {request.provider && (
                         <div className="mt-3 p-3 rounded-lg bg-[#1C1917]/60 border border-[#D5C3B6]/10">
                           <p className="text-xs text-[#9C8578]">Proveedor asignado:</p>

@@ -15,6 +15,7 @@ import { PaymentModal } from '@/components/payment/payment-modal'
 import { getUserIdentity } from '@/lib/identity-documents'
 import { PageHeader } from '@/components/ui/page-header'
 import { paymentStatusConfig } from '@/lib/status-config'
+import { getDocumentKindLabel, getDocumentViewUrl } from '@/lib/document-utils'
 
 // Format Chilean pesos
 function formatCLP(amount: number) {
@@ -368,9 +369,9 @@ export default function TenantPagosPage() {
                               className="text-[#5E8B8C]"
                               asChild
                             >
-                              <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
+                              <a href={getDocumentViewUrl(payment.receipt) ?? payment.receipt} target="_blank" rel="noopener noreferrer">
                                 <Download className="h-4 w-4 mr-1" />
-                                PDF
+                                Ver {getDocumentKindLabel(payment.receipt).toLowerCase()}
                               </a>
                             </Button>
                           ) : (

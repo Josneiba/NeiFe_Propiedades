@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { Camera, Loader2 } from 'lucide-react'
+import { Camera, Loader2, Plus, Trash2 } from 'lucide-react'
 
 type RoomCondition = 'EXCELENTE' | 'BUENA' | 'REGULAR' | 'MALA'
 
@@ -37,11 +37,11 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingRoom, setUploadingRoom] = useState<string | null>(null)
-  const [defaultRooms, setDefaultRooms] = useState<string[]>([])
   const [checklists, setChecklists] = useState<ChecklistRecord[]>([])
   const [type, setType] = useState<'CHECKIN' | 'CHECKOUT'>('CHECKIN')
   const [overallCondition, setOverallCondition] = useState('')
   const [rooms, setRooms] = useState<RoomState[]>([])
+  const [newRoomName, setNewRoomName] = useState('')
 
   const checkin = useMemo(() => checklists.find((item) => item.type === 'CHECKIN') ?? null, [checklists])
   const checkout = useMemo(() => checklists.find((item) => item.type === 'CHECKOUT') ?? null, [checklists])
@@ -53,19 +53,11 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'No se pudo cargar checklist')
 
-        setDefaultRooms(data.defaultRooms || [])
         setChecklists((data.checklists || []).map((item: any) => ({
           ...item,
           rooms: Array.isArray(item.rooms) ? item.rooms : [],
         })))
-
-        const initialRooms = (data.defaultRooms || []).map((room: string) => ({
-          room,
-          condition: 'BUENA' as RoomCondition,
-          notes: '',
-          photos: [],
-        }))
-        setRooms(initialRooms)
+        setRooms([])
         setType(data.checklists?.some((item: any) => item.type === 'CHECKIN') ? 'CHECKOUT' : 'CHECKIN')
       } catch (error) {
         toast({
@@ -86,7 +78,7 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
     try {
       const form = new FormData()
       form.append('file', file)
-      form.append('folder', 'properties')
+      form.append('folder', 'checklists')
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: form,
@@ -110,7 +102,44 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
     }
   }
 
+  const addRoom = () => {
+    const roomName = newRoomName.trim()
+    if (!roomName) return
+
+    if (rooms.some((room) => room.room.toLowerCase() === roomName.toLowerCase())) {
+      toast({
+        title: 'Espacio repetido',
+        description: 'Ese lugar ya fue agregado al checklist.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setRooms((current) => [
+      ...current,
+      { room: roomName, condition: 'BUENA', notes: '', photos: [] },
+    ])
+    setNewRoomName('')
+  }
+
   const saveChecklist = async () => {
+    const normalizedRooms = rooms
+      .map((room) => ({
+        ...room,
+        room: room.room.trim(),
+        notes: room.notes.trim(),
+      }))
+      .filter((room) => room.room.length > 0)
+
+    if (normalizedRooms.length === 0) {
+      toast({
+        title: 'Agrega al menos un espacio',
+        description: 'Primero crea un lugar del hogar para registrar su estado.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setSaving(true)
     try {
       const res = await fetch(`/api/properties/${propertyId}/checklist`, {
@@ -118,20 +147,21 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type,
-          rooms,
-          overallCondition,
+          rooms: normalizedRooms,
+          overallCondition: overallCondition.trim(),
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'No se pudo guardar checklist')
 
       setChecklists((current) => [
-        { ...data.checklist, rooms: Array.isArray(data.checklist.rooms) ? data.checklist.rooms : rooms },
+        { ...data.checklist, rooms: Array.isArray(data.checklist.rooms) ? data.checklist.rooms : normalizedRooms },
         ...current.filter((item) => item.type !== type),
       ])
       setType(type === 'CHECKIN' ? 'CHECKOUT' : 'CHECKIN')
       setOverallCondition('')
-      setRooms(defaultRooms.map((room) => ({ room, condition: 'BUENA', notes: '', photos: [] })))
+      setRooms([])
+      setNewRoomName('')
       toast({ title: 'Checklist guardado' })
     } catch (error) {
       toast({
@@ -148,6 +178,10 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
     return <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">Cargando checklist...</div>
   }
 
+  const roomNames = Array.from(
+    new Set([...(checkin?.rooms ?? []).map((room) => room.room), ...(checkout?.rooms ?? []).map((room) => room.room)])
+  )
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
@@ -159,13 +193,15 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
         <div className="rounded-2xl border border-border bg-card p-5">
           <h3 className="text-lg font-semibold text-foreground">Comparación rápida</h3>
           <div className="mt-4 space-y-3">
-            {checkin.rooms.map((room) => {
-              const out = checkout.rooms.find((entry) => entry.room === room.room)
+            {roomNames.map((roomName) => {
+              const entry = checkin.rooms.find((room) => room.room === roomName)
+              if (!entry) return null
+              const exit = checkout.rooms.find((room) => room.room === roomName)
               return (
-                <div key={room.room} className="grid gap-2 rounded-xl border border-border p-3 md:grid-cols-3">
-                  <p className="font-medium text-foreground">{room.room}</p>
-                  <p className="text-sm text-muted-foreground">Entrada: {CONDITION_LABELS[room.condition]}</p>
-                  <p className="text-sm text-muted-foreground">Salida: {out ? CONDITION_LABELS[out.condition] : 'Sin registro'}</p>
+                <div key={roomName} className="grid gap-2 rounded-xl border border-border p-3 md:grid-cols-3">
+                  <p className="font-medium text-foreground">{roomName}</p>
+                  <p className="text-sm text-muted-foreground">Entrada: {CONDITION_LABELS[entry.condition]}</p>
+                  <p className="text-sm text-muted-foreground">Salida: {exit ? CONDITION_LABELS[exit.condition] : 'Sin registro'}</p>
                 </div>
               )
             })}
@@ -178,15 +214,52 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
           Crear checklist de {type === 'CHECKIN' ? 'entrada' : 'salida'}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Respaldo visual y escrito para el estado de la propiedad.
+          Agrega solo los espacios necesarios y registra su estado con fotos y notas.
         </p>
 
         <div className="mt-5 space-y-4">
+          <div className="rounded-xl border border-border p-4">
+            <Label className="text-sm text-muted-foreground">Agregar espacio del hogar</Label>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="Ej: Pieza matrimonial, logia, quincho, bodega"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addRoom()
+                  }
+                }}
+              />
+              <Button type="button" onClick={addRoom} className="bg-[#5E8B8C] text-[#FAF6F2] hover:bg-[#5E8B8C]/90">
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar
+              </Button>
+            </div>
+          </div>
+
+          {rooms.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+              Agrega los lugares que quieras revisar. No hay ambientes predeterminados para evitar scroll innecesario.
+            </div>
+          ) : null}
+
           {rooms.map((room) => (
             <div key={room.room} className="rounded-xl border border-border p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">{room.room}</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium text-foreground">{room.room}</p>
+                    <button
+                      type="button"
+                      onClick={() => setRooms((current) => current.filter((entry) => entry.room !== room.room))}
+                      className="inline-flex items-center gap-1 text-sm text-[#C27F79] hover:text-[#FAF6F2]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Quitar
+                    </button>
+                  </div>
                   <div className="mt-3 grid gap-2 sm:grid-cols-4">
                     {(['EXCELENTE', 'BUENA', 'REGULAR', 'MALA'] as RoomCondition[]).map((condition) => (
                       <button
@@ -228,7 +301,7 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
               <div className="mt-4">
                 <Label className="text-sm text-muted-foreground">Notas</Label>
                 <Textarea
-                  rows={2}
+                  rows={3}
                   value={room.notes}
                   onChange={(e) =>
                     setRooms((current) =>
@@ -238,6 +311,7 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
                     )
                   }
                   className="mt-2"
+                  placeholder="Ej: muro sin manchas, piso con desgaste leve, ventana abre con dificultad."
                 />
               </div>
 
@@ -255,10 +329,11 @@ export function PropertyChecklist({ propertyId }: { propertyId: string }) {
 
           <div>
             <Label className="text-sm text-muted-foreground">Resumen general</Label>
-            <Input
+            <Textarea
+              rows={3}
               value={overallCondition}
               onChange={(e) => setOverallCondition(e.target.value)}
-              placeholder="Ej: Propiedad en buen estado general, con desgaste normal"
+              placeholder="Ej: Propiedad en buen estado general, con desgaste normal por uso."
               className="mt-2"
             />
           </div>
@@ -287,6 +362,7 @@ function SummaryCard({
           <p className="text-muted-foreground">
             Fecha: {checklist.completedAt ? new Date(checklist.completedAt).toLocaleDateString('es-CL') : 'Sin fecha'}
           </p>
+          <p className="text-muted-foreground">Espacios registrados: {checklist.rooms.length}</p>
           <p className="text-muted-foreground">
             Estado general: {checklist.overallCondition || 'Sin resumen'}
           </p>

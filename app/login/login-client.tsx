@@ -448,7 +448,116 @@ export default function LoginClient() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[#D5C3B6] text-sm">Contraseña</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="password" className="text-[#D5C3B6] text-sm">Contraseña</Label>
+                    <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-[#5E8B8C] hover:text-[#FAF6F2] transition-colors"
+                          onClick={() => {
+                            setResetForm((prev) => ({
+                              ...prev,
+                              email: formData.email || prev.email,
+                            }))
+                          }}
+                        >
+                          Olvidé mi contraseña
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#FAF6F2]">
+                        <DialogHeader>
+                          <DialogTitle className="text-[#FAF6F2]">Recuperar contraseña</DialogTitle>
+                          <DialogDescription className="text-[#9C8578]">
+                            Te enviaremos un código de un solo uso para verificar tu identidad.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                          <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/40 p-4">
+                            <div className="flex items-start gap-3">
+                              <Mail className="mt-0.5 h-4 w-4 text-[#5E8B8C]" />
+                              <p className="text-sm text-[#9C8578]">
+                                El código llega al correo de la cuenta y dura 30 minutos.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="reset-email" className="text-[#D5C3B6]">Correo electrónico</Label>
+                            <Input
+                              id="reset-email"
+                              type="email"
+                              value={resetForm.email}
+                              onChange={(e) => setResetForm((prev) => ({ ...prev, email: e.target.value }))}
+                              placeholder="tu@correo.cl"
+                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                            />
+                          </div>
+
+                          {resetStep === "confirm" ? (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="reset-code" className="text-[#D5C3B6]">Código recibido</Label>
+                                <Input
+                                  id="reset-code"
+                                  value={resetForm.code}
+                                  onChange={(e) => setResetForm((prev) => ({ ...prev, code: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                                  placeholder="000000"
+                                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="reset-password" className="text-[#D5C3B6]">Nueva contraseña</Label>
+                                <Input
+                                  id="reset-password"
+                                  type="password"
+                                  value={resetForm.password}
+                                  onChange={(e) => setResetForm((prev) => ({ ...prev, password: e.target.value }))}
+                                  placeholder="Mínimo 8 caracteres"
+                                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="reset-confirm-password" className="text-[#D5C3B6]">Confirmar contraseña</Label>
+                                <Input
+                                  id="reset-confirm-password"
+                                  type="password"
+                                  value={resetForm.confirmPassword}
+                                  onChange={(e) => setResetForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                                  placeholder="Repite tu nueva contraseña"
+                                  className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                                />
+                              </div>
+                            </>
+                          ) : null}
+
+                          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                            {resetStep === "confirm" ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="border-[#D5C3B6]/20 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
+                                onClick={handlePasswordResetRequest}
+                                disabled={resetLoading}
+                              >
+                                Reenviar código
+                              </Button>
+                            ) : null}
+                            <Button
+                              type="button"
+                              className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
+                              onClick={resetStep === "request" ? handlePasswordResetRequest : handlePasswordResetConfirm}
+                              disabled={resetLoading}
+                            >
+                              {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                              {resetStep === "request" ? "Enviar código" : "Actualizar contraseña"}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   <div className="relative">
                     <Input
                       id="password"
@@ -476,116 +585,6 @@ export default function LoginClient() {
                   {isLoading ? "Ingresando..." : "Entrar"}
                 </Button>
               </form>
-
-              <div className="mt-3 flex justify-end">
-                <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-[#5E8B8C] hover:text-[#FAF6F2] transition-colors"
-                      onClick={() => {
-                        setResetForm((prev) => ({
-                          ...prev,
-                          email: formData.email || prev.email,
-                        }))
-                      }}
-                    >
-                      Olvidé mi contraseña
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#FAF6F2]">
-                    <DialogHeader>
-                      <DialogTitle className="text-[#FAF6F2]">Recuperar contraseña</DialogTitle>
-                      <DialogDescription className="text-[#9C8578]">
-                        Te enviaremos un código de un solo uso para verificar tu identidad.
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/40 p-4">
-                        <div className="flex items-start gap-3">
-                          <Mail className="mt-0.5 h-4 w-4 text-[#5E8B8C]" />
-                          <p className="text-sm text-[#9C8578]">
-                            El código llega al correo de la cuenta y dura 30 minutos.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="reset-email" className="text-[#D5C3B6]">Correo electrónico</Label>
-                        <Input
-                          id="reset-email"
-                          type="email"
-                          value={resetForm.email}
-                          onChange={(e) => setResetForm((prev) => ({ ...prev, email: e.target.value }))}
-                          placeholder="tu@correo.cl"
-                          className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
-                        />
-                      </div>
-
-                      {resetStep === "confirm" ? (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="reset-code" className="text-[#D5C3B6]">Código recibido</Label>
-                            <Input
-                              id="reset-code"
-                              value={resetForm.code}
-                              onChange={(e) => setResetForm((prev) => ({ ...prev, code: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                              placeholder="000000"
-                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reset-password" className="text-[#D5C3B6]">Nueva contraseña</Label>
-                            <Input
-                              id="reset-password"
-                              type="password"
-                              value={resetForm.password}
-                              onChange={(e) => setResetForm((prev) => ({ ...prev, password: e.target.value }))}
-                              placeholder="Mínimo 8 caracteres"
-                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reset-confirm-password" className="text-[#D5C3B6]">Confirmar contraseña</Label>
-                            <Input
-                              id="reset-confirm-password"
-                              type="password"
-                              value={resetForm.confirmPassword}
-                              onChange={(e) => setResetForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                              placeholder="Repite tu nueva contraseña"
-                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
-                            />
-                          </div>
-                        </>
-                      ) : null}
-
-                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                        {resetStep === "confirm" ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="border-[#D5C3B6]/20 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
-                            onClick={handlePasswordResetRequest}
-                            disabled={resetLoading}
-                          >
-                            Reenviar código
-                          </Button>
-                        ) : null}
-                        <Button
-                          type="button"
-                          className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
-                          onClick={resetStep === "request" ? handlePasswordResetRequest : handlePasswordResetConfirm}
-                          disabled={resetLoading}
-                        >
-                          {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                          {resetStep === "request" ? "Enviar código" : "Actualizar contraseña"}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
 
               {requiresVerification ? (
                 <div className="mt-4 rounded-xl border border-[#B8965A]/30 bg-[#1C1917] p-4">

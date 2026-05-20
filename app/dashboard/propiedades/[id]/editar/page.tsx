@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { getRegions, getCommunesByRegion } from '@/lib/chile-regions'
+import { PropertyPhotosTab } from '@/components/dashboard/property-photos-tab'
 
 interface Property {
   id: string
@@ -323,6 +324,16 @@ export default function EditarPropiedad() {
                 className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-[#5E8B8C] resize-none"
                 rows={4}
               />
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Fotos de la propiedad</h3>
+                <p className="text-sm text-muted-foreground">
+                  Puedes subir una foto principal o más imágenes de apoyo desde aquí.
+                </p>
+              </div>
+              <PropertyPhotosTab propertyId={propertyId} />
             </div>
 
             {/* Row 3: Bedrooms, Bathrooms, Square Meters */}

@@ -11,6 +11,7 @@ import { PropertyMiniMap } from "@/components/map/property-mini-map"
 import { PropertyPublicationToggle } from "@/components/properties/property-publication-toggle"
 import { ApplicationPortalManager } from "@/components/properties/application-portal-manager"
 import { ConfirmPaymentButton } from "@/components/payments/confirm-payment-button"
+import { getDocumentKindLabel, getDocumentViewUrl } from "@/lib/document-utils"
 import {
   ArrowLeft,
   Calendar,
@@ -440,8 +441,8 @@ export default function BrokerPropertyDetailPage({
                               <div className="flex flex-wrap items-center gap-2">
                                 {payment.receipt && (
                                   <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10" asChild>
-                                    <a href={payment.receipt} target="_blank" rel="noopener noreferrer">
-                                      <Download className="mr-2 h-4 w-4" />Comprobante
+                                    <a href={getDocumentViewUrl(payment.receipt) ?? payment.receipt} target="_blank" rel="noopener noreferrer">
+                                      <Download className="mr-2 h-4 w-4" />Ver {getDocumentKindLabel(payment.receipt).toLowerCase()}
                                     </a>
                                   </Button>
                                 )}

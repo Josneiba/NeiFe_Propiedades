@@ -69,15 +69,15 @@ export function PropertyCard({
     <Link
       href={`/dashboard/propiedades/${property.id}`}
       className={cn(
-        'group flex min-h-[260px] flex-col overflow-hidden rounded-2xl border transition-all duration-300',
+        'group flex min-h-[290px] flex-col overflow-hidden rounded-2xl border bg-[#2D3C3C] transition-all duration-300 hover:-translate-y-0.5',
         isManagedByBroker
-          ? 'border-[#5E8B8C]/20 bg-[#244042]/40 hover:border-[#5E8B8C]/40 hover:bg-[#244042]/60'
-          : 'border-[#D5C3B6]/10 bg-[#2A2520] hover:border-[#B8965A]/30 hover:bg-[#2A2520]/80'
+          ? 'border-[#5E8B8C]/20 hover:border-[#5E8B8C]/40 hover:bg-[#2F4749]'
+          : 'border-[#D5C3B6]/10 hover:border-[#D5C3B6]/25 hover:bg-[#314445]'
       )}
     >
       <div className="h-1 w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
 
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-semibold leading-tight text-[#FAF6F2]">
@@ -101,13 +101,13 @@ export function PropertyCard({
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
+          <div className="rounded-xl bg-[#1C1917]/70 px-3 py-3">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Pago</p>
             <Badge className={statusLabel?.className || 'bg-gray-600 text-white'}>
               {statusLabel?.label || 'Sin estado'}
             </Badge>
           </div>
-          <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
+          <div className="rounded-xl bg-[#1C1917]/70 px-3 py-3">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-[#9C8578]">Arrendatario</p>
             <p className="truncate text-sm font-medium text-[#D5C3B6]">
               {property.tenant?.name || 'Sin asignar'}
@@ -147,7 +147,7 @@ export function PropertyCard({
         </div>
       </div>
 
-      <div className="border-t border-[#D5C3B6]/8 px-5 py-3 flex justify-end">
+      <div className="border-t border-[#D5C3B6]/8 px-6 py-4 flex justify-end">
         <span className="text-sm font-medium text-[#5E8B8C] transition-colors group-hover:text-[#8FC4C5]">
           Ver ficha →
         </span>

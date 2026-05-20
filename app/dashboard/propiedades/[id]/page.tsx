@@ -43,6 +43,7 @@ import { ApplicationPortalManager } from "@/components/properties/application-po
 import { PropertyChecklist } from "@/components/dashboard/property-checklist"
 import { SecurityDepositPanel } from "@/components/dashboard/security-deposit-panel"
 import { IpcAdjustmentDialog } from "@/components/dashboard/ipc-adjustment-dialog"
+import { PropertyPhotosTab } from "@/components/dashboard/property-photos-tab"
 import { getUserIdentity } from "@/lib/identity-documents"
 
 interface Property {
@@ -63,6 +64,13 @@ interface Property {
   publishedAt?: string | null
   applicationOpen: boolean
   applicationSlug?: string | null
+  photos?: Array<{
+    id: string
+    url: string
+    room: string
+    caption?: string | null
+    type: string
+  }>
   tenant?: {
     id: string
     name: string
@@ -275,6 +283,7 @@ export default function PropertyDetailPage() {
     userRole === 'BROKER' && !hasBroker && brokerPermissionStatus !== 'APPROVED'
   const canManageProperty = userRole === 'BROKER' ? hasBroker : !landlordDelegatedToBroker
   const canEditProperty = userRole === 'BROKER' ? hasBroker : !landlordDelegatedToBroker
+  const currentPhoto = property.photos?.[0] ?? null
 
   return (
     <div className="space-y-6">
@@ -397,8 +406,16 @@ export default function PropertyDetailPage() {
               <Card className="bg-card border-border">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-48 h-48 bg-[#2D3C3C] rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-16 w-16 text-[#D5C3B6]/50" />
+                    <div className="w-full md:w-48 h-48 overflow-hidden rounded-lg bg-[#2D3C3C] flex items-center justify-center flex-shrink-0">
+                      {currentPhoto ? (
+                        <img
+                          src={currentPhoto.url}
+                          alt={currentPhoto.caption || property.name || property.address}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Building2 className="h-16 w-16 text-[#D5C3B6]/50" />
+                      )}
                     </div>
                     <div className="flex-1 space-y-4">
                       <div>
@@ -436,6 +453,19 @@ export default function PropertyDetailPage() {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Tenant Info */}
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Fotos de la propiedad</CardTitle>
+                  <CardDescription>
+                    Sube una foto actual para que la ficha deje de mostrar el ícono genérico.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PropertyPhotosTab propertyId={propertyId} />
                 </CardContent>
               </Card>
 

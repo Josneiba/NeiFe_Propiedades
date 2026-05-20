@@ -99,6 +99,13 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
           take: 5,
         },
+        photos: {
+          where: {
+            type: 'CURRENT',
+          },
+          orderBy: [{ order: 'asc' }, { takenAt: 'desc' }],
+          take: 6,
+        },
         providers: {
           include: {
             provider: {

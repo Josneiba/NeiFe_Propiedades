@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 
 type Deposit = {
@@ -67,6 +68,24 @@ export function SecurityDepositPanel({ propertyId }: { propertyId: string }) {
   }, [propertyId, toast])
 
   const save = async () => {
+    if (!form.amountCLP || Number(form.amountCLP) <= 0) {
+      toast({
+        title: 'Monto pendiente',
+        description: 'Ingresa un monto de garantía válido antes de guardar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!form.receivedBy.trim()) {
+      toast({
+        title: 'Falta información',
+        description: 'Indica quién recibió la garantía.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setSaving(true)
     try {
       const res = await fetch(`/api/properties/${propertyId}/security-deposit`, {
@@ -85,7 +104,7 @@ export function SecurityDepositPanel({ propertyId }: { propertyId: string }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'No se pudo guardar la garantía')
-      toast({ title: 'Garantía guardada' })
+      toast({ title: 'Garantía guardada', description: 'El registro quedó actualizado correctamente.' })
     } catch (error) {
       toast({
         title: 'Error',
@@ -140,11 +159,15 @@ export function SecurityDepositPanel({ propertyId }: { propertyId: string }) {
           <Input value={form.deductionsCLP} onChange={(e) => setForm((c) => ({ ...c, deductionsCLP: e.target.value }))} />
         </Field>
         <Field label="Notas de descuento">
-          <Input value={form.deductionNotes} onChange={(e) => setForm((c) => ({ ...c, deductionNotes: e.target.value }))} />
+          <Textarea
+            rows={3}
+            value={form.deductionNotes}
+            onChange={(e) => setForm((c) => ({ ...c, deductionNotes: e.target.value }))}
+          />
         </Field>
       </div>
 
-      <Button onClick={save} disabled={saving} className="mt-5 bg-[#75524C] text-[#FAF6F2] hover:bg-[#75524C]/90">
+      <Button type="button" onClick={save} disabled={saving} className="mt-5 bg-[#75524C] text-[#FAF6F2] hover:bg-[#75524C]/90">
         {saving ? 'Guardando...' : 'Guardar garantía'}
       </Button>
     </div>

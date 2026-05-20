@@ -316,6 +316,20 @@ export default async function MantencionesPage({
                     )}
                   </div>
 
+                  {request.photos && request.photos.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {request.photos.map((photo) => (
+                        <a key={photo} href={photo} target="_blank" rel="noopener noreferrer" className="block">
+                          <img
+                            src={photo}
+                            alt="Foto de mantención"
+                            className="h-20 w-20 rounded-lg border border-[#D5C3B6]/10 object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
                   {request.status === "IN_PROGRESS" && request.provider && (
                     <div className="bg-[#1C1917]/60 border border-[#D5C3B6]/10 rounded-lg p-3">
                       <p className="text-xs text-[#9C8578]">Proveedor asignado:</p>
