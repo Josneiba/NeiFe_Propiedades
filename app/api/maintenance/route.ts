@@ -6,6 +6,8 @@ import { logActivity, logUnauthorizedAccess } from '@/lib/activity'
 import { z } from 'zod'
 import { assertBrokerAccess } from '@/lib/permissions'
 
+const MAX_MAINTENANCE_RESULTS = 100
+
 const createSchema = z.object({
   propertyId: z.string(),
   category: z.enum([
@@ -90,6 +92,7 @@ export async function GET(req: NextRequest) {
         timeline: { orderBy: { createdAt: 'desc' } },
       },
       orderBy: { createdAt: 'desc' },
+      take: MAX_MAINTENANCE_RESULTS,
     })
 
     return NextResponse.json({ maintenance })

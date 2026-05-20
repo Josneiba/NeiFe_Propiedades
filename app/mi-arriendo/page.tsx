@@ -22,6 +22,7 @@ import {
 import Link from "next/link"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { Suspense } from "react"
+import { formatDateCompact } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -149,14 +150,14 @@ async function TenantPropertyInfo({ tenantId }: { tenantId: string }) {
               <div className="rounded-xl bg-[#1C1917] p-4">
                 <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Inicio contrato</p>
                 <p className="text-sm font-semibold text-[#FAF6F2]">
-                  {new Date(contractDates.start).toLocaleDateString("es-CL")}
+                  {formatDateCompact(contractDates.start)}
                 </p>
               </div>
 
               <div className="rounded-xl bg-[#1C1917] p-4">
                 <p className="mb-2 text-[10px] uppercase tracking-wide text-[#9C8578]">Termino contrato</p>
                 <p className="text-sm font-semibold text-[#FAF6F2]">
-                  {new Date(contractDates.end).toLocaleDateString("es-CL")}
+                  {formatDateCompact(contractDates.end)}
                 </p>
               </div>
             </>
@@ -367,7 +368,7 @@ async function TenantPaymentInfo({ propertyId }: { propertyId: string }) {
                     {getMonthName(payment.month)} {payment.year}
                   </p>
                   <p className="text-xs text-[#9C8578]">
-                    {new Date(payment.createdAt).toLocaleDateString("es-CL")}
+                    {formatDateCompact(payment.createdAt)}
                   </p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-[#5E8B8C]" />
@@ -407,7 +408,7 @@ async function TenantMaintenanceInfo({ propertyId }: { propertyId: string }) {
               <div>
                 <p className="font-medium text-[#FAF6F2]">{maintenance.category}</p>
                 <p className="text-xs text-[#9C8578]">
-                  {new Date(maintenance.createdAt).toLocaleDateString("es-CL")}
+                  {formatDateCompact(maintenance.createdAt)}
                 </p>
               </div>
               <Badge

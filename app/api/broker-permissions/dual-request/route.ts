@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
           propertyInfo = property
         }
       } catch (error) {
-        console.log('No se pudo verificar la propiedad (continuando con antiguo):', error)
+        console.error('No se pudo verificar la propiedad (continuando con antiguo):', error)
       }
     }
 

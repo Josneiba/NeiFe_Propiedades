@@ -237,8 +237,6 @@ export async function PUT(
       }
     }
 
-    console.log('Update payload:', JSON.stringify(data, null, 2))
-
     const updated = await prisma.property.update({
       where: { id },
       data,

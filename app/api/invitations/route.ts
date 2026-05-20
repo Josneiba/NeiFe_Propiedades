@@ -107,8 +107,6 @@ export async function POST(req: NextRequest) {
       } else {
         try {
           const toEmail = data.email.trim()
-          console.log(`📧 Intentando enviar email de invitación a ${toEmail}`)
-          console.log(`🔗 URL de invitación: ${inviteUrl}`)
 
           let propertyAddress = 'Tus propiedades'
           let senderDescription = 'el corredor'
@@ -132,7 +130,6 @@ export async function POST(req: NextRequest) {
           )
 
           const from = getResendFrom()
-          console.log(`✉️ Remitente: ${from}`)
 
           const result = await resend.emails.send({
             from,
@@ -146,7 +143,6 @@ export async function POST(req: NextRequest) {
             emailError = result.error
           } else {
             emailSent = true
-            console.log(`✅ Email enviado exitosamente. ID: ${result.data?.id}`)
           }
         } catch (emailErr) {
           console.error('❌ Error al enviar email:', emailErr)
@@ -155,8 +151,6 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-
-    console.log(`✨ Invitación creada: ${invitation.id}`)
 
     const basePayload = {
       invitation,

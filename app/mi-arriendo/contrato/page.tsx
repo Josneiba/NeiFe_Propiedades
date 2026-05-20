@@ -15,24 +15,14 @@ import { redirect } from "next/navigation"
 import { ContractProgressChart } from "@/components/charts/contract-progress"
 import { getUserIdentity } from "@/lib/identity-documents"
 import { TenantContractSignActions } from "@/components/contracts/tenant-contract-sign-actions"
+import { formatDateCompact, formatDateLong } from "@/lib/utils"
 
 function formatContractDate(date: Date | null | undefined) {
-  if (!date) return "No disponible"
-  return date.toLocaleDateString("es-CL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  })
+  return formatDateLong(date)
 }
 
 function formatTimestamp(date: Date | null | undefined) {
-  if (!date) return "No disponible"
-  return date.toLocaleDateString("es-CL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  })
+  return formatDateLong(date)
 }
 
 export default async function ContratoPage() {
@@ -323,7 +313,7 @@ export default async function ContratoPage() {
                       Fotos de entrada
                     </CardTitle>
                     <p className="text-sm text-[#9C8578]">
-                      {checkInPhotos[0] ? formatTimestamp(checkInPhotos[0].takenAt) : "Sin registro"}
+                      {checkInPhotos[0] ? formatDateCompact(checkInPhotos[0].takenAt) : "Sin registro"}
                     </p>
                   </div>
                 </CardHeader>

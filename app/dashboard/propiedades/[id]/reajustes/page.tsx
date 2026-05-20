@@ -279,7 +279,7 @@ export default function ReajustesPage() {
         <CardHeader>
           <CardTitle className="text-foreground">Información actual</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-muted/50">
               <p className="text-sm text-muted-foreground mb-1">Arriendo actual</p>
@@ -298,6 +298,31 @@ export default function ReajustesPage() {
               <p className="text-lg font-semibold text-foreground">
                 {property?.nextIpcDate ? new Date(property.nextIpcDate).toLocaleDateString("es-CL") : "No programado"}
               </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917]/40 p-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">Referencia oficial sugerida</p>
+            <p className="mt-1">
+              Verifica el IPC publicado por el INE antes de aplicar el reajuste. Puedes apoyarte en la
+              calculadora oficial del INE o contrastar indicadores en Mindicador.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href="https://calculadoraipc.ine.cl/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-md border border-[#D5C3B6]/15 px-3 py-1.5 text-sm text-[#D5C3B6] hover:bg-[#D5C3B6]/5"
+              >
+                Abrir calculadora IPC INE
+              </a>
+              <a
+                href="https://mindicador.cl/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-md border border-[#D5C3B6]/15 px-3 py-1.5 text-sm text-[#D5C3B6] hover:bg-[#D5C3B6]/5"
+              >
+                Ver indicadores en Mindicador
+              </a>
             </div>
           </div>
         </CardContent>

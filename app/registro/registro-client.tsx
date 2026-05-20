@@ -108,6 +108,22 @@ export default function RegistroClient() {
   const allPrivacyAccepted = privacy.terms && privacy.privacyPolicy && privacy.dataConsent
   const documentTypeOptions = getDocumentTypeOptions(documentCountry)
   const documentLabel = getDocumentLabel(documentType)
+  const roleCopy = selectedRole === "broker"
+    ? {
+        title: "Perfil corredor",
+        body: "Con nombre, documento, teléfono y empresa ya queda una base suficiente para operar. El teléfono y la empresa ayudan a que propietarios y arrendatarios te identifiquen mejor dentro del panel.",
+      }
+    : selectedRole === "landlord"
+      ? {
+          title: "Perfil arrendador",
+          body: "Con tus datos personales y documento basta para crear la cuenta. Luego podrás completar datos bancarios y propiedades dentro del panel.",
+        }
+      : selectedRole === "tenant"
+        ? {
+            title: "Perfil arrendatario",
+            body: "El documento y el correo son claves para invitaciones, pagos y validación de contrato. Puedes completar el resto del perfil después.",
+          }
+        : null
 
   const validateCurrentDocument = (value: string) => {
     const result = validateDocument({
@@ -423,6 +439,17 @@ export default function RegistroClient() {
                     <div className="h-px flex-1 bg-[#D5C3B6]/15" />
                   </div>
 
+                  {roleCopy && (
+                    <div className="mb-6 rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/45 p-4">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#B8965A]">
+                        {roleCopy.title}
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-[#9C8578]">
+                        {roleCopy.body}
+                      </p>
+                    </div>
+                  )}
+
                   <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -431,6 +458,8 @@ export default function RegistroClient() {
                           id="name"
                           value={formData.name}
                           onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                          placeholder={selectedRole === "broker" ? "Nombre del corredor o representante" : "Como aparece en tu documento"}
+                          autoComplete="name"
                           className={inputClass}
                           required
                         />
@@ -442,6 +471,8 @@ export default function RegistroClient() {
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                          placeholder="nombre@correo.com"
+                          autoComplete="email"
                           className={inputClass}
                           required
                         />
@@ -550,8 +581,15 @@ export default function RegistroClient() {
                           id="phone"
                           value={formData.phone}
                           onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                          placeholder={selectedRole === "broker" ? "+56 9 1234 5678" : "Opcional"}
+                          autoComplete="tel"
                           className={inputClass}
                         />
+                        <p className="text-xs text-[#9C8578]">
+                          {selectedRole === "broker"
+                            ? "Muy recomendado para que te contacten desde propiedades, pagos y mantenciones."
+                            : "Puedes completarlo ahora o después desde configuración."}
+                        </p>
                       </div>
                     </div>
 
@@ -562,8 +600,13 @@ export default function RegistroClient() {
                           id="company"
                           value={formData.company}
                           onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
+                          placeholder="Ejemplo: Gestión Inmobiliaria SpA"
+                          autoComplete="organization"
                           className={inputClass}
                         />
+                        <p className="text-xs text-[#9C8578]">
+                          Se mostrará en los perfiles y vistas donde participes como administrador.
+                        </p>
                       </div>
                     )}
 
@@ -576,6 +619,8 @@ export default function RegistroClient() {
                             type={showPassword ? "text" : "password"}
                             value={formData.password}
                             onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                            placeholder="Mínimo 8 caracteres"
+                            autoComplete="new-password"
                             className={cn(inputClass, "pr-10")}
                             required
                           />
@@ -598,6 +643,8 @@ export default function RegistroClient() {
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))
                           }
+                          placeholder="Repite tu contraseña"
+                          autoComplete="new-password"
                           className={inputClass}
                           required
                         />

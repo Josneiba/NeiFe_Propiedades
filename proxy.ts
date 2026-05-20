@@ -7,7 +7,9 @@ const publicPathnames = ['/', '/login', '/registro', '/privacidad', '/terminos',
 function isPublicPath(pathname: string) {
   return (
     publicPathnames.some((r) => pathname === r) ||
-    pathname.startsWith('/invitacion/')
+    pathname.startsWith('/invitacion/') ||
+    pathname.startsWith('/arriendos/') ||
+    pathname.startsWith('/postular/')
   )
 }
 

@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
           select: { id: true, name: true, address: true }
         })
       } catch (error) {
-        console.log('Error getting property info:', error)
+        console.error('Error getting property info:', error)
       }
     }
 

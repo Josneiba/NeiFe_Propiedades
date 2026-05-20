@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { redirect } from 'next/navigation'
 import { ContractWorkspace } from '@/components/contracts/contract-workspace'
 

@@ -10,7 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { SearchFilter } from "@/components/ui/search-filter"
 import { MaintenanceStatusActions } from "@/components/maintenance/maintenance-status-actions"
 import { maintenanceStatusConfig } from "@/lib/status-config"
-import { 
+import {
   Wrench, 
   Building2,
   User,
@@ -20,6 +20,9 @@ import {
   Clock,
   Image as ImageIcon
 } from "lucide-react"
+import { formatDateCompact } from "@/lib/utils"
+
+const MAX_MAINTENANCE_RESULTS = 100
 
 const maintenanceInclude = {
   property: {
@@ -163,6 +166,7 @@ export default async function MantencionesPage({
     orderBy: {
       createdAt: "desc",
     },
+    take: MAX_MAINTENANCE_RESULTS,
   })
 
   return (
@@ -232,6 +236,11 @@ export default async function MantencionesPage({
 
       {/* Requests List */}
       <div className="space-y-4">
+        {requests.length === MAX_MAINTENANCE_RESULTS && (
+          <div className="rounded-lg border border-[#F2C94C]/20 bg-[#F2C94C]/10 px-4 py-3 text-sm text-[#D5C3B6]">
+            Mostrando las 100 mantenciones más recientes. Aplica filtros para acotar el historial.
+          </div>
+        )}
         {requests.length === 0 ? (
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
             <CardContent className="p-10 text-center">
@@ -297,7 +306,7 @@ export default async function MantencionesPage({
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {request.createdAt.toLocaleDateString("es-CL")}
+                      {formatDateCompact(request.createdAt)}
                     </div>
                     {request.photos && request.photos.length > 0 && (
                       <div className="flex items-center gap-2">

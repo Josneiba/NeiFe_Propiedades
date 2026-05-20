@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PageHeader } from "@/components/ui/page-header"
+import { formatDateCompact } from "@/lib/utils"
 import { 
   Wrench, 
   Plus,
@@ -64,10 +65,12 @@ const statusConfig = {
 }
 
 const legalInfo: Record<string, string> = {
-  Plomería: "Según la Ley 18.101, las reparaciones de cañerías e instalaciones sanitarias son responsabilidad del arrendador.",
-  Electricidad: "Las instalaciones eléctricas fijas son responsabilidad del arrendador según la Ley 18.101.",
-  Estructura: "Daños estructurales y reparaciones mayores corresponden al arrendador.",
-  Otro: "La responsabilidad dependerá del tipo de reparación y su origen.",
+  PLUMBING: "Según la Ley 18.101, las reparaciones de cañerías e instalaciones sanitarias suelen corresponder al arrendador.",
+  ELECTRICAL: "Las instalaciones eléctricas fijas suelen ser responsabilidad del arrendador según la Ley 18.101.",
+  STRUCTURAL: "Daños estructurales y reparaciones mayores normalmente corresponden al arrendador.",
+  APPLIANCES: "La responsabilidad depende de si el artefacto forma parte del arriendo y de la causa de la falla.",
+  CLEANING: "Este tipo de solicitud se revisa según origen, urgencia y obligaciones pactadas.",
+  OTHER: "La responsabilidad dependerá del tipo de reparación y su origen.",
 }
 
 export default async function TenantMantencionesPage() {
@@ -156,7 +159,7 @@ export default async function TenantMantencionesPage() {
                       </div>
                       <p className="text-[#FAF6F2] mb-2 text-sm">{request.description}</p>
                       <div className="flex flex-wrap gap-4 text-xs text-[#9C8578]">
-                        <span>Reportado: {request.createdAt.toLocaleDateString("es-CL")}</span>
+                        <span>Reportado: {formatDateCompact(request.createdAt)}</span>
                         {request.photos && request.photos.length > 0 && (
                           <span className="flex items-center gap-1">
                             <ImageIcon className="h-4 w-4" />
@@ -177,7 +180,7 @@ export default async function TenantMantencionesPage() {
                           <div>
                             <p className="text-xs font-medium text-[#FAF6F2]">Información legal</p>
                             <p className="text-xs text-[#9C8578] mt-1">
-                              {legalInfo[request.category] || legalInfo.Otro}
+                              {legalInfo[request.category] || legalInfo.OTHER}
                             </p>
                           </div>
                         </div>
@@ -244,8 +247,8 @@ export default async function TenantMantencionesPage() {
                       </p>
                       <p className="text-xs text-[#9C8578] mt-1">
                         {request.status === "COMPLETED" 
-                          ? `Completado: ${request.updatedAt?.toLocaleDateString("es-CL")}`
-                          : `Rechazado: ${request.updatedAt?.toLocaleDateString("es-CL")}`
+                          ? `Completado: ${formatDateCompact(request.updatedAt)}`
+                          : `Rechazado: ${formatDateCompact(request.updatedAt)}`
                         }
                       </p>
                     </div>

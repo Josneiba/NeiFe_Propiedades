@@ -291,14 +291,15 @@ export function PaymentModal({
 
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                type="button"
                 onClick={() => setStep('details')}
-                className="flex-1 border-[#D5C3B6] text-[#1C1917] hover:bg-[#D5C3B6]/10"
+                className="flex-1 border border-[#D5C3B6] bg-white text-[#1C1917] hover:bg-[#F4ECE4]"
                 disabled={uploading}
               >
                 ← Volver
               </Button>
               <Button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!file || uploading}
                 className="flex-1 bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"

@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { auth } from '@/lib/auth-session'
+import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
 
 export async function GET(req: NextRequest) {
-  console.log('\n=== DIAGNOSTICO DE RESEND ===\n')
+  const session = await auth()
+  const cronSecret = process.env.CRON_SECRET
+  const authHeader = req.headers.get('authorization')
+  const hasCronAccess =
+    cronSecret &&
+    hasSafeCronSecret() &&
+    authHeader === `Bearer ${cronSecret}`
+  const hasUserAccess =
+    session?.user &&
+    ['OWNER', 'LANDLORD', 'BROKER'].includes(session.user.role)
+
+  if (!hasCronAccess && !hasUserAccess) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
 
   // Verificar variables de entorno
   const apiKey = process.env.RESEND_API_KEY
   const fromEmail = process.env.RESEND_FROM?.trim() || null
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
-  console.log('📋 Variables de entorno:')
-  console.log(`  RESEND_API_KEY: ${apiKey ? '✅ Configurada' : '❌ NO CONFIGURADA'}`)
-  console.log(`  RESEND_FROM: ${fromEmail ? `✅ ${fromEmail}` : '❌ NO CONFIGURADA'}`)
-  console.log(`  NEXT_PUBLIC_APP_URL: ${appUrl ? `✅ ${appUrl}` : '❌ NO CONFIGURADA'}`)
+  if (authHeader && !hasCronAccess && cronSecret && !hasSafeCronSecret()) {
+    return NextResponse.json(
+      { error: getCronSecretConfigError() },
+      { status: 500 }
+    )
+  }
 
   if (!apiKey) {
     return NextResponse.json(
@@ -29,9 +46,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const fromUsed = getResendFrom()
-    const toEmail = req.nextUrl.searchParams.get('to')?.trim() || 'delivered@resend.dev'
-    console.log('\n📧 Intentando enviar correo de prueba...')
-    console.log(`  Destinatario: ${toEmail}`)
+    const toEmail =
+      req.nextUrl.searchParams.get('to')?.trim() ||
+      session?.user?.email ||
+      'delivered@resend.dev'
 
     const result = await resend.emails.send({
       from: fromUsed,
@@ -43,7 +61,6 @@ export async function GET(req: NextRequest) {
           <p style="color: #666;">Este es un correo de prueba enviado desde tu aplicación NeiFe.</p>
           <p style="color: #666;">
             <strong>Información:</strong><br/>
-            API Key: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 10)}<br/>
             Remitente: ${fromUsed}<br/>
             Timestamp: ${new Date().toISOString()}
           </p>
@@ -52,7 +69,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (result.error) {
-      console.error('❌ Error de Resend:', result.error)
+      console.error('Error de Resend:', result.error)
       return NextResponse.json(
         {
           error: 'Error al enviar correo de prueba',
@@ -62,9 +79,6 @@ export async function GET(req: NextRequest) {
         { status: 400 }
       )
     }
-
-    console.log(`✅ Correo enviado exitosamente`)
-    console.log(`   Email ID: ${result.data?.id}`)
 
     return NextResponse.json(
       {
@@ -82,7 +96,7 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('❌ Error durante el test:', error)
+    console.error('Error durante el test de Resend:', error)
     return NextResponse.json(
       {
         error: 'Error durante el test de Resend',
