@@ -24,12 +24,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createEventSchema.parse(body)
 
-    // Verificar que la propiedad existe y pertenece al usuario
+    const propertyWhere =
+      session.user.role === 'BROKER'
+        ? {
+            id: data.propertyId,
+            OR: [
+              { managedBy: session.user.id },
+              {
+                mandates: {
+                  some: {
+                    brokerId: session.user.id,
+                    status: 'ACTIVE' as const,
+                  },
+                },
+              },
+            ],
+          }
+        : {
+            id: data.propertyId,
+            landlordId: session.user.id,
+          }
+
     const property = await prisma.property.findFirst({
-      where: {
-        id: data.propertyId,
-        landlordId: session.user.id,
-      },
+      where: propertyWhere,
       include: { tenant: true },
     })
 

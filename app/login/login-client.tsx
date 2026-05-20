@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield, FileText, Sparkles, CreditCard } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Eye, EyeOff, ArrowLeft, Building2, Home, Briefcase, Check, Shield, FileText, Sparkles, CreditCard, KeyRound, Mail, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,15 @@ export default function LoginClient() {
   const [selectedDemoRole, setSelectedDemoRole] = useState<'landlord' | 'tenant' | 'broker'>('landlord')
   const [requiresVerification, setRequiresVerification] = useState(false)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
+  const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false)
+  const [resetStep, setResetStep] = useState<"request" | "confirm">("request")
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetForm, setResetForm] = useState({
+    email: "",
+    code: "",
+    password: "",
+    confirmPassword: "",
+  })
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -183,6 +193,90 @@ export default function LoginClient() {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       setSelectedDemoRole(role)
+    }
+  }
+
+  const handlePasswordResetRequest = async () => {
+    if (!resetForm.email) {
+      toast.error("Ingresa tu correo para recuperar acceso")
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const res = await fetch("/api/auth/password-reset-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetForm.email }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo enviar el código")
+        return
+      }
+
+      toast.success("Si la cuenta existe, te enviamos un código al correo.")
+      setResetStep("confirm")
+    } catch (error) {
+      console.error("Password reset request failed:", error)
+      toast.error("No se pudo iniciar la recuperación")
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  const handlePasswordResetConfirm = async () => {
+    if (!resetForm.code || !resetForm.password || !resetForm.confirmPassword) {
+      toast.error("Completa el código y la nueva contraseña")
+      return
+    }
+
+    if (resetForm.password !== resetForm.confirmPassword) {
+      toast.error("Las contraseñas no coinciden")
+      return
+    }
+
+    if (resetForm.password.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres")
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const res = await fetch("/api/auth/password-reset-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: resetForm.email,
+          token: resetForm.code,
+          password: resetForm.password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo actualizar la contraseña")
+        return
+      }
+
+      toast.success("Contraseña actualizada correctamente")
+      setFormData((prev) => ({ ...prev, email: resetForm.email }))
+      setResetForm({
+        email: "",
+        code: "",
+        password: "",
+        confirmPassword: "",
+      })
+      setResetStep("request")
+      setShowPasswordResetDialog(false)
+    } catch (error) {
+      console.error("Password reset confirm failed:", error)
+      toast.error("No se pudo actualizar la contraseña")
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -382,6 +476,116 @@ export default function LoginClient() {
                   {isLoading ? "Ingresando..." : "Entrar"}
                 </Button>
               </form>
+
+              <div className="mt-3 flex justify-end">
+                <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-[#5E8B8C] hover:text-[#FAF6F2] transition-colors"
+                      onClick={() => {
+                        setResetForm((prev) => ({
+                          ...prev,
+                          email: formData.email || prev.email,
+                        }))
+                      }}
+                    >
+                      Olvidé mi contraseña
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#FAF6F2]">
+                    <DialogHeader>
+                      <DialogTitle className="text-[#FAF6F2]">Recuperar contraseña</DialogTitle>
+                      <DialogDescription className="text-[#9C8578]">
+                        Te enviaremos un código de un solo uso para verificar tu identidad.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/40 p-4">
+                        <div className="flex items-start gap-3">
+                          <Mail className="mt-0.5 h-4 w-4 text-[#5E8B8C]" />
+                          <p className="text-sm text-[#9C8578]">
+                            El código llega al correo de la cuenta y dura 30 minutos.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-email" className="text-[#D5C3B6]">Correo electrónico</Label>
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          value={resetForm.email}
+                          onChange={(e) => setResetForm((prev) => ({ ...prev, email: e.target.value }))}
+                          placeholder="tu@correo.cl"
+                          className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                        />
+                      </div>
+
+                      {resetStep === "confirm" ? (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="reset-code" className="text-[#D5C3B6]">Código recibido</Label>
+                            <Input
+                              id="reset-code"
+                              value={resetForm.code}
+                              onChange={(e) => setResetForm((prev) => ({ ...prev, code: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                              placeholder="000000"
+                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="reset-password" className="text-[#D5C3B6]">Nueva contraseña</Label>
+                            <Input
+                              id="reset-password"
+                              type="password"
+                              value={resetForm.password}
+                              onChange={(e) => setResetForm((prev) => ({ ...prev, password: e.target.value }))}
+                              placeholder="Mínimo 8 caracteres"
+                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="reset-confirm-password" className="text-[#D5C3B6]">Confirmar contraseña</Label>
+                            <Input
+                              id="reset-confirm-password"
+                              type="password"
+                              value={resetForm.confirmPassword}
+                              onChange={(e) => setResetForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                              placeholder="Repite tu nueva contraseña"
+                              className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder:text-[#9C8578]/50"
+                            />
+                          </div>
+                        </>
+                      ) : null}
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        {resetStep === "confirm" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-[#D5C3B6]/20 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10"
+                            onClick={handlePasswordResetRequest}
+                            disabled={resetLoading}
+                          >
+                            Reenviar código
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]"
+                          onClick={resetStep === "request" ? handlePasswordResetRequest : handlePasswordResetConfirm}
+                          disabled={resetLoading}
+                        >
+                          {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                          {resetStep === "request" ? "Enviar código" : "Actualizar contraseña"}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
 
               {requiresVerification ? (
                 <div className="mt-4 rounded-xl border border-[#B8965A]/30 bg-[#1C1917] p-4">

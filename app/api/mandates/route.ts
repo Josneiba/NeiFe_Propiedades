@@ -14,7 +14,8 @@ const emptyToUndefined = (value: unknown) =>
 const createMandateSchema = z
   .object({
     propertyId: z.string().min(1),
-    ownerId: z.string().min(1),
+    ownerId: z.string().min(1).optional(),
+    brokerId: z.string().min(1).optional(),
     notes: z.string().trim().max(1000).optional(),
     startsAt: z.preprocess(emptyToUndefined, z.coerce.date()).optional(),
     expiresAt: z.preprocess(emptyToUndefined, z.coerce.date()).optional(),
@@ -50,7 +51,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  if (session.user.role !== 'BROKER') {
+  if (
+    session.user.role !== 'BROKER' &&
+    session.user.role !== 'LANDLORD' &&
+    session.user.role !== 'OWNER'
+  ) {
     return forbiddenResponse()
   }
 
@@ -58,8 +63,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = createMandateSchema.parse(body)
 
-    // Verify owner is different from broker
-    if (data.ownerId === session.user.id) {
+    const ownerId =
+      session.user.role === 'BROKER' ? data.ownerId : session.user.id
+    const brokerId =
+      session.user.role === 'BROKER' ? session.user.id : data.brokerId
+
+    if (!ownerId) {
+      return NextResponse.json(
+        { error: 'ownerId es requerido' },
+        { status: 400 }
+      )
+    }
+
+    if (!brokerId) {
+      return NextResponse.json(
+        { error: 'brokerId es requerido' },
+        { status: 400 }
+      )
+    }
+
+    if (ownerId === brokerId) {
       return NextResponse.json(
         { error: 'El propietario no puede ser el mismo que el corredor' },
         { status: 400 }
@@ -69,7 +92,7 @@ export async function POST(req: NextRequest) {
     const property = await prisma.property.findFirst({
       where: {
         id: data.propertyId,
-        landlordId: data.ownerId,
+        landlordId: ownerId,
         isActive: true,
       },
       select: {
@@ -87,24 +110,45 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const brokerPermission = await prisma.brokerPermission.findUnique({
+    const broker = await prisma.user.findFirst({
       where: {
-        landlordId_brokerId: {
-          landlordId: data.ownerId,
-          brokerId: session.user.id,
-        },
+        id: brokerId,
+        role: 'BROKER',
       },
-      select: { status: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
     })
 
-    if (!brokerPermission || brokerPermission.status !== 'APPROVED') {
+    if (!broker) {
       return NextResponse.json(
-        {
-          error:
-            'Primero debes solicitar y obtener permiso del propietario para administrar sus propiedades.',
-        },
-        { status: 403 }
+        { error: 'Corredor no encontrado' },
+        { status: 404 }
       )
+    }
+
+    if (session.user.role === 'BROKER') {
+      const brokerPermission = await prisma.brokerPermission.findUnique({
+        where: {
+          landlordId_brokerId: {
+            landlordId: ownerId,
+            brokerId,
+          },
+        },
+        select: { status: true },
+      })
+
+      if (!brokerPermission || brokerPermission.status !== 'APPROVED') {
+        return NextResponse.json(
+          {
+            error:
+              'Primero debes solicitar y obtener permiso del propietario para administrar sus propiedades.',
+          },
+          { status: 403 }
+        )
+      }
     }
 
     const existing = await prisma.mandate.findFirst({
@@ -127,11 +171,17 @@ export async function POST(req: NextRequest) {
     const mandate = await prisma.mandate.create({
       data: {
         propertyId: data.propertyId,
-        ownerId: data.ownerId,
-        brokerId: session.user.id,
+        ownerId,
+        brokerId,
         status: 'PENDING',
-        signedByBroker: true,
-        brokerSignedAt: new Date(),
+        signedByBroker: session.user.role === 'BROKER',
+        brokerSignedAt: session.user.role === 'BROKER' ? new Date() : undefined,
+        signedByOwner:
+          session.user.role === 'LANDLORD' || session.user.role === 'OWNER',
+        ownerSignedAt:
+          session.user.role === 'LANDLORD' || session.user.role === 'OWNER'
+            ? new Date()
+            : undefined,
         startsAt: data.startsAt,
         expiresAt: data.expiresAt,
         commissionRate: data.commissionRate,
@@ -141,13 +191,23 @@ export async function POST(req: NextRequest) {
       include: mandateInclude,
     })
 
-    await createNotification(
-      data.ownerId,
-      'MANDATE_REQUESTED',
-      'Solicitud de administración',
-      `El corredor ${session.user.name || session.user.email} solicita administrar tu propiedad`,
-      '/dashboard/solicitudes-corredores?tab=propiedades'
-    )
+    if (session.user.role === 'BROKER') {
+      await createNotification(
+        ownerId,
+        'MANDATE_REQUESTED',
+        'Solicitud de administración',
+        `El corredor ${session.user.name || session.user.email} solicita administrar tu propiedad`,
+        '/dashboard/solicitudes-corredores?tab=propiedades'
+      )
+    } else {
+      await createNotification(
+        brokerId,
+        'MANDATE_REQUESTED',
+        'Nueva solicitud de administración',
+        `${session.user.name || session.user.email} quiere delegarte la administración de una propiedad.`,
+        '/broker/mandatos'
+      )
+    }
 
     await logActivity(
       session.user.id,
@@ -156,7 +216,8 @@ export async function POST(req: NextRequest) {
       data.propertyId,
       {
         mandateId: mandate.id,
-        ownerId: data.ownerId,
+        ownerId,
+        brokerId,
       }
     )
 

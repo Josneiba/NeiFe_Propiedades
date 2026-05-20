@@ -111,6 +111,8 @@ export function TenantContractSignActions({ propertyId, pdfUrl, status }: Props)
     }
   }, [status])
 
+  const proxiedPdfUrl = pdfUrl ? `/api/pdf?url=${encodeURIComponent(pdfUrl)}` : null
+
   return (
     <div className="space-y-3">
       <input
@@ -152,10 +154,10 @@ export function TenantContractSignActions({ propertyId, pdfUrl, status }: Props)
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {pdfUrl ? (
+        {proxiedPdfUrl ? (
           <>
             <a
-              href={pdfUrl}
+              href={proxiedPdfUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -164,7 +166,7 @@ export function TenantContractSignActions({ propertyId, pdfUrl, status }: Props)
               Ver contrato
             </a>
             <a
-              href={pdfUrl}
+              href={proxiedPdfUrl}
               download
               target="_blank"
               rel="noopener noreferrer"

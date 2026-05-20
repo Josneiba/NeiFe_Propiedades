@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import {
   Calendar,
   Clock,
@@ -25,7 +28,7 @@ import {
 
 interface CalendarEvent {
   id: string
-  type: "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT"
+  type: "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT" | "PAYMENT_DUE" | "PAYMENT_OVERDUE" | "CONTRACT_RENEWAL" | "IPC_ADJUSTMENT" | "MAINTENANCE" | "TENANT_REMINDER"
   date: string
   title: string
   description: string
@@ -135,6 +138,29 @@ export default function CalendarioPage() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [updatingEvent, setUpdatingEvent] = useState(false)
+  const [recentEventId, setRecentEventId] = useState<string | null>(null)
+  const [createErrors, setCreateErrors] = useState<Partial<Record<"propertyId" | "title" | "date" | "reminder", string>>>({})
+  const [createFeedback, setCreateFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
+
+  const typeOptions = [
+    { value: "INSPECTION", label: "Inspección" },
+    { value: "IPC_ADJUSTMENT", label: "Reajuste IPC" },
+    { value: "CONTRACT_RENEWAL", label: "Renovación de contrato" },
+    { value: "PAYMENT_DUE", label: "Recordatorio de pago" },
+    { value: "MAINTENANCE", label: "Mantención" },
+    { value: "TENANT_REMINDER", label: "Recordatorio a arrendatario" },
+  ] as const
+
+  const filterMatches = (event: CalendarEvent, currentFilter: typeof filter) => {
+    if (currentFilter === "ALL") return true
+    if (currentFilter === "INSPECTION") return event.type === "INSPECTION"
+    if (currentFilter === "IPC") return event.type === "IPC" || event.type === "IPC_ADJUSTMENT"
+    if (currentFilter === "CONTRACT") return event.type === "CONTRACT" || event.type === "CONTRACT_RENEWAL"
+    if (currentFilter === "PAYMENT") {
+      return event.type === "PAYMENT" || event.type === "PAYMENT_DUE" || event.type === "PAYMENT_OVERDUE"
+    }
+    return false
+  }
 
   const decorateEvents = useCallback((rawEvents: any[]): CalendarEvent[] => {
     return rawEvents.map((event) => ({
@@ -189,17 +215,17 @@ export default function CalendarioPage() {
   }, [loadSummary, toast])
 
   const filteredEvents = useMemo(() => (
-    filter === "ALL" ? events : events.filter((event) => event.type === filter)
+    events.filter((event) => filterMatches(event, filter))
   ), [events, filter])
   const hasProperties = properties.length > 0
 
   const next30Counts = useMemo(() => {
     const now = Date.now()
-    const countWithin30 = (type: CalendarEvent["type"]) =>
-      filteredEvents.filter((event) => {
-        const daysFromNow = Math.floor((new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24))
-        return event.type === type && daysFromNow <= 30
-      }).length
+      const countWithin30 = (scope: "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT") =>
+        filteredEvents.filter((event) => {
+          const daysFromNow = Math.floor((new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24))
+          return filterMatches(event, scope) && daysFromNow <= 30
+        }).length
 
     return {
       inspections: countWithin30("INSPECTION"),
@@ -213,12 +239,22 @@ export default function CalendarioPage() {
     const now = Date.now()
     return filteredEvents.filter((event) => {
       const daysFromNow = Math.floor((new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24))
-      return daysFromNow < 7 || (event.type === "PAYMENT" && daysFromNow < 0)
+      return daysFromNow < 7 || (filterMatches(event, "PAYMENT") && daysFromNow < 0)
     })
   }, [filteredEvents])
 
   const handleCreateEvent = async () => {
-    if (!newEvent.propertyId || !newEvent.title || !newEvent.date) {
+    const nextErrors: Partial<Record<"propertyId" | "title" | "date" | "reminder", string>> = {}
+
+    if (!newEvent.propertyId) nextErrors.propertyId = "Selecciona la propiedad del evento."
+    if (!newEvent.title.trim()) nextErrors.title = "Escribe un título breve para identificarlo."
+    if (!newEvent.date) nextErrors.date = "Debes elegir una fecha."
+    if (newEvent.reminder < 0) nextErrors.reminder = "El recordatorio no puede ser negativo."
+
+    setCreateErrors(nextErrors)
+    setCreateFeedback(null)
+
+    if (Object.keys(nextErrors).length > 0) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos requeridos",
@@ -243,14 +279,20 @@ export default function CalendarioPage() {
         }),
       })
 
-      if (!response.ok) throw new Error("Error creating event")
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || "Error creating event")
 
       toast({
         title: "Éxito",
         description: "Evento creado correctamente",
       })
+      setCreateFeedback({
+        type: "success",
+        message: "Evento creado. Lo dejamos resaltado en la lista para que lo ubiques fácilmente.",
+      })
 
       // Reset form and close dialog
+      setRecentEventId(payload.data?.id ?? null)
       setNewEvent({
         propertyId: "",
         title: "",
@@ -264,10 +306,14 @@ export default function CalendarioPage() {
 
       await loadSummary()
     } catch (error) {
+      setCreateFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "No se pudo crear el evento",
+      })
       console.error("Error creating event:", error)
       toast({
         title: "Error",
-        description: "No se pudo crear el evento",
+        description: error instanceof Error ? error.message : "No se pudo crear el evento",
         variant: "destructive"
       })
     } finally {
@@ -366,6 +412,9 @@ export default function CalendarioPage() {
     )
   }
 
+  const fieldClass =
+    "w-full rounded-lg border border-[#D5C3B6]/20 bg-[#1C1917] px-3 py-2.5 text-sm text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+
   return (
     <div className="space-y-6">
       {/* Header with Create Event Button */}
@@ -388,15 +437,24 @@ export default function CalendarioPage() {
                 Registra un nuevo evento en el calendario para tus propiedades
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-5 pb-1">
+            <form
+              className="space-y-5 pb-1"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void handleCreateEvent()
+              }}
+            >
               
               <div>
                 <Label htmlFor="propertyId" className="text-[#D5C3B6]">Propiedad *</Label>
                 <select
                   id="propertyId"
                   value={newEvent.propertyId}
-                  onChange={(e) => setNewEvent({ ...newEvent, propertyId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                  onChange={(e) => {
+                    setCreateErrors((current) => ({ ...current, propertyId: undefined }))
+                    setNewEvent({ ...newEvent, propertyId: e.target.value })
+                  }}
+                  className={cn(fieldClass, createErrors.propertyId && "border-[#C27F79]")}
                   required
                 >
                   <option value="">Selecciona una propiedad</option>
@@ -406,6 +464,7 @@ export default function CalendarioPage() {
                     </option>
                   ))}
                 </select>
+                {createErrors.propertyId ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.propertyId}</p> : null}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -415,9 +474,13 @@ export default function CalendarioPage() {
                     id="title"
                     placeholder="Ej: Inspección de propiedad"
                     value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
+                    onChange={(e) => {
+                      setCreateErrors((current) => ({ ...current, title: undefined }))
+                      setNewEvent({ ...newEvent, title: e.target.value })
+                    }}
+                    className={cn(fieldClass, createErrors.title && "border-[#C27F79]")}
                   />
+                  {createErrors.title ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.title}</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="type" className="text-[#D5C3B6]">Tipo *</Label>
@@ -425,12 +488,13 @@ export default function CalendarioPage() {
                     id="type"
                     value={newEvent.type}
                     onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2]"
+                    className={fieldClass}
                   >
-                    <option value="INSPECTION">Inspección</option>
-                    <option value="IPC">Reajuste IPC</option>
-                    <option value="CONTRACT">Contrato</option>
-                    <option value="PAYMENT">Pago</option>
+                    {typeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -442,9 +506,13 @@ export default function CalendarioPage() {
                     id="date"
                     type="date"
                     value={newEvent.date}
-                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                    onChange={(e) => {
+                      setCreateErrors((current) => ({ ...current, date: undefined }))
+                      setNewEvent({ ...newEvent, date: e.target.value })
+                    }}
+                    className={cn(fieldClass, createErrors.date && "border-[#C27F79]")}
                   />
+                  {createErrors.date ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.date}</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="reminder" className="text-[#D5C3B6]">Recordatorio (días)</Label>
@@ -453,23 +521,39 @@ export default function CalendarioPage() {
                     type="number"
                     min="0"
                     value={newEvent.reminder}
-                    onChange={(e) => setNewEvent({ ...newEvent, reminder: parseInt(e.target.value) || 0 })}
-                    className="bg-[#1C1917] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                    onChange={(e) => {
+                      setCreateErrors((current) => ({ ...current, reminder: undefined }))
+                      setNewEvent({ ...newEvent, reminder: parseInt(e.target.value) || 0 })
+                    }}
+                    className={cn(fieldClass, createErrors.reminder && "border-[#C27F79]")}
                   />
+                  <p className="mt-1 text-xs text-[#9C8578]">Se usa para recordatorios previos al vencimiento o visita.</p>
+                  {createErrors.reminder ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.reminder}</p> : null}
                 </div>
               </div>
 
               <div>
                 <Label htmlFor="description" className="text-[#D5C3B6]">Descripción</Label>
-                <textarea
+                <Textarea
                   id="description"
                   placeholder="Detalles del evento..."
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-md bg-[#1C1917] border border-[#D5C3B6]/20 text-[#FAF6F2] placeholder-[#9C8578]"
-                  rows={3}
                 />
               </div>
+
+              {createFeedback ? (
+                <Alert className={createFeedback.type === "success"
+                  ? "border-[#5E8B8C]/30 bg-[#5E8B8C]/10 text-[#D5C3B6]"
+                  : "border-[#C27F79]/30 bg-[#C27F79]/10 text-[#D5C3B6]"
+                }>
+                  <AlertCircle className={createFeedback.type === "success" ? "text-[#5E8B8C]" : "text-[#C27F79]"} />
+                  <AlertTitle className="text-[#FAF6F2]">
+                    {createFeedback.type === "success" ? "Todo listo" : "Revisa el formulario"}
+                  </AlertTitle>
+                  <AlertDescription className="text-[#9C8578]">{createFeedback.message}</AlertDescription>
+                </Alert>
+              ) : null}
 
               <div>
                 <Label className="text-[#D5C3B6] mb-3 block">Notificación *</Label>
@@ -511,13 +595,13 @@ export default function CalendarioPage() {
               </div>
 
               <Button
-                onClick={handleCreateEvent}
+                type="submit"
                 disabled={creatingEvent || !newEvent.propertyId}
                 className="w-full bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-white"
               >
                 {creatingEvent ? "Creando..." : "Crear evento"}
               </Button>
-            </div>
+            </form>
           </DialogContent>
         </Dialog>
 
@@ -666,7 +750,9 @@ export default function CalendarioPage() {
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border-2 transition ${style.card}`}
+                    className={`p-4 rounded-lg border-2 transition ${style.card} ${
+                      recentEventId === event.id ? "shadow-[0_0_0_1px_rgba(94,139,140,0.45)] ring-1 ring-[#5E8B8C]/40" : ""
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">

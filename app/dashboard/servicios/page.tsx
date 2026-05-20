@@ -4,8 +4,10 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { MonthlyServiceManager } from "@/components/services/monthly-service-manager"
-import { Droplets, Zap, Flame } from "lucide-react"
+import { CheckCircle2, Droplets, Zap, Flame } from "lucide-react"
+import { ServiceRecordCard } from "@/components/services/service-record-card"
 
 const monthNames = [
   "Enero",
@@ -25,7 +27,7 @@ const monthNames = [
 export default async function DashboardServiciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string; month?: string; year?: string }>
+  searchParams: Promise<{ property?: string; month?: string; year?: string; saved?: string; flash?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -33,7 +35,7 @@ export default async function DashboardServiciosPage({
     redirect("/mi-arriendo")
   }
 
-  const { property: filterPropertyId, month: monthFilter, year: yearFilter } = await searchParams
+  const { property: filterPropertyId, month: monthFilter, year: yearFilter, saved, flash } = await searchParams
 
   const properties = await prisma.property.findMany({
     where: { landlordId: session.user.id, isActive: true },
@@ -176,8 +178,17 @@ export default async function DashboardServiciosPage({
         />
       )}
 
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card id="service-records" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardContent className="p-5">
+          {flash === "updated" && saved ? (
+            <Alert className="mb-4 border-[#5E8B8C]/30 bg-[#5E8B8C]/10 text-[#D5C3B6]">
+              <CheckCircle2 className="text-[#5E8B8C]" />
+              <AlertTitle className="text-[#FAF6F2]">Registro actualizado</AlertTitle>
+              <AlertDescription className="text-[#9C8578]">
+                Resaltamos el período que acabas de guardar para que lo ubiques más rápido.
+              </AlertDescription>
+            </Alert>
+          ) : null}
           <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Registros mensuales</p>
           {services.length === 0 ? (
             <div className="p-10 text-center">
@@ -192,77 +203,17 @@ export default async function DashboardServiciosPage({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#D5C3B6]/10">
-                    {!filterProperty && (
-                      <th className="py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">
-                        Propiedad
-                      </th>
-                    )}
-                    <th className="py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">
-                      Período
-                    </th>
-                    <th className="py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">
-                      Agua
-                    </th>
-                    <th className="py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">
-                      Electricidad
-                    </th>
-                    <th className="py-3 px-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">
-                      Gas
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {services.map((row) => {
-                    const label =
-                      row.property.name || row.property.address
-                    return (
-                      <tr
-                        key={row.id}
-                        className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5 transition-colors"
-                      >
-                        {!filterProperty && (
-                          <td className="py-3 px-3">
-                            <Link
-                              href={`/dashboard/servicios?property=${row.property.id}`}
-                              className="text-[#5E8B8C] hover:underline font-medium"
-                            >
-                              {label}
-                            </Link>
-                            <p className="text-xs text-[#9C8578]">
-                              {row.property.commune}
-                            </p>
-                          </td>
-                        )}
-                        <td className="py-3 px-3 text-[#9C8578]">
-                          {monthNames[row.month - 1]} {row.year}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Droplets className="h-3.5 w-3.5 text-sky-500" />
-                            {row.water}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Zap className="h-3.5 w-3.5 text-amber-500" />
-                            {row.electricity}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Flame className="h-3.5 w-3.5 text-orange-500" />
-                            {row.gas}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {services.map((row) => (
+                <ServiceRecordCard
+                  key={row.id}
+                  record={row}
+                  monthLabel={`${monthNames[row.month - 1]} ${row.year}`}
+                  propertyLabel={!filterProperty ? row.property.name || row.property.address : undefined}
+                  propertyMeta={!filterProperty ? row.property.commune : undefined}
+                  highlighted={saved === `${row.property.id}-${row.year}-${row.month}`}
+                />
+              ))}
             </div>
           )}
         </CardContent>

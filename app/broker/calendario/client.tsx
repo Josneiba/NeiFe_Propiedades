@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import {
   Calendar,
   Clock,
@@ -130,6 +133,9 @@ export default function BrokerCalendarClient() {
   const [filter, setFilter] = useState<"ALL" | "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT">("ALL")
   const [showNewEventDialog, setShowNewEventDialog] = useState(false)
   const [creatingEvent, setCreatingEvent] = useState(false)
+  const [recentEventId, setRecentEventId] = useState<string | null>(null)
+  const [createErrors, setCreateErrors] = useState<Partial<Record<"propertyId" | "title" | "date" | "reminder", string>>>({})
+  const [createFeedback, setCreateFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [newEvent, setNewEvent] = useState({
     propertyId: "",
     title: "",
@@ -139,6 +145,25 @@ export default function BrokerCalendarClient() {
     reminder: 1,
     notifyType: "ME" as "ME" | "TENANT" | "BOTH",
   })
+
+  const typeOptions = [
+    { value: "INSPECTION", label: "Inspección" },
+    { value: "PAYMENT_DUE", label: "Recordatorio de pago" },
+    { value: "CONTRACT_RENEWAL", label: "Renovación de contrato" },
+    { value: "MAINTENANCE", label: "Mantención" },
+    { value: "TENANT_REMINDER", label: "Recordatorio a arrendatario" },
+  ] as const
+
+  const filterMatches = (event: CalendarEvent, currentFilter: typeof filter) => {
+    if (currentFilter === "ALL") return true
+    if (currentFilter === "INSPECTION") return event.type === "INSPECTION"
+    if (currentFilter === "IPC") return event.type === "IPC" || event.type === "IPC_ADJUSTMENT"
+    if (currentFilter === "CONTRACT") return event.type === "CONTRACT" || event.type === "CONTRACT_RENEWAL"
+    if (currentFilter === "PAYMENT") {
+      return event.type === "PAYMENT" || event.type === "PAYMENT_DUE" || event.type === "PAYMENT_OVERDUE"
+    }
+    return false
+  }
 
   const decorateEvents = useCallback((rawEvents: any[]): CalendarEvent[] => {
     return rawEvents.map((event) => ({
@@ -193,18 +218,18 @@ export default function BrokerCalendarClient() {
   }, [loadSummary, toast])
 
   const filteredEvents = useMemo(() => (
-    filter === "ALL" ? events : events.filter((event) => event.type === filter)
+    events.filter((event) => filterMatches(event, filter))
   ), [events, filter])
   const hasProperties = properties.length > 0
 
   const next30Counts = useMemo(() => {
     const now = Date.now()
-    const countWithin30 = (type: CalendarEvent["type"]) =>
+    const countWithin30 = (scope: "INSPECTION" | "IPC" | "CONTRACT" | "PAYMENT") =>
       filteredEvents.filter((event) => {
         const daysFromNow = Math.floor(
           (new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24)
         )
-        return event.type === type && daysFromNow <= 30
+        return filterMatches(event, scope) && daysFromNow <= 30
       }).length
 
     return {
@@ -221,22 +246,54 @@ export default function BrokerCalendarClient() {
       const daysFromNow = Math.floor(
         (new Date(event.date).getTime() - now) / (1000 * 60 * 60 * 24)
       )
-      return daysFromNow < 7 || (event.type === "PAYMENT" && daysFromNow < 0)
+      return daysFromNow < 7 || (filterMatches(event, "PAYMENT") && daysFromNow < 0)
     })
   }, [filteredEvents])
 
   const handleCreateEvent = async () => {
+    const nextErrors: Partial<Record<"propertyId" | "title" | "date" | "reminder", string>> = {}
+    if (!newEvent.propertyId) nextErrors.propertyId = "Selecciona la propiedad del evento."
+    if (!newEvent.title.trim()) nextErrors.title = "Escribe un título breve."
+    if (!newEvent.date) nextErrors.date = "Debes elegir una fecha."
+    if (newEvent.reminder < 0) nextErrors.reminder = "El recordatorio no puede ser negativo."
+
+    setCreateErrors(nextErrors)
+    setCreateFeedback(null)
+
+    if (Object.keys(nextErrors).length > 0) {
+      toast({
+        title: "Error",
+        description: "Hay campos pendientes en el formulario.",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       setCreatingEvent(true)
       const response = await fetch("/api/calendar/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEvent)
+        body: JSON.stringify({
+          propertyId: newEvent.propertyId,
+          title: newEvent.title,
+          description: newEvent.description,
+          type: newEvent.type,
+          date: newEvent.date,
+          reminder: newEvent.reminder,
+          notifyTenant: newEvent.notifyType === "BOTH" || newEvent.notifyType === "TENANT",
+        })
       })
 
-      if (!response.ok) throw new Error("Failed to create event")
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || "Failed to create event")
 
       setShowNewEventDialog(false)
+      setRecentEventId(payload.data?.id ?? null)
+      setCreateFeedback({
+        type: "success",
+        message: "Evento creado. Lo dejamos resaltado en la lista para ubicarlo rápido.",
+      })
       setNewEvent({
         propertyId: "",
         title: "",
@@ -255,9 +312,13 @@ export default function BrokerCalendarClient() {
       await loadSummary()
     } catch (error) {
       console.error("Error creating event:", error)
+      setCreateFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "No se pudo crear el evento",
+      })
       toast({
         title: "Error",
-        description: "No se pudo crear el evento",
+        description: error instanceof Error ? error.message : "No se pudo crear el evento",
         variant: "destructive"
       })
     } finally {
@@ -331,8 +392,11 @@ export default function BrokerCalendarClient() {
                 <select
                   id="property"
                   value={newEvent.propertyId}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, propertyId: e.target.value }))}
-                  className={fieldClass}
+                  onChange={(e) => {
+                    setCreateErrors((current) => ({ ...current, propertyId: undefined }))
+                    setNewEvent(prev => ({ ...prev, propertyId: e.target.value }))
+                  }}
+                  className={cn(fieldClass, createErrors.propertyId && "border-[#C27F79]")}
                 >
                   <option value="">Selecciona una propiedad</option>
                   {properties.map(property => (
@@ -341,6 +405,7 @@ export default function BrokerCalendarClient() {
                     </option>
                   ))}
                 </select>
+                {createErrors.propertyId ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.propertyId}</p> : null}
               </div>
               <div>
                 <Label htmlFor="type">Tipo de Evento</Label>
@@ -350,11 +415,11 @@ export default function BrokerCalendarClient() {
                   onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value as any }))}
                   className={fieldClass}
                 >
-                  <option value="INSPECTION">Inspección</option>
-                  <option value="PAYMENT_DUE">Recordatorio de Pago</option>
-                  <option value="CONTRACT_RENEWAL">Renovación de Contrato</option>
-                  <option value="MAINTENANCE">Mantención</option>
-                  <option value="TENANT_REMINDER">Recordatorio a Arrendatario</option>
+                  {typeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -362,10 +427,14 @@ export default function BrokerCalendarClient() {
                 <Input
                   id="title"
                   value={newEvent.title}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => {
+                    setCreateErrors((current) => ({ ...current, title: undefined }))
+                    setNewEvent(prev => ({ ...prev, title: e.target.value }))
+                  }}
                   placeholder="Título del evento"
-                  className={fieldClass}
+                  className={cn(fieldClass, createErrors.title && "border-[#C27F79]")}
                 />
+                {createErrors.title ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.title}</p> : null}
               </div>
               <div>
                 <Label htmlFor="date">Fecha</Label>
@@ -373,21 +442,51 @@ export default function BrokerCalendarClient() {
                   id="date"
                   type="date"
                   value={newEvent.date}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
-                  className={fieldClass}
+                  onChange={(e) => {
+                    setCreateErrors((current) => ({ ...current, date: undefined }))
+                    setNewEvent(prev => ({ ...prev, date: e.target.value }))
+                  }}
+                  className={cn(fieldClass, createErrors.date && "border-[#C27F79]")}
                 />
+                {createErrors.date ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.date}</p> : null}
+              </div>
+              <div>
+                <Label htmlFor="reminder">Recordatorio (días)</Label>
+                <Input
+                  id="reminder"
+                  type="number"
+                  min="0"
+                  value={newEvent.reminder}
+                  onChange={(e) => {
+                    setCreateErrors((current) => ({ ...current, reminder: undefined }))
+                    setNewEvent(prev => ({ ...prev, reminder: parseInt(e.target.value) || 0 }))
+                  }}
+                  className={cn(fieldClass, createErrors.reminder && "border-[#C27F79]")}
+                />
+                <p className="mt-1 text-xs text-[#9C8578]">Úsalo para anticiparte antes del vencimiento o visita.</p>
+                {createErrors.reminder ? <p className="mt-1 text-xs text-[#C27F79]">{createErrors.reminder}</p> : null}
               </div>
               <div>
                 <Label htmlFor="description">Descripción</Label>
-                <textarea
+                <Textarea
                   id="description"
                   value={newEvent.description}
                   onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descripción del evento"
-                  rows={3}
-                  className={fieldClass}
                 />
               </div>
+              {createFeedback ? (
+                <Alert className={createFeedback.type === "success"
+                  ? "border-[#5E8B8C]/30 bg-[#5E8B8C]/10 text-[#D5C3B6]"
+                  : "border-[#C27F79]/30 bg-[#C27F79]/10 text-[#D5C3B6]"
+                }>
+                  <AlertCircle className={createFeedback.type === "success" ? "text-[#5E8B8C]" : "text-[#C27F79]"} />
+                  <AlertTitle className="text-[#FAF6F2]">
+                    {createFeedback.type === "success" ? "Todo listo" : "Revisa el formulario"}
+                  </AlertTitle>
+                  <AlertDescription className="text-[#9C8578]">{createFeedback.message}</AlertDescription>
+                </Alert>
+              ) : null}
               <div className="flex gap-2">
                 <Button
                   onClick={handleCreateEvent}
@@ -470,7 +569,9 @@ export default function BrokerCalendarClient() {
           </Card>
         ) : (
           filteredEvents.map((event) => (
-            <Card key={event.id} className="rounded-xl border border-[#5E8B8C]/30 bg-[#5E8B8C]/15 shadow-sm">
+            <Card key={event.id} className={`rounded-xl border border-[#5E8B8C]/30 bg-[#5E8B8C]/15 shadow-sm ${
+              recentEventId === event.id ? "ring-1 ring-[#5E8B8C]/40 shadow-[0_0_0_1px_rgba(94,139,140,0.35)]" : ""
+            }`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">

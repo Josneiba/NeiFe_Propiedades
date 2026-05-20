@@ -11,8 +11,10 @@ import {
   TrendingDown,
 } from "lucide-react"
 import { ConsumoServiciosChart } from "@/components/mi-arriendo/ConsumoServiciosChart"
+import { ServiceRecordCard } from "@/components/services/service-record-card"
 
 interface MonthlyService {
+  id?: string
   month: number
   year: number
   water: number
@@ -27,6 +29,12 @@ interface MonthlyService {
   gasBillUrl?: string | null
   garbageBillUrl?: string | null
   commonBillUrl?: string | null
+  extraItems?: Array<{
+    label: string
+    amount: number
+    billUrl?: string | null
+  }> | null
+  notes?: string | null
 }
 
 export default async function ServiciosPage() {
@@ -75,6 +83,8 @@ export default async function ServiciosPage() {
       gasBillUrl: true,
       garbageBillUrl: true,
       commonBillUrl: true,
+      extraItems: true,
+      notes: true,
     },
     orderBy: [{ year: "asc" }, { month: "asc" }],
   })) as unknown as MonthlyService[]
@@ -218,94 +228,14 @@ export default async function ServiciosPage() {
               <p className="text-[#9C8578]">No hay historial de servicios registrado</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#D5C3B6]/10">
-                    <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Mes</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Agua</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Luz</th>
-                    {services.some(s => s.gas && s.gas > 0) && (
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gas</th>
-                    )}
-                    {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gasto común</th>
-                    )}
-                    <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Total servicios</th>
-                    <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Boletas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {services.map((service, index) => (
-                    <tr 
-                      key={index} 
-                      className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5"
-                    >
-                      <td className="py-4 px-4 font-medium text-[#FAF6F2]">
-                        {getMonthName(service.month)} {service.year}
-                      </td>
-                      <td className="py-4 px-4 text-right text-[#FAF6F2]">
-                        ${service.water.toLocaleString("es-CL")}
-                      </td>
-                      <td className="py-4 px-4 text-right text-[#FAF6F2]">
-                        ${service.electricity.toLocaleString("es-CL")}
-                      </td>
-                      {services.some(s => s.gas && s.gas > 0) && (
-                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
-                          ${(service.gas || 0).toLocaleString("es-CL")}
-                        </td>
-                      )}
-                      {services.some(s => s.commonExpenses && s.commonExpenses > 0) && (
-                        <td className="py-4 px-4 text-right text-[#FAF6F2]">
-                          ${(service.commonExpenses || 0).toLocaleString("es-CL")}
-                        </td>
-                      )}
-                      <td className="py-4 px-4 text-right font-semibold text-[#FAF6F2]">
-                        ${(
-                          service.water +
-                          service.electricity +
-                          (service.gas || 0) +
-                          (service.garbage || 0) +
-                          (service.commonExpenses || 0) +
-                          (service.other || 0)
-                        ).toLocaleString("es-CL")}
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {service.waterBillUrl ? (
-                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
-                              <a href={service.waterBillUrl} target="_blank" rel="noopener noreferrer">
-                                Agua
-                              </a>
-                            </Button>
-                          ) : null}
-                          {service.lightBillUrl ? (
-                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
-                              <a href={service.lightBillUrl} target="_blank" rel="noopener noreferrer">
-                                Luz
-                              </a>
-                            </Button>
-                          ) : null}
-                          {service.gasBillUrl ? (
-                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
-                              <a href={service.gasBillUrl} target="_blank" rel="noopener noreferrer">
-                                Gas
-                              </a>
-                            </Button>
-                          ) : null}
-                          {service.commonBillUrl ? (
-                            <Button variant="outline" size="sm" className="border-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/10 text-xs h-7" asChild>
-                              <a href={service.commonBillUrl} target="_blank" rel="noopener noreferrer">
-                                GC
-                              </a>
-                            </Button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {[...services].reverse().map((service, index) => (
+                <ServiceRecordCard
+                  key={service.id ?? `${service.month}-${service.year}-${index}`}
+                  record={service}
+                  monthLabel={`${getMonthName(service.month)} ${service.year}`}
+                />
+              ))}
             </div>
           )}
         </CardContent>

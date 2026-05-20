@@ -4,8 +4,10 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { MonthlyServiceManager } from "@/components/services/monthly-service-manager"
-import { Droplets, Zap, Flame, BadgeDollarSign } from "lucide-react"
+import { CheckCircle2, Droplets, Zap, Flame, BadgeDollarSign } from "lucide-react"
+import { ServiceRecordCard } from "@/components/services/service-record-card"
 
 const monthNames = [
   "Enero",
@@ -25,7 +27,7 @@ const monthNames = [
 export default async function BrokerServiciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string; month?: string; year?: string }>
+  searchParams: Promise<{ property?: string; month?: string; year?: string; saved?: string; flash?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
@@ -33,7 +35,7 @@ export default async function BrokerServiciosPage({
     redirect("/mi-arriendo")
   }
 
-  const { property: filterPropertyId, month: monthFilter, year: yearFilter } = await searchParams
+  const { property: filterPropertyId, month: monthFilter, year: yearFilter, saved, flash } = await searchParams
 
   const propertyWhere = {
     isActive: true,
@@ -182,82 +184,35 @@ export default async function BrokerServiciosPage({
         />
       )}
 
-      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+      <Card id="service-records" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardContent className="p-6">
+          {flash === "updated" && saved ? (
+            <Alert className="mb-4 border-[#5E8B8C]/30 bg-[#5E8B8C]/10 text-[#D5C3B6]">
+              <CheckCircle2 className="text-[#5E8B8C]" />
+              <AlertTitle className="text-[#FAF6F2]">Registro actualizado</AlertTitle>
+              <AlertDescription className="text-[#9C8578]">
+                Dejamos resaltado el período recién guardado para esta cartera.
+              </AlertDescription>
+            </Alert>
+          ) : null}
           <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-4">Registros mensuales</p>
           {services.length === 0 ? (
             <p className="py-6 text-center text-sm text-[#9C8578]">
               No hay registros de servicios aún para esta cartera.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#D5C3B6]/10 text-left">
-                    {!filterProperty && (
-                      <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Propiedad</th>
-                    )}
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Período</th>
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Arrendatario</th>
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Agua</th>
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Electricidad</th>
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Gas</th>
-                    <th className="px-3 py-3 text-xs font-medium uppercase tracking-wider text-[#9C8578]">Cargos extra</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {services.map((row) => {
-                    const label = row.property.name || row.property.address
-                    const extraTotal =
-                      row.garbage + row.commonExpenses + row.other
-                    return (
-                      <tr key={row.id} className="border-b border-[#D5C3B6]/10 hover:bg-[#D5C3B6]/5 transition-colors">
-                        {!filterProperty && (
-                          <td className="px-3 py-3">
-                            <Link
-                              href={`/broker/servicios?property=${row.property.id}`}
-                              className="font-medium text-[#5E8B8C] hover:underline"
-                            >
-                              {label}
-                            </Link>
-                            <p className="text-xs text-[#9C8578]">{row.property.commune}</p>
-                          </td>
-                        )}
-                        <td className="px-3 py-3 text-[#9C8578]">
-                          {monthNames[row.month - 1]} {row.year}
-                        </td>
-                        <td className="px-3 py-3 text-[#FAF6F2]">
-                          {row.property.tenant?.name || "Sin arrendatario"}
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Droplets className="h-3.5 w-3.5 text-sky-500" />
-                            {row.water}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Zap className="h-3.5 w-3.5 text-amber-500" />
-                            {row.electricity}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <Flame className="h-3.5 w-3.5 text-orange-500" />
-                            {row.gas}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1 text-[#FAF6F2]">
-                            <BadgeDollarSign className="h-3.5 w-3.5 text-[#B8965A]" />
-                            {extraTotal}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {services.map((row) => (
+                <ServiceRecordCard
+                  key={row.id}
+                  record={row}
+                  monthLabel={`${monthNames[row.month - 1]} ${row.year}`}
+                  propertyLabel={!filterProperty ? row.property.name || row.property.address : undefined}
+                  propertyMeta={!filterProperty ? row.property.commune : undefined}
+                  tenantName={row.property.tenant?.name || undefined}
+                  highlighted={saved === `${row.property.id}-${row.year}-${row.month}`}
+                />
+              ))}
             </div>
           )}
         </CardContent>

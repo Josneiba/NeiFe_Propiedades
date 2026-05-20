@@ -102,6 +102,9 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
         throw new Error('Corredor no encontrado')
       }
       const data = await response.json()
+      if (data.user?.role !== 'BROKER') {
+        throw new Error('El correo ingresado no pertenece a un corredor')
+      }
       setBroker(data.user)
     } catch (err) {
       toast({
@@ -125,7 +128,6 @@ export function AdministrationSection({ propertyId }: { propertyId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           propertyId,
-          ownerId: undefined, // Backend uses session
           brokerId: broker.id,
         }),
       })
