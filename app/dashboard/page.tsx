@@ -209,6 +209,16 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
           },
           take: 1,
         },
+        photos: {
+          select: {
+            url: true,
+            order: true,
+          },
+          orderBy: {
+            order: 'asc',
+          },
+          take: 3,
+        },
         _count: {
           select: {
             maintenance: {
