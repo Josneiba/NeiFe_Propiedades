@@ -56,6 +56,8 @@ model User {
   landlordStatementsReceived BrokerStatement[] @relation("BrokerStatementLandlord")
   brokerMessagesSent     BrokerMessage[]      @relation("BrokerMessageSender")
   brokerMessagesReceived BrokerMessage[]      @relation("BrokerMessageTenant")
+  propertyCreationRequestsAsBroker BrokerPropertyCreationRequest[] @relation("BrokerPropertyCreationBroker")
+  propertyCreationRequestsAsLandlord BrokerPropertyCreationRequest[] @relation("BrokerPropertyCreationLandlord")
 
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
@@ -163,6 +165,7 @@ model Property {
   applications   TenantApplication[]
   securityDeposit SecurityDeposit?
   checklists     PropertyChecklist[]
+  creationRequests BrokerPropertyCreationRequest[]
 }
 
 model RentAdjustment {
@@ -457,6 +460,28 @@ model NotificationPreferences {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model BrokerPropertyCreationRequest {
+  id          String                       @id @default(cuid())
+  propertyId  String
+  brokerId    String
+  landlordId  String
+  status      BrokerPropertyCreationStatus @default(PENDING)
+  ownerName   String?
+  ownerEmail  String
+  notes       String?
+  reviewedAt  DateTime?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  broker      User     @relation("BrokerPropertyCreationBroker", fields: [brokerId], references: [id])
+  landlord    User     @relation("BrokerPropertyCreationLandlord", fields: [landlordId], references: [id])
+
+  @@index([brokerId, status])
+  @@index([landlordId, status])
+  @@unique([propertyId])
+}
+
 enum Role {
   OWNER
   LANDLORD
@@ -604,6 +629,12 @@ enum NotificationType {
   SERVICE_UPLOADED
   INVITATION_RECEIVED
   SYSTEM
+}
+
+enum BrokerPropertyCreationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum BrokerStatementStatus {

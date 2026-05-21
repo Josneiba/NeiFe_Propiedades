@@ -41,15 +41,52 @@ interface PendingMandate {
   }
 }
 
+interface PendingPropertyCreationRequest {
+  id: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  createdAt: string
+  notes: string | null
+  broker: {
+    id: string
+    name: string | null
+    email: string
+    company: string | null
+  }
+  property: {
+    id: string
+    name: string | null
+    address: string
+    commune: string
+    region: string
+    description: string | null
+    bedrooms: number | null
+    bathrooms: number | null
+    squareMeters: number | null
+    monthlyRentUF: number | null
+    monthlyRentCLP: number | null
+    contractStart: string | null
+    contractEnd: string | null
+    isActive: boolean
+  }
+}
+
 export default function SolicitudesCorredoresPage() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const [permissions, setPermissions] = useState<BrokerPermission[]>([])
   const [pendingMandates, setPendingMandates] = useState<PendingMandate[]>([])
+  const [pendingPropertyCreations, setPendingPropertyCreations] = useState<PendingPropertyCreationRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [endingId, setEndingId] = useState<string | null>(null)
   const [processingMandateId, setProcessingMandateId] = useState<string | null>(null)
-  const currentTab = searchParams.get('tab') === 'propiedades' ? 'propiedades' : 'corredores'
+  const [processingPropertyCreationId, setProcessingPropertyCreationId] = useState<string | null>(null)
+  const currentTabParam = searchParams.get('tab')
+  const currentTab =
+    currentTabParam === 'propiedades'
+      ? 'propiedades'
+      : currentTabParam === 'altas'
+        ? 'altas'
+        : 'corredores'
 
   useEffect(() => {
     fetchData()
@@ -57,9 +94,10 @@ export default function SolicitudesCorredoresPage() {
 
   const fetchData = async () => {
     try {
-      const [permissionsResponse, mandatesResponse] = await Promise.all([
+      const [permissionsResponse, mandatesResponse, propertyCreationsResponse] = await Promise.all([
         fetch('/api/broker-permissions', { cache: 'no-store' }),
         fetch('/api/mandates?status=PENDING', { cache: 'no-store' }),
+        fetch('/api/broker-property-requests?status=PENDING', { cache: 'no-store' }),
       ])
 
       if (permissionsResponse.ok) {
@@ -76,6 +114,15 @@ export default function SolicitudesCorredoresPage() {
         ))
       } else {
         setPendingMandates([])
+      }
+
+      if (propertyCreationsResponse.ok) {
+        const propertyCreationsData = await propertyCreationsResponse.json()
+        setPendingPropertyCreations((propertyCreationsData.requests || []).filter(
+          (request: PendingPropertyCreationRequest) => request.status === 'PENDING'
+        ))
+      } else {
+        setPendingPropertyCreations([])
       }
     } catch (error) {
       console.error('Error fetching broker requests:', error)
@@ -259,6 +306,47 @@ export default function SolicitudesCorredoresPage() {
     }
   }
 
+  const handlePropertyCreationDecision = async (
+    requestId: string,
+    action: 'approve' | 'reject'
+  ) => {
+    setProcessingPropertyCreationId(requestId)
+
+    try {
+      const response = await fetch(`/api/broker-property-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: action === 'approve' ? 'Propiedad aprobada' : 'Propiedad rechazada',
+          description:
+            action === 'approve'
+              ? 'La propiedad quedó activa y el corredor ya puede administrarla.'
+              : 'La propiedad quedó rechazada y no se activará.',
+        })
+        await fetchData()
+      } else {
+        const data = await response.json()
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: data.error || 'No se pudo procesar la alta de propiedad.',
+        })
+      }
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error de conexión.',
+      })
+    } finally {
+      setProcessingPropertyCreationId(null)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -296,9 +384,137 @@ export default function SolicitudesCorredoresPage() {
 
       <Tabs key={currentTab} defaultValue={currentTab} className="w-full">
         <TabsList className="bg-[#2D3C3C] border border-[#D5C3B6]/10">
+          <TabsTrigger value="altas">Altas de propiedades</TabsTrigger>
           <TabsTrigger value="propiedades">Acceso a propiedades</TabsTrigger>
           <TabsTrigger value="corredores">Permisos generales</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="altas" className="space-y-4">
+          <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+            <CardContent className="p-4 text-sm text-[#9C8578]">
+              Aquí revisas las propiedades que un corredor cargó directamente a tu nombre para que tú solo confirmes si autorizas su administración.
+            </CardContent>
+          </Card>
+
+          {pendingPropertyCreations.length === 0 ? (
+            <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+              <CardContent className="p-10 text-center">
+                <Building2 className="w-12 h-12 text-[#9C8578]/40 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-[#FAF6F2] mb-2">Sin altas pendientes</h3>
+                <p className="text-sm text-[#9C8578]">
+                  Cuando un corredor cargue una propiedad en tu nombre, aparecerá aquí para tu revisión.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {pendingPropertyCreations.map((requestRow) => (
+                <Card key={requestRow.id} className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-2 min-w-0">
+                        <div className="flex items-center gap-2 text-[#FAF6F2]">
+                          <Building2 className="h-4 w-4 text-[#5E8B8C]" />
+                          <span className="font-semibold">{requestRow.property.name || requestRow.property.address}</span>
+                        </div>
+                        <p className="text-sm text-[#9C8578]">{requestRow.property.address}</p>
+                        <p className="text-sm text-[#9C8578]">
+                          Corredor: {requestRow.broker.name || requestRow.broker.email}
+                        </p>
+                        {requestRow.broker.company ? (
+                          <p className="text-xs text-[#9C8578]">{requestRow.broker.company}</p>
+                        ) : null}
+                      </div>
+                      <Badge className="w-fit bg-[#F2C94C]/15 text-[#F2C94C] border border-[#F2C94C]/30">
+                        Pendiente de aprobación
+                      </Badge>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-[#9C8578]">Ubicación</p>
+                        <p className="mt-1 text-sm text-[#FAF6F2]">
+                          {requestRow.property.commune}, {requestRow.property.region}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-[#9C8578]">Distribución</p>
+                        <p className="mt-1 text-sm text-[#FAF6F2]">
+                          {requestRow.property.bedrooms ?? 0}D / {requestRow.property.bathrooms ?? 0}B
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-[#9C8578]">Superficie</p>
+                        <p className="mt-1 text-sm text-[#FAF6F2]">
+                          {requestRow.property.squareMeters ? `${requestRow.property.squareMeters} m²` : 'Sin dato'}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-[#9C8578]">Arriendo</p>
+                        <p className="mt-1 text-sm text-[#FAF6F2]">
+                          {requestRow.property.monthlyRentCLP
+                            ? `$${requestRow.property.monthlyRentCLP.toLocaleString('es-CL')}`
+                            : requestRow.property.monthlyRentUF
+                              ? `UF ${requestRow.property.monthlyRentUF}`
+                              : 'Sin renta'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {requestRow.property.description ? (
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-4">
+                        <p className="text-[10px] uppercase tracking-wider text-[#B8965A]">Descripción cargada por el corredor</p>
+                        <p className="mt-2 text-sm text-[#D5C3B6]">{requestRow.property.description}</p>
+                      </div>
+                    ) : null}
+
+                    {requestRow.notes ? (
+                      <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-4">
+                        <p className="text-[10px] uppercase tracking-wider text-[#B8965A]">Notas del corredor</p>
+                        <p className="mt-2 text-sm text-[#D5C3B6]">{requestRow.notes}</p>
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <p className="text-sm text-[#9C8578]">
+                        Cargado el {formatDate(requestRow.createdAt)}
+                      </p>
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        <Button
+                          onClick={() => handlePropertyCreationDecision(requestRow.id, 'reject')}
+                          disabled={processingPropertyCreationId === requestRow.id}
+                          variant="outline"
+                          size="sm"
+                          className="border-red-600/30 text-red-600 hover:bg-red-600/10"
+                        >
+                          {processingPropertyCreationId === requestRow.id ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <X className="w-4 h-4 mr-2" />
+                          )}
+                          Rechazar
+                        </Button>
+                        <Button
+                          onClick={() => handlePropertyCreationDecision(requestRow.id, 'approve')}
+                          disabled={processingPropertyCreationId === requestRow.id}
+                          size="sm"
+                          className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90"
+                        >
+                          {processingPropertyCreationId === requestRow.id ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4 mr-2" />
+                          )}
+                          Aprobar y activar administración
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="propiedades" className="space-y-4">
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">

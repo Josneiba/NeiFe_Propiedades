@@ -2,9 +2,11 @@ import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { SearchFilter } from "@/components/ui/search-filter"
 import { PropertyCard } from "@/components/properties/property-card"
-import { Building2, Plus } from "lucide-react"
+import { Building2, Clock3, Plus } from "lucide-react"
 import Link from "next/link"
 import { paymentStatus as paymentStatusLocal } from "@/lib/broker-design"
 import { Suspense } from 'react'
@@ -41,6 +43,23 @@ interface PropertyWithPaymentStatus {
   }>
   _count: {
     maintenance: number
+  }
+}
+
+interface PendingPropertyRequest {
+  id: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  createdAt: Date
+  landlord: {
+    name: string | null
+    email: string
+  }
+  property: {
+    id: string
+    name: string
+    address: string
+    commune: string
+    isActive: boolean
   }
 }
 
@@ -227,6 +246,39 @@ export default async function BrokerPropiedadesPage({
     },
   })
 
+  const pendingRequests = (await prisma.brokerPropertyCreationRequest.findMany({
+    where: {
+      brokerId: session.user.id,
+      status: 'PENDING',
+      ...(q
+        ? {
+            OR: [
+              { property: { address: { contains: q, mode: 'insensitive' } } },
+              { property: { commune: { contains: q, mode: 'insensitive' } } },
+              { property: { name: { contains: q, mode: 'insensitive' } } },
+              { landlord: { name: { contains: q, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      landlord: {
+        select: { name: true, email: true },
+      },
+      property: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          commune: true,
+          isActive: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 12,
+  })) as PendingPropertyRequest[]
+
   return (
     <div className="max-w-7xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -236,8 +288,62 @@ export default async function BrokerPropiedadesPage({
             {propertiesCount > 0 ? `${propertiesCount} propiedades administradas` : 'Propiedades que administras'}
           </p>
         </div>
+        <Link href="/broker/propiedades/nueva">
+          <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] shrink-0">
+            <Plus className="mr-2 h-4 w-4" />
+            Crear propiedad para arrendador
+          </Button>
+        </Link>
       </div>
       <SearchFilter placeholder="Buscar por dirección, comuna, propietario o arrendatario..." />
+
+      {pendingRequests.length > 0 ? (
+        <Card className="border-[#D5C3B6]/10 bg-[#2D3C3C]">
+          <CardContent className="p-5">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A]">Altas pendientes de aprobación</p>
+                <p className="mt-1 text-sm text-[#9C8578]">
+                  Estas propiedades ya fueron cargadas por ti y están esperando confirmación del arrendador.
+                </p>
+              </div>
+              <Badge className="w-fit border-0 bg-[#F2C94C]/15 text-[#F2C94C]">
+                {pendingRequests.length} pendiente{pendingRequests.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {pendingRequests.map((requestRow) => (
+                <div
+                  key={requestRow.id}
+                  className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[#FAF6F2]">
+                        {requestRow.property.name || requestRow.property.address}
+                      </p>
+                      <p className="mt-1 text-sm text-[#9C8578]">{requestRow.property.address}</p>
+                      <p className="mt-1 text-xs text-[#9C8578]">Arrendador: {requestRow.landlord.name || requestRow.landlord.email}</p>
+                    </div>
+                    <span className="rounded-full bg-[#F2C94C]/15 px-3 py-1 text-xs font-medium text-[#F2C94C]">
+                      Pendiente
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-xs text-[#9C8578]">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {new Date(requestRow.createdAt).toLocaleDateString('es-CL')}
+                    </span>
+                    <span className="text-xs text-[#5E8B8C]">
+                      Se activará al aprobarse
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Suspense fallback={
         <div className="space-y-3">
