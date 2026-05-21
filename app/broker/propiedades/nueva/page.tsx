@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { AddressPicker } from '@/components/map/address-picker'
 import { useToast } from '@/hooks/use-toast'
 import { getCommunesByRegion, getRegions } from '@/lib/chile-regions'
 
@@ -25,6 +26,7 @@ interface FormErrors {
   name?: string
   address?: string
   commune?: string
+  coordinates?: string
 }
 
 export default function NuevaPropiedadBrokerPage() {
@@ -51,6 +53,8 @@ export default function NuevaPropiedadBrokerPage() {
     contractStart: '',
     contractEnd: '',
     notes: '',
+    lat: '',
+    lng: '',
   })
 
   useEffect(() => {
@@ -130,6 +134,9 @@ export default function NuevaPropiedadBrokerPage() {
     if (!formData.name.trim()) nextErrors.name = 'Ingresa un nombre o referencia de la propiedad.'
     if (!formData.address.trim()) nextErrors.address = 'La dirección es obligatoria.'
     if (!formData.commune) nextErrors.commune = 'Selecciona una comuna.'
+    if (!formData.lat || !formData.lng) {
+      nextErrors.coordinates = 'Ubica la propiedad en el mapa para que luego aparezca correctamente en el panel del arrendador.'
+    }
     if (permissionStatus !== 'APPROVED') {
       nextErrors.ownerSearch = 'Solo puedes continuar cuando el arrendador te haya aprobado como corredor.'
     }
@@ -160,6 +167,8 @@ export default function NuevaPropiedadBrokerPage() {
           bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
           bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
           squareMeters: formData.squareMeters ? Number(formData.squareMeters) : undefined,
+          lat: formData.lat ? Number(formData.lat) : undefined,
+          lng: formData.lng ? Number(formData.lng) : undefined,
           monthlyRentCLP: formData.monthlyRentCLP ? Number(formData.monthlyRentCLP) : undefined,
           monthlyRentUF: formData.monthlyRentUF ? Number(formData.monthlyRentUF) : undefined,
           contractStart: formData.contractStart || undefined,
@@ -359,6 +368,34 @@ export default function NuevaPropiedadBrokerPage() {
                 placeholder="Describe la propiedad para que el arrendador revise lo que estás cargando."
                 className="min-h-[120px] border-[#D5C3B6]/10 bg-[#1C1917] text-[#FAF6F2]"
               />
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[#FAF6F2]">Ubicación en el mapa</Label>
+                <p className="mt-1 text-sm text-[#9C8578]">
+                  Busca la dirección y ajusta el pin si es necesario. Estas coordenadas son las que verá el arrendador en su mapa.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/35 p-4">
+                <AddressPicker
+                  address={formData.address}
+                  commune={formData.commune}
+                  region={formData.region}
+                  initialLat={formData.lat ? Number(formData.lat) : null}
+                  initialLng={formData.lng ? Number(formData.lng) : null}
+                  onCoordinatesChange={(lat, lng) =>
+                    setFormData((current) => ({
+                      ...current,
+                      lat: String(lat),
+                      lng: String(lng),
+                    }))
+                  }
+                />
+                {formErrors.coordinates ? (
+                  <p className="mt-3 text-xs text-[#C27F79]">{formErrors.coordinates}</p>
+                ) : null}
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
