@@ -152,7 +152,7 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
   }
 
   return (
-    <div className={`grid gap-4 ${properties.length > 0 ? 'sm:grid-cols-2 2xl:grid-cols-3' : ''}`}>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {properties.length === 0 ? (
         <div className="sm:col-span-2 xl:col-span-3 rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5E8B8C]/10">
@@ -228,7 +228,7 @@ export default async function BrokerPropiedadesPage({
   })
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Propiedades</h1>

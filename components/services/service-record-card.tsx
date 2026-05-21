@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { getDocumentViewUrl } from '@/lib/document-utils'
 import {
   Droplets,
   Flame,
@@ -127,7 +128,12 @@ export function ServiceRecordCard({
   ].filter((item) => item.amount > 0)
 
   const total = chargeItems.reduce((sum, item) => sum + item.amount, 0)
-  const bills = chargeItems.filter((item) => item.billUrl)
+  const bills = chargeItems
+    .map((item) => ({
+      ...item,
+      viewUrl: item.billUrl ? getDocumentViewUrl(item.billUrl) : null,
+    }))
+    .filter((item) => item.billUrl)
 
   return (
     <div
@@ -181,7 +187,7 @@ export function ServiceRecordCard({
                   className="border-[#D5C3B6]/15 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10 hover:text-[#FAF6F2]"
                   asChild
                 >
-                  <a href={item.billUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={getDocumentViewUrl(item.billUrl) ?? item.billUrl ?? undefined} target="_blank" rel="noopener noreferrer">
                     Ver boleta
                   </a>
                 </Button>
@@ -210,7 +216,7 @@ export function ServiceRecordCard({
               className="border-[#D5C3B6]/15 bg-transparent text-[#D5C3B6] hover:bg-[#D5C3B6]/10 hover:text-[#FAF6F2]"
               asChild
             >
-              <a href={item.billUrl!} target="_blank" rel="noopener noreferrer">
+              <a href={item.viewUrl!} target="_blank" rel="noopener noreferrer">
                 Boleta {item.label}
               </a>
             </Button>
