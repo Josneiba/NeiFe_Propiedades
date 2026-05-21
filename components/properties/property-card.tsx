@@ -15,25 +15,31 @@ interface PropertyCardProps {
     monthlyRentCLP: number | null
     contractStart: Date | null
     contractEnd: Date | null
+    landlord?: { name: string | null } | null
     tenant: { name: string | null } | null
     payments: Array<{ status: string }>
-    mandates: Array<{ broker?: { name: string | null } | null }>
+    mandates: Array<{ id?: string; broker?: { name: string | null } | null }>
     photos?: Array<{ url: string; order: number }>
     _count: { maintenance: number }
   }
   statusConfig: PaymentStatusConfig
   isManagedByBroker: boolean
+  href?: string
+  footerLabel?: string
+  ownerLabel?: string
 }
 
 export function PropertyCard({
   property,
   statusConfig,
   isManagedByBroker,
+  href,
+  footerLabel = 'Ver detalle →',
+  ownerLabel = 'Propietario',
 }: PropertyCardProps) {
   const currentPayment = property.payments[0]
   const paymentStatus = currentPayment?.status || 'PENDING'
   const statusLabel = statusConfig[paymentStatus]
-  const broker = property.mandates[0]?.broker
 
   const coverPhoto = property.photos
     ? [...property.photos].sort((a, b) => a.order - b.order)[0]
@@ -66,7 +72,7 @@ export function PropertyCard({
 
   return (
     <Link
-      href={`/dashboard/propiedades/${property.id}`}
+      href={href ?? `/dashboard/propiedades/${property.id}`}
       className={cn(
         'group flex min-h-[260px] flex-col rounded-2xl border overflow-hidden transition-all duration-200',
         isManagedByBroker
@@ -96,13 +102,6 @@ export function PropertyCard({
             </svg>
           </div>
         )}
-        {isManagedByBroker && (
-          <div className="absolute top-2 right-2">
-            <Badge className="bg-[#5E8B8C]/80 text-[10px] text-white backdrop-blur-sm">
-              Adm. {broker?.name?.split(' ')[0] || 'Corredor'}
-            </Badge>
-          </div>
-        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-5">
@@ -123,29 +122,42 @@ export function PropertyCard({
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
-            <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Arrendatario</p>
+            <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">{ownerLabel}</p>
             <p className="text-sm truncate font-medium">
-              {property.tenant?.name
-                ? <span className="text-[#D5C3B6]">{property.tenant.name}</span>
-                : <span className="text-[#9C8578] italic">Sin asignar</span>}
+              {property.landlord?.name ? (
+                <span className="text-[#D5C3B6]">{property.landlord.name}</span>
+              ) : (
+                <span className="text-[#9C8578] italic">Sin asignar</span>
+              )}
             </p>
           </div>
           <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
-            <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Arriendo</p>
-            <p className="text-sm font-semibold text-[#FAF6F2] tabular-nums leading-none">
-              {property.monthlyRentCLP
-                ? `$${property.monthlyRentCLP.toLocaleString('es-CL')}`
-                : <span className="text-[#9C8578] font-normal">Sin renta</span>}
+            <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Arrendatario</p>
+            <p className="text-sm truncate font-medium">
+              {property.tenant?.name ? (
+                <span className="text-[#D5C3B6]">{property.tenant.name}</span>
+              ) : (
+                <span className="text-[#9C8578] italic">Sin asignar</span>
+              )}
             </p>
           </div>
         </div>
 
-        {property._count.maintenance > 0 && (
-          <span className="flex items-center gap-1.5 self-start rounded-full bg-[#F2C94C]/10 px-2.5 py-1 text-xs font-medium text-[#F2C94C]">
-            <Wrench className="h-3.5 w-3.5" />
-            {property._count.maintenance} mantención{property._count.maintenance === 1 ? '' : 'es'} abierta{property._count.maintenance === 1 ? '' : 's'}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-base font-semibold text-[#FAF6F2] tabular-nums leading-none">
+            {property.monthlyRentCLP ? (
+              `$${property.monthlyRentCLP.toLocaleString('es-CL')}`
+            ) : (
+              <span className="text-[#9C8578] font-normal text-sm">Sin renta</span>
+            )}
           </span>
-        )}
+          {property._count.maintenance > 0 && (
+            <span className="flex items-center gap-1.5 rounded-full bg-[#F2C94C]/10 px-2.5 py-1 text-xs font-medium text-[#F2C94C]">
+              <Wrench className="h-3.5 w-3.5" />
+              {property._count.maintenance} abierta{property._count.maintenance === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
 
         {contractPct !== null && (
           <div className="mt-auto">
@@ -168,7 +180,7 @@ export function PropertyCard({
 
       <div className="border-t border-[#D5C3B6]/8 px-5 py-3 flex justify-end">
         <span className="text-sm text-[#5E8B8C] group-hover:text-[#8FC4C5] font-medium transition-colors">
-          Ver detalle →
+          {footerLabel}
         </span>
       </div>
     </Link>

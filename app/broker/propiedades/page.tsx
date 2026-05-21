@@ -2,9 +2,9 @@ import { auth } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { SearchFilter } from "@/components/ui/search-filter"
-import { Building2, MapPin, Plus, Wrench } from "lucide-react"
+import { PropertyCard } from "@/components/properties/property-card"
+import { Building2, Plus } from "lucide-react"
 import Link from "next/link"
 import { paymentStatus as paymentStatusLocal } from "@/lib/broker-design"
 import { Suspense } from 'react'
@@ -25,6 +25,10 @@ interface PropertyWithPaymentStatus {
     name: string | null
     email: string
   } | null
+  photos?: Array<{
+    url: string
+    order: number
+  }>
   contractStart: Date
   contractEnd: Date
   payments: Array<{
@@ -76,6 +80,16 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
               name: true,
               email: true,
             },
+          },
+          photos: {
+            select: {
+              url: true,
+              order: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+            take: 1,
           },
           payments: {
             where: {
@@ -159,91 +173,22 @@ async function BrokerPropertyList({ brokerId, searchQuery }: { brokerId: string;
       properties.map((property) => {
           const ps = getPaymentStatus(property.payments)
           const pConf = paymentStatusLocal[ps]
-          const accentColor = ps === 'PAID' ? '#5E8B8C' : ps === 'OVERDUE' ? '#C27F79' : '#F2C94C'
-          const daysLeft = property.contractEnd
-            ? Math.ceil((new Date(property.contractEnd).getTime() - Date.now()) / 86_400_000)
-            : null
-          const contractPct = property.contractStart && property.contractEnd
-            ? Math.min(100, Math.max(0,
-                ((Date.now() - new Date(property.contractStart).getTime()) /
-                 (new Date(property.contractEnd).getTime() - new Date(property.contractStart).getTime())) * 100
-              ))
-            : null
-
           return (
-            <Link
+            <PropertyCard
               key={property.id}
               href={`/broker/propiedades/${property.id}`}
-              className="group flex min-h-[260px] flex-col rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] overflow-hidden hover:border-[#5E8B8C]/30 transition-all duration-200"
-            >
-              <div className="h-1 w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
-
-              <div className="flex flex-1 flex-col gap-4 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[#FAF6F2] truncate group-hover:text-white transition-colors text-base leading-tight">
-                      {property.name || property.address}
-                    </p>
-                    <p className="text-sm text-[#9C8578] truncate mt-1 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      {property.commune}
-                    </p>
-                  </div>
-                  <Badge className={`shrink-0 text-[11px] px-2 py-0.5 ${pConf.badge}`}>
-                    {pConf.label}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
-                    <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Propietario</p>
-                    <p className="text-sm text-[#D5C3B6] truncate font-medium">
-                      {property.landlord?.name || '—'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-[#1C1917]/60 px-3 py-2.5">
-                    <p className="text-[10px] text-[#9C8578] uppercase tracking-wider mb-1">Arrendatario</p>
-                    <p className="text-sm truncate font-medium">
-                      {property.tenant?.name
-                        ? <span className="text-[#D5C3B6]">{property.tenant.name}</span>
-                        : <span className="text-[#9C8578] italic">Sin asignar</span>}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-base font-semibold text-[#FAF6F2] tabular-nums leading-none">
-                    {property.monthlyRentCLP
-                      ? `$${property.monthlyRentCLP.toLocaleString('es-CL')}`
-                      : <span className="text-[#9C8578] font-normal text-sm">Sin renta</span>}
-                  </span>
-                  {property._count?.maintenance > 0 && (
-                    <span className="flex items-center gap-1.5 rounded-full bg-[#F2C94C]/10 px-2.5 py-1 text-xs font-medium text-[#F2C94C]">
-                      <Wrench className="h-3.5 w-3.5" />
-                      {property._count.maintenance} abierta{property._count.maintenance === 1 ? '' : 's'}
-                    </span>
-                  )}
-                </div>
-
-                {contractPct !== null && (
-                  <div>
-                    <div className="h-1.5 w-full rounded-full bg-[#1C1917] overflow-hidden">
-                      <div className="h-full rounded-full bg-[#5E8B8C]/50 transition-all"
-                        style={{ width: `${contractPct}%` }} />
-                    </div>
-                    <p className="text-[11px] text-[#9C8578] mt-1.5">
-                      {daysLeft !== null && daysLeft > 0 ? `Vence en ${daysLeft}d` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-[#D5C3B6]/8 px-5 py-3 flex justify-end">
-                <span className="text-sm text-[#5E8B8C] group-hover:text-[#8FC4C5] font-medium transition-colors">
-                  Ver ficha →
-                </span>
-              </div>
-            </Link>
+              property={property}
+              statusConfig={{
+                PAID: { label: paymentStatusLocal.PAID.label, className: paymentStatusLocal.PAID.badge },
+                PENDING: { label: paymentStatusLocal.PENDING.label, className: paymentStatusLocal.PENDING.badge },
+                OVERDUE: { label: paymentStatusLocal.OVERDUE.label, className: paymentStatusLocal.OVERDUE.badge },
+                PROCESSING: { label: paymentStatusLocal.PROCESSING.label, className: paymentStatusLocal.PROCESSING.badge },
+                CANCELLED: { label: paymentStatusLocal.CANCELLED.label, className: paymentStatusLocal.CANCELLED.badge },
+              }}
+              isManagedByBroker={false}
+              footerLabel="Ver detalle →"
+              ownerLabel="Propietario"
+            />
           )
         })
       )}

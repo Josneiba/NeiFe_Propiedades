@@ -20,6 +20,9 @@ interface PropertyWithPaymentStatus {
   address: string
   commune: string
   monthlyRentCLP: number | null
+  landlord: {
+    name: string | null
+  } | null
   tenant: {
     name: string | null
     email: string
@@ -65,6 +68,11 @@ async function OwnerPropertyList({ landlordId, searchQuery }: { landlordId: stri
         : {}),
     },
     include: {
+      landlord: {
+        select: {
+          name: true,
+        },
+      },
       tenant: {
         select: {
           name: true,
@@ -170,7 +178,8 @@ async function OwnerPropertyList({ landlordId, searchQuery }: { landlordId: stri
               key={property.id}
               property={property}
               statusConfig={statusConfig}
-              isManagedByBroker={Boolean(property.mandates[0])}
+              isManagedByBroker={false}
+              footerLabel="Ver detalle →"
             />
           )
         })
