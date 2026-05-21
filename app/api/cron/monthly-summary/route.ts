@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email-composer'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -97,74 +98,56 @@ export async function GET(req: NextRequest) {
 
         return `
           <tr>
-            <td style="padding:10px 8px;border-bottom:1px solid rgba(213,195,182,0.08);color:#FAF6F2;font-size:14px;">${p.address}</td>
-            <td style="padding:10px 8px;border-bottom:1px solid rgba(213,195,182,0.08);color:#9C8578;font-size:14px;">${p.tenant?.name || 'Sin arrendatario'}</td>
-            <td style="padding:10px 8px;border-bottom:1px solid rgba(213,195,182,0.08);color:#D5C3B6;font-size:14px;">$${(p.monthlyRentCLP || 0).toLocaleString('es-CL')}</td>
-            <td style="padding:10px 8px;border-bottom:1px solid rgba(213,195,182,0.08);color:${statusColor};font-size:14px;">${statusLabel}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid rgba(213,195,182,0.16);color:#1C1917;font-size:14px;">${p.address}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid rgba(213,195,182,0.16);color:#5A5048;font-size:14px;">${p.tenant?.name || 'Sin arrendatario'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid rgba(213,195,182,0.16);color:#3C3530;font-size:14px;">$${(p.monthlyRentCLP || 0).toLocaleString('es-CL')}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid rgba(213,195,182,0.16);color:${statusColor};font-size:14px;font-weight:600;">${statusLabel}</td>
           </tr>
         `
       })
       .join('')
 
     try {
+      const summaryTable = `
+        <div style="overflow:hidden;border:1px solid rgba(213,195,182,0.18);border-radius:18px;background:#F8F2EC;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+            <tr style="background:#EFE8E1;">
+              <th style="text-align:left;padding:12px 14px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Propiedad</th>
+              <th style="text-align:left;padding:12px 14px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Arrendatario</th>
+              <th style="text-align:left;padding:12px 14px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Renta</th>
+              <th style="text-align:left;padding:12px 14px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Estado</th>
+            </tr>
+            ${propertyRows}
+          </table>
+        </div>
+      `
+
       const result = await resend.emails.send({
         from: getResendFrom(),
         to: landlord.email,
         subject: `Resumen ${monthNames[reportMonth]} ${reportYear} — NeiFe`,
-        html: `
-          <!DOCTYPE html><html lang="es"><body style="margin:0;padding:0;background:#1C1917;font-family:Arial,sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1C1917;padding:32px 16px;">
-          <tr><td align="center">
-          <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
-            <tr><td style="padding-bottom:24px;text-align:center;">
-              <span style="font-size:18px;font-weight:700;color:#D5C3B6;letter-spacing:0.08em;">NeiFe</span>
-            </td></tr>
-            <tr><td style="background:#2D3C3C;border:1px solid rgba(213,195,182,0.12);border-radius:16px;padding:32px;">
-              <h1 style="color:#FAF6F2;margin:0 0 4px;font-size:22px;">Resumen de ${monthNames[reportMonth]}</h1>
-              <p style="color:#9C8578;margin:0 0 28px;font-size:14px;">Hola ${landlord.name.split(' ')[0]}, aquí está tu resumen mensual.</p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td width="25%" style="text-align:center;background:#1C1917;border-radius:8px;padding:16px 8px;">
-                    <div style="font-size:22px;font-weight:700;color:#FAF6F2;">${props.length}</div>
-                    <div style="font-size:11px;color:#9C8578;margin-top:4px;">Propiedades</div>
-                  </td>
-                  <td width="4%"></td>
-                  <td width="25%" style="text-align:center;background:#1C1917;border-radius:8px;padding:16px 8px;">
-                    <div style="font-size:22px;font-weight:700;color:#5E8B8C;">${paidCount}</div>
-                    <div style="font-size:11px;color:#9C8578;margin-top:4px;">Pagados</div>
-                  </td>
-                  <td width="4%"></td>
-                  <td width="25%" style="text-align:center;background:#1C1917;border-radius:8px;padding:16px 8px;">
-                    <div style="font-size:22px;font-weight:700;color:#C27F79;">${overdueCount}</div>
-                    <div style="font-size:11px;color:#9C8578;margin-top:4px;">Atrasados</div>
-                  </td>
-                  <td width="4%"></td>
-                  <td width="25%" style="text-align:center;background:#1C1917;border-radius:8px;padding:16px 8px;">
-                    <div style="font-size:22px;font-weight:700;color:#B8965A;">${totalMaintenance}</div>
-                    <div style="font-size:11px;color:#9C8578;margin-top:4px;">Mantenciones</div>
-                  </td>
-                </tr>
-              </table>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-                <tr style="background:#1C1917;">
-                  <th style="text-align:left;padding:8px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Propiedad</th>
-                  <th style="text-align:left;padding:8px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Arrendatario</th>
-                  <th style="text-align:left;padding:8px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Renta</th>
-                  <th style="text-align:left;padding:8px;color:#9C8578;font-size:11px;font-weight:600;text-transform:uppercase;">Estado</th>
-                </tr>
-                ${propertyRows}
-              </table>
-              <div style="text-align:center;">
-                <a href="${baseUrl}/dashboard" style="display:inline-block;background:#5E8B8C;color:#FAF6F2;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
-                  Ver dashboard completo →
-                </a>
-              </div>
-            </td></tr>
-          </table>
-          </td></tr>
-          </table>
-          </body></html>
-        `,
+        html: buildBrandedEmailHtml({
+          preview: `Resumen mensual de ${monthNames[reportMonth]} ${reportYear}`,
+          title: `Resumen de ${monthNames[reportMonth]} ${reportYear}`,
+          greeting: `Hola ${escapeHtml((landlord.name || 'arrendador').split(' ')[0])},`,
+          intro: [
+            'Aquí tienes un resumen ejecutivo del último mes para que revises rápidamente el estado de tu cartera.',
+          ],
+          infoRows: [
+            { label: 'Propiedades activas', value: String(props.length) },
+            { label: 'Pagos registrados', value: String(paidCount) },
+            { label: 'Pagos atrasados', value: String(overdueCount) },
+            { label: 'Mantenciones abiertas', value: String(totalMaintenance) },
+          ],
+          customContent: summaryTable,
+          cta: {
+            label: 'Ver dashboard completo',
+            url: `${baseUrl}/dashboard`,
+          },
+          closing: [
+            'Si quieres revisar cada propiedad en detalle, entra a tu panel y verás pagos, mantenciones y contratos en un solo lugar.',
+          ],
+        }),
       })
 
       if (!result.error) {

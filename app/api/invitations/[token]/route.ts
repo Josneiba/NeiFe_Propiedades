@@ -164,7 +164,7 @@ export async function POST(
         'SYSTEM',
         'Permiso aprobado por propietario',
         `${session.user.name || session.user.email} aceptó tu invitación y te autorizó para administrar sus propiedades.`,
-        `/broker/mandatos/nuevo${ownerEmailQuery}`
+        `/broker/propiedades/nueva${ownerEmailQuery}`
       )
 
       await logActivity(

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email-composer'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,21 +67,26 @@ function getContractAlertEmailHtml(params: {
   formattedDate: string
   dashboardUrl: string
 }) {
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#1C1917;padding:32px;border-radius:12px;">
-      <h2 style="color:#FAF6F2;margin:0 0 8px;">Contrato proximo a vencer</h2>
-      <p style="color:#9C8578;margin:0 0 24px;">Hola ${params.landlordName}, te avisamos con anticipacion para que puedas renovar o coordinar el cierre del contrato.</p>
-      <div style="background:#2D3C3C;border-radius:8px;padding:16px;margin-bottom:24px;">
-        <p style="color:#FAF6F2;margin:0;font-weight:600;">${params.propertyAddress}</p>
-        <p style="color:#9C8578;margin:4px 0 0;font-size:14px;">Vence en ${params.daysUntilExpiry} dias</p>
-        <p style="color:#9C8578;margin:4px 0 0;font-size:14px;">Fecha de termino: ${params.formattedDate}</p>
-      </div>
-      <a href="${params.dashboardUrl}" style="display:inline-block;background:#5E8B8C;color:#FAF6F2;padding:12px 28px;text-decoration:none;border-radius:8px;font-weight:600;">
-        Ver contrato
-      </a>
-      <p style="color:#9C8578;font-size:12px;margin-top:24px;">NeiFe · Gestion de Arriendos</p>
-    </div>
-  `
+  return buildBrandedEmailHtml({
+    preview: `Contrato próximo a vencer en ${escapeHtml(params.propertyAddress)}`,
+    title: 'Contrato próximo a vencer',
+    greeting: `Hola ${escapeHtml(params.landlordName)},`,
+    intro: [
+      'Te avisamos con anticipación para que puedas renovar o coordinar el cierre del contrato a tiempo.',
+    ],
+    infoRows: [
+      { label: 'Propiedad', value: escapeHtml(params.propertyAddress) },
+      { label: 'Vence en', value: `${params.daysUntilExpiry} días` },
+      { label: 'Fecha de término', value: escapeHtml(params.formattedDate) },
+    ],
+    cta: {
+      label: 'Revisar contrato',
+      url: params.dashboardUrl,
+    },
+    closing: [
+      'Si ya estás coordinando la renovación o el cierre, puedes usar este aviso solo como recordatorio.',
+    ],
+  })
 }
 
 export async function GET(req: NextRequest) {
@@ -193,7 +199,7 @@ export async function GET(req: NextRequest) {
         const result = await resend.emails.send({
           from: getResendFrom(),
           to: property.landlord.email,
-          subject: `Tu contrato vence en ${daysUntilExpiry} dias - ${property.address}`,
+          subject: `Contrato por vencer en ${daysUntilExpiry} días · NeiFe`,
           html: getContractAlertEmailHtml({
             landlordName: property.landlord.name,
             propertyAddress: property.address,

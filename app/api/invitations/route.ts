@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { render } from '@react-email/components'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { InvitationEmail } from '@/components/email/invitation-template'
+import { buildInvitationEmailHtml } from '@/components/email/invitation-template'
 import { getResendFrom } from '@/lib/resend-from'
 import { getPublicOrigin } from '@/lib/public-origin'
 
@@ -119,22 +118,24 @@ export async function POST(req: NextRequest) {
             senderDescription = 'tu arrendador'
           }
 
-          const emailHtml = await render(
-            InvitationEmail({
-              inviteLink: inviteUrl,
-              invitedEmail: toEmail,
-              propertyAddress,
-              senderName: session.user.name || senderDescription,
-              isBrokerInvite: data.type === 'BROKER_INVITE',
-            })
-          )
+          const emailHtml = buildInvitationEmailHtml({
+            inviteLink: inviteUrl,
+            invitedEmail: toEmail,
+            propertyAddress,
+            senderName: session.user.name || senderDescription,
+            isBrokerInvite: data.type === 'BROKER_INVITE',
+          })
 
           const from = getResendFrom()
+          const subject =
+            data.type === 'BROKER_INVITE'
+              ? `${session.user.name || 'Un corredor'} te invita a administrar tu propiedad en NeiFe`
+              : `Tienes una invitación pendiente en NeiFe`
 
           const result = await resend.emails.send({
             from,
             to: toEmail,
-            subject: 'Invitación a NeiFe - Plataforma de Gestión de Arriendos',
+            subject,
             html: emailHtml,
           })
 
@@ -163,7 +164,7 @@ export async function POST(req: NextRequest) {
           : 'Invitación creada; copia el enlace para compartirlo',
     }
 
-    if (data.type === 'EMAIL' && !emailSent && emailError !== undefined) {
+    if ((data.type === 'EMAIL' || data.type === 'BROKER_INVITE') && !emailSent && emailError !== undefined) {
       return NextResponse.json(
         {
           ...basePayload,

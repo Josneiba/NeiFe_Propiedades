@@ -64,9 +64,12 @@ export default function RegistroClient() {
     password: "",
     confirmPassword: "",
   })
+  const invitationCallbackUrl = inviteToken ? `/invitacion/${inviteToken}` : null
 
   useEffect(() => {
-    if (inviteToken && !inviteRole) {
+    if (inviteRole === "landlord" || inviteRole === "tenant" || inviteRole === "broker") {
+      setSelectedRole(inviteRole)
+    } else if (inviteToken && !inviteRole) {
       fetch(`/api/invitations/${inviteToken}`)
         .then(async (res) => {
           if (!res.ok) {
@@ -82,6 +85,10 @@ export default function RegistroClient() {
         })
         .then((data) => {
           if (data.invitation) {
+            if (data.invitation.email) {
+              setFormData((prev) => ({ ...prev, email: data.invitation.email }))
+            }
+
             if (data.invitation.type === "BROKER_INVITE") {
               setSelectedRole("landlord")
             } else {
@@ -92,10 +99,29 @@ export default function RegistroClient() {
         .catch(() => {
           setSelectedRole("tenant")
         })
-    } else if (inviteRole === "tenant" || inviteToken) {
-      setSelectedRole("tenant")
     }
   }, [inviteToken, inviteRole])
+
+  useEffect(() => {
+    if (!inviteToken) return
+
+    fetch(`/api/invitations/${inviteToken}`)
+      .then(async (res) => {
+        if (!res.ok) return null
+        const contentType = res.headers.get("content-type") || ""
+        if (!contentType.includes("application/json")) return null
+        return res.json()
+      })
+      .then((data) => {
+        if (data?.invitation?.email) {
+          setFormData((prev) => ({
+            ...prev,
+            email: prev.email || data.invitation.email,
+          }))
+        }
+      })
+      .catch(() => undefined)
+  }, [inviteToken])
 
   useEffect(() => {
     const defaultType = getDefaultDocumentType(documentCountry)
@@ -218,7 +244,10 @@ export default function RegistroClient() {
         return
       }
 
-      router.push("/login?registered=true")
+      const nextLoginUrl = invitationCallbackUrl
+        ? `/login?registered=true&callbackUrl=${encodeURIComponent(invitationCallbackUrl)}`
+        : "/login?registered=true"
+      router.push(nextLoginUrl)
     } catch (error) {
       console.error("Registration error:", error)
       toast.error("Error al registrarse")
@@ -245,7 +274,10 @@ export default function RegistroClient() {
       }
 
       toast.success("Cuenta verificada correctamente")
-      router.push("/login?registered=true&verified=true")
+      const nextLoginUrl = invitationCallbackUrl
+        ? `/login?registered=true&verified=true&callbackUrl=${encodeURIComponent(invitationCallbackUrl)}`
+        : "/login?registered=true&verified=true"
+      router.push(nextLoginUrl)
     } catch {
       setVerifyError("Error de conexion")
     } finally {
@@ -349,7 +381,9 @@ export default function RegistroClient() {
               </div>
               <CardTitle className="text-2xl font-serif text-[#FAF6F2]">Crear cuenta</CardTitle>
               <CardDescription className="text-[#9C8578]">
-                Selecciona tu rol y completa tus datos
+                {inviteToken
+                  ? "Completa tu registro para aceptar la invitación pendiente"
+                  : "Selecciona tu rol y completa tus datos"}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-6">
@@ -389,6 +423,17 @@ export default function RegistroClient() {
                 </div>
               ) : (
                 <>
+                  {inviteToken ? (
+                    <div className="mb-6 rounded-2xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/10 p-4">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#5E8B8C]">
+                        Invitación pendiente
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-[#D5C3B6]">
+                        Esta cuenta se creará para continuar con una invitación activa dentro de NeiFe. Cuando termines el registro podrás iniciar sesión y aceptar la solicitud desde el enlace recibido.
+                      </p>
+                    </div>
+                  ) : null}
+
                   <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-3">
                     {roleCards.map((option) => {
                       const Icon = option.icon

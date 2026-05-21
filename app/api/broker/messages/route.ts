@@ -9,6 +9,7 @@ import {
   getResendFrom,
   isResendSandboxFrom,
 } from '@/lib/resend-from'
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email-composer'
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -129,20 +130,36 @@ export async function POST(req: NextRequest) {
       emailStatus = 'FAILED'
       emailError = getResendDomainHelpMessage()
     } else if (data.sendEmail && resend) {
+      const safeMessage = escapeHtml(data.message).replaceAll('\n', '<br />')
       const emailResult = await resend.emails.send({
         from: fromAddress,
         to: property.tenant.email,
-        subject: `NeiFe - ${data.subject}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#1C1917;padding:32px;border-radius:12px;">
-            <div style="text-align:center;margin-bottom:24px;">
-              <span style="font-size:20px;font-weight:700;color:#D5C3B6;">NeiFe</span>
+        subject: `Aviso de administración · ${data.subject}`,
+        html: buildBrandedEmailHtml({
+          preview: data.subject,
+          title: data.subject,
+          greeting: `Hola ${property.tenant.name || 'arrendatario'},`,
+          intro: [
+            'Recibiste un nuevo aviso relacionado con tu arriendo en NeiFe.',
+          ],
+          infoRows: [
+            { label: 'Propiedad', value: property.address },
+            { label: 'Tipo de aviso', value: data.type.replaceAll('_', ' ') },
+          ],
+          customContent: `
+            <div style="padding:18px 20px;border-radius:16px;background:#F8F2EC;border:1px solid rgba(213,195,182,0.18);">
+              <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9C8578;margin-bottom:8px;">Mensaje</div>
+              <div style="font-size:15px;line-height:1.7;color:#3C3530;">${safeMessage}</div>
             </div>
-            <h2 style="color:#FAF6F2;margin:0 0 8px;font-size:20px;">${data.subject}</h2>
-            <p style="color:#9C8578;font-size:14px;line-height:1.6;white-space:pre-wrap;">${data.message}</p>
-            <p style="color:#9C8578;font-size:12px;margin-top:24px;">Propiedad: ${property.address}</p>
-          </div>
-        `,
+          `,
+          cta: {
+            label: 'Abrir mi panel',
+            url: `${req.nextUrl.origin}/mi-arriendo`,
+          },
+          closing: [
+            'También encontrarás este aviso guardado dentro de tu panel para futuras consultas.',
+          ],
+        }),
       })
 
       if (emailResult.error) {

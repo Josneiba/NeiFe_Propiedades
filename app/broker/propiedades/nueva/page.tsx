@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, Home, Loader2, Mail, Plus, Search } from 'lucide-react'
+import { ArrowLeft, Building2, Copy, Home, Loader2, Mail, Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,9 @@ export default function NuevaPropiedadBrokerPage() {
   const regions = getRegions()
   const [loadingOwner, setLoadingOwner] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [requestingPermission, setRequestingPermission] = useState(false)
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [owner, setOwner] = useState<Owner | null>(null)
   const [ownerEmail, setOwnerEmail] = useState('')
   const [permissionStatus, setPermissionStatus] = useState<'NONE' | 'PENDING' | 'REJECTED' | 'APPROVED'>('NONE')
@@ -80,6 +83,7 @@ export default function NuevaPropiedadBrokerPage() {
       if (!response.ok) {
         setOwner(null)
         setPermissionStatus('NONE')
+        setInviteUrl(null)
         setFormErrors((current) => ({
           ...current,
           ownerSearch: 'No encontramos un arrendador con ese correo. Primero debe tener cuenta para poder aprobar la propiedad.',
@@ -143,6 +147,81 @@ export default function NuevaPropiedadBrokerPage() {
 
     setFormErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
+  }
+
+  const handleRequestPermission = async () => {
+    if (!owner) return
+    setRequestingPermission(true)
+
+    try {
+      const response = await fetch('/api/broker-permissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ landlordId: owner.id }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo enviar la solicitud de permiso')
+      }
+
+      setPermissionStatus('PENDING')
+      setFormErrors((current) => ({
+        ...current,
+        ownerSearch:
+          'La solicitud fue enviada. Cuando el arrendador la apruebe podrás crear propiedades en su nombre desde esta misma pantalla.',
+      }))
+      toast({
+        title: 'Solicitud enviada',
+        description: 'El arrendador recibió tu solicitud de permiso general.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo solicitar permiso',
+        variant: 'destructive',
+      })
+    } finally {
+      setRequestingPermission(false)
+    }
+  }
+
+  const handleSendInvite = async () => {
+    if (!ownerEmail.trim()) return
+    setSendingInvite(true)
+    setInviteUrl(null)
+
+    try {
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'BROKER_INVITE',
+          email: ownerEmail.trim(),
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo crear la invitación')
+      }
+
+      setInviteUrl(data.inviteUrl || null)
+      toast({
+        title: data.emailSent ? 'Invitación enviada' : 'Invitación creada',
+        description: data.emailSent
+          ? 'El propietario recibió un correo para crear su cuenta como arrendador y aprobar tu gestión.'
+          : 'La invitación quedó lista. Puedes copiar el enlace si el correo no salió automáticamente.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo enviar la invitación',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingInvite(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,6 +332,64 @@ export default function NuevaPropiedadBrokerPage() {
             {formErrors.ownerSearch ? (
               <div className="rounded-xl border border-[#C27F79]/20 bg-[#C27F79]/10 p-4 text-sm text-[#D5C3B6]">
                 {formErrors.ownerSearch}
+                {!owner ? (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-[#9C8578]">
+                      Si ese correo todavía no tiene cuenta, puedes invitarlo para que se registre como arrendador y luego apruebe tu administración.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleSendInvite}
+                      disabled={sendingInvite || !ownerEmail.trim()}
+                      size="sm"
+                      className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
+                    >
+                      {sendingInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                      Invitar arrendador
+                    </Button>
+                    {inviteUrl ? (
+                      <div className="rounded-lg border border-[#D5C3B6]/10 bg-[#1C1917]/40 p-3">
+                        <p className="mb-2 text-xs text-[#9C8578]">Enlace de invitación</p>
+                        <div className="flex gap-2">
+                          <Input
+                            value={inviteUrl}
+                            readOnly
+                            className="border-[#D5C3B6]/10 bg-[#1C1917] text-[#FAF6F2]"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-[#D5C3B6]/10 text-[#FAF6F2]"
+                            onClick={() => {
+                              navigator.clipboard.writeText(inviteUrl)
+                              toast({ title: 'Enlace copiado' })
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : permissionStatus !== 'APPROVED' ? (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-[#9C8578]">
+                      Aunque el arrendador todavía no tenga propiedades en su panel, puedes pedir permiso desde aquí para comenzar la administración desde cero.
+                    </p>
+                    {permissionStatus !== 'PENDING' ? (
+                      <Button
+                        type="button"
+                        onClick={handleRequestPermission}
+                        disabled={requestingPermission}
+                        size="sm"
+                        className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/90 text-[#FAF6F2]"
+                      >
+                        {requestingPermission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Solicitar permiso
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

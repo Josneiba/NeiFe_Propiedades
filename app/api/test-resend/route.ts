@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { auth } from '@/lib/auth-session'
 import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email-composer'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -54,18 +55,22 @@ export async function GET(req: NextRequest) {
     const result = await resend.emails.send({
       from: fromUsed,
       to: toEmail,
-      subject: 'Test de NeiFe - Verifica que Resend está funcionando',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #5E8B8C;">✅ NeiFe - Resend está funcionando</h2>
-          <p style="color: #666;">Este es un correo de prueba enviado desde tu aplicación NeiFe.</p>
-          <p style="color: #666;">
-            <strong>Información:</strong><br/>
-            Remitente: ${fromUsed}<br/>
-            Timestamp: ${new Date().toISOString()}
-          </p>
-        </div>
-      `,
+      subject: 'Prueba de entrega de correo · NeiFe',
+      html: buildBrandedEmailHtml({
+        preview: 'Correo de prueba de NeiFe',
+        title: 'Prueba de correo exitosa',
+        intro: [
+          'Este mensaje confirma que la integración de Resend está disponible en tu entorno actual.',
+        ],
+        infoRows: [
+          { label: 'Destinatario', value: escapeHtml(toEmail) },
+          { label: 'Remitente usado', value: escapeHtml(fromUsed) },
+          { label: 'Fecha de prueba', value: new Date().toISOString() },
+        ],
+        closing: [
+          'Si recibiste este correo correctamente, la entrega transaccional básica está funcionando.',
+        ],
+      }),
     })
 
     if (result.error) {
