@@ -144,15 +144,15 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    await createNotification(
-      property.managedBy ?? property.landlordId,
-      'SYSTEM',
-      'Nueva postulación recibida',
-      `Se recibió una postulación para ${property.address}.`,
-      property.managedBy
+    await createNotification({
+      userId: property.managedBy ?? property.landlordId,
+      type: 'SYSTEM',
+      title: 'Nueva postulación recibida',
+      message: `Se recibió una postulación para ${property.address}.`,
+      link: property.managedBy
         ? `/broker/propiedades/${property.id}`
         : `/dashboard/propiedades/${property.id}?tab=postulaciones`
-    )
+    })
 
     return NextResponse.json({ application }, { status: 201 })
   } catch (error) {

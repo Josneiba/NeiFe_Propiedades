@@ -135,15 +135,15 @@ export async function POST(req: NextRequest) {
       ? '/dashboard/solicitudes-corredores?tab=propiedades'
       : '/dashboard/solicitudes-corredores'
 
-    await createNotification(
-      landlordId,
-      'SYSTEM',
-      propertyInfo 
+    await createNotification({
+      userId: landlordId,
+      type: 'SYSTEM',
+      title: propertyInfo 
         ? 'Solicitud de acceso a propiedad específica'
         : 'Solicitud de corredor recibida',
-      `El corredor ${session.user.name || session.user.email} solicita administrar${propertyInfo ? ` la propiedad: ${propertyInfo.name || propertyInfo.address}` : ' tus propiedades'}.`,
-      notificationLink
-    )
+      message: `El corredor ${session.user.name || session.user.email} solicita administrar${propertyInfo ? ` la propiedad: ${propertyInfo.name || propertyInfo.address}` : ' tus propiedades'}.`,
+      link: notificationLink
+    })
 
     await logActivity(
       session.user.id,

@@ -202,13 +202,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (data.sendToLandlord) {
-      await createNotification(
-        property.landlordId,
-        'SYSTEM',
-        'Nueva rendicion mensual disponible',
-        `${session.user.name || session.user.email} publico la rendicion de ${property.address} para ${data.month}/${data.year}.`,
-        '/dashboard#rendiciones-recibidas'
-      )
+      await createNotification({
+        userId: property.landlordId,
+        type: 'SYSTEM',
+        title: 'Nueva rendicion mensual disponible',
+        message: `${session.user.name || session.user.email} publico la rendicion de ${property.address} para ${data.month}/${data.year}.`,
+        link: '/dashboard#rendiciones-recibidas'
+      })
     }
 
     return NextResponse.json({ statement }, { status: 201 })

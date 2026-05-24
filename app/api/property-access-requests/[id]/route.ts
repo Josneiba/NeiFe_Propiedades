@@ -160,13 +160,13 @@ export async function PATCH(
       ? `${session.user.name} ha aprobado tu solicitud para administrar la propiedad ${accessRequest.property.name || accessRequest.property.address}.`
       : `${session.user.name} ha rechazado tu solicitud para administrar la propiedad ${accessRequest.property.name || accessRequest.property.address}.`
 
-    await createNotification(
-      accessRequest.brokerId,
-      'SYSTEM',
-      notificationTitle,
-      notificationMessage,
-      action === 'approve' ? `/broker/propiedades/${accessRequest.propertyId}` : undefined
-    )
+    await createNotification({
+      userId: accessRequest.brokerId,
+      type: 'SYSTEM',
+      title: notificationTitle,
+      message: notificationMessage,
+      link: action === 'approve' ? `/broker/propiedades/${accessRequest.propertyId}` : undefined
+    })
 
     // Log activity
     await logActivity(

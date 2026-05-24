@@ -43,13 +43,13 @@ export async function notifyTenantContractSent(params: {
   propertyId: string
   senderName: string
 }) {
-  return createNotification(
-    params.tenantId,
-    'SYSTEM',
-    'Nuevo contrato disponible',
-    `${params.senderName} te envio un contrato para revisar y firmar en la plataforma.`,
-    buildContractLink(params.propertyId)
-  )
+  return createNotification({
+    userId: params.tenantId,
+    type: 'SYSTEM',
+    title: 'Nuevo contrato disponible',
+    message: `${params.senderName} te envio un contrato para revisar y firmar en la plataforma.`,
+    link: buildContractLink(params.propertyId)
+  })
 }
 
 export async function notifyContractSigned(params: {
@@ -59,21 +59,21 @@ export async function notifyContractSigned(params: {
   propertyId: string
   tenantName: string
 }) {
-  await createNotification(
-    params.landlordId,
-    'CONTRACT_SIGNED',
-    'Contrato firmado',
-    `${params.tenantName} subio la copia firmada del contrato de ${params.propertyAddress}.`,
-    `/dashboard/contratos?property=${params.propertyId}`
-  )
+  await createNotification({
+    userId: params.landlordId,
+    type: 'CONTRACT_SIGNED',
+    title: 'Contrato firmado',
+    message: `${params.tenantName} subio la copia firmada del contrato de ${params.propertyAddress}.`,
+    link: `/dashboard/contratos?property=${params.propertyId}`
+  })
 
   if (params.brokerId) {
-    await createNotification(
-      params.brokerId,
-      'CONTRACT_SIGNED',
-      'Contrato firmado',
-      `${params.tenantName} subio la copia firmada del contrato de ${params.propertyAddress}.`,
-      `/broker/contratos?property=${params.propertyId}`
-    )
+    await createNotification({
+      userId: params.brokerId,
+      type: 'CONTRACT_SIGNED',
+      title: 'Contrato firmado',
+      message: `${params.tenantName} subio la copia firmada del contrato de ${params.propertyAddress}.`,
+      link: `/broker/contratos?property=${params.propertyId}`
+    })
   }
 }

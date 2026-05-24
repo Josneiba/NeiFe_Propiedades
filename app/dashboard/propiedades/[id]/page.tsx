@@ -45,6 +45,7 @@ import { SecurityDepositPanel } from "@/components/dashboard/security-deposit-pa
 import { IpcAdjustmentDialog } from "@/components/dashboard/ipc-adjustment-dialog"
 import { PropertyPhotosTab } from "@/components/dashboard/property-photos-tab"
 import { getUserIdentity } from "@/lib/identity-documents"
+import { PropertyTimeline } from "@/components/properties/property-timeline"
 
 interface Property {
   id: string
@@ -377,6 +378,7 @@ export default function PropertyDetailPage() {
             <TabsTrigger value="operacion">Operación</TabsTrigger>
             <TabsTrigger value="contrato">Contrato y Documentos</TabsTrigger>
             <TabsTrigger value="gestion">Gestión</TabsTrigger>
+            <TabsTrigger value="historial">Historial</TabsTrigger>
           </TabsList>
         </div>
         <div className="md:hidden">
@@ -393,6 +395,7 @@ export default function PropertyDetailPage() {
               <option value="operacion">Operación</option>
               <option value="contrato">Contrato y Documentos</option>
               <option value="gestion">Gestión</option>
+              <option value="historial">Historial</option>
             </select>
           </div>
         </div>
@@ -995,6 +998,18 @@ export default function PropertyDetailPage() {
               applicationSlug={property.applicationSlug}
               hasTenant={Boolean(property.tenant)}
             />
+          </section>
+        </TabsContent>
+
+        <TabsContent value="historial" className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Historial de actividad</h3>
+              <p className="text-sm text-muted-foreground">
+                Cronología de eventos en esta propiedad (pagos, mantenciones, contratos, etc.)
+              </p>
+            </div>
+            <PropertyTimeline propertyId={propertyId} />
           </section>
         </TabsContent>
       </Tabs>

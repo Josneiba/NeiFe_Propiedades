@@ -72,16 +72,16 @@ export async function generateMonthlyPaymentsForPeriod(
     })
 
     if (property.tenantId) {
-      await createNotification(
-        property.tenantId,
-        'PAYMENT_DUE',
-        'Nuevo pago disponible',
-        `Tu pago de ${new Date(year, month - 1, 1).toLocaleDateString('es-CL', {
+      await createNotification({
+        userId: property.tenantId,
+        type: 'PAYMENT_DUE',
+        title: 'Nuevo pago disponible',
+        message: `Tu pago de ${new Date(year, month - 1, 1).toLocaleDateString('es-CL', {
           month: 'long',
           year: 'numeric',
         })} ya está disponible.`,
-        '/mi-arriendo/pagos'
-      )
+        link: '/mi-arriendo/pagos'
+      })
     }
 
     created += 1

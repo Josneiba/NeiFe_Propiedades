@@ -192,21 +192,21 @@ export async function POST(req: NextRequest) {
     })
 
     if (session.user.role === 'BROKER') {
-      await createNotification(
-        ownerId,
-        'MANDATE_REQUESTED',
-        'Solicitud de administración',
-        `El corredor ${session.user.name || session.user.email} solicita administrar tu propiedad`,
-        '/dashboard/solicitudes-corredores?tab=propiedades'
-      )
+      await createNotification({
+        userId: ownerId,
+        type: 'MANDATE_REQUESTED',
+        title: 'Solicitud de administración',
+        message: `El corredor ${session.user.name || session.user.email} solicita administrar tu propiedad`,
+        link: '/dashboard/solicitudes-corredores?tab=propiedades'
+      })
     } else {
-      await createNotification(
-        brokerId,
-        'MANDATE_REQUESTED',
-        'Nueva solicitud de administración',
-        `${session.user.name || session.user.email} quiere delegarte la administración de una propiedad.`,
-        '/broker/mandatos'
-      )
+      await createNotification({
+        userId: brokerId,
+        type: 'MANDATE_REQUESTED',
+        title: 'Nueva solicitud de administración',
+        message: `${session.user.name || session.user.email} quiere delegarte la administración de una propiedad.`,
+        link: '/broker/mandatos'
+      })
     }
 
     await logActivity(

@@ -108,13 +108,13 @@ export async function PATCH(
     }
 
     if (statusMessages[data.status]) {
-      await createNotification(
-        maintenance.requesterId,
-        'MAINTENANCE_UPDATE',
-        `Mantención: ${data.status}`,
-        statusMessages[data.status],
-        '/mi-arriendo/mantenciones'
-      )
+      await createNotification({
+        userId: maintenance.requesterId,
+        type: 'MAINTENANCE_UPDATE',
+        title: `Mantención: ${data.status}`,
+        message: statusMessages[data.status],
+        link: '/mi-arriendo/mantenciones',
+      })
     }
 
     await logActivity(

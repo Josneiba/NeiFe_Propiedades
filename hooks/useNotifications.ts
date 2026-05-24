@@ -1,19 +1,10 @@
 'use client'
 
+import type { NotificationItem } from '@/components/layout/notification-visuals'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-interface Notification {
-  id: string
-  type: string
-  title: string
-  message: string
-  link?: string | null
-  isRead: boolean
-  createdAt: string
-}
-
 export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const esRef = useRef<EventSource | null>(null)
   const retryRef = useRef<NodeJS.Timeout>()
@@ -28,6 +19,17 @@ export function useNotifications() {
       try {
         const parsed = JSON.parse(event.data)
         if (Array.isArray(parsed)) {
+          // Detectar si hay notificaciones nuevas vs el estado anterior
+          const prevIds = new Set(notifications.map(n => n.id))
+          const incoming = parsed.filter(n => !n.isRead && !prevIds.has(n.id))
+
+          if (incoming.length > 0 && notifications.length > 0) {
+            // Emitir evento custom para que el toast pueda escucharlo
+            window.dispatchEvent(new CustomEvent('neife:new-notification', {
+              detail: { notifications: incoming }
+            }))
+          }
+
           setNotifications(parsed)
           setUnreadCount(parsed.filter((n) => !n.isRead).length)
         }

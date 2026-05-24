@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { MapPin, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { PropertyHealth } from '@/lib/property-health'
 
 type PaymentStatusConfig = Record<string, { label: string; className: string }>
 
@@ -27,6 +29,7 @@ interface PropertyCardProps {
   href?: string
   footerLabel?: string
   ownerLabel?: string
+  health?: PropertyHealth
 }
 
 export function PropertyCard({
@@ -36,6 +39,7 @@ export function PropertyCard({
   href,
   footerLabel = 'Ver detalle →',
   ownerLabel = 'Propietario',
+  health,
 }: PropertyCardProps) {
   const currentPayment = property.payments[0]
   const paymentStatus = currentPayment?.status || 'PENDING'
@@ -80,6 +84,39 @@ export function PropertyCard({
           : 'border-[#D5C3B6]/10 bg-[#2D3C3C] hover:border-[#5E8B8C]/30',
       )}
     >
+      {health && (
+        <div 
+          className="absolute top-3 right-3 z-10"
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold"
+                style={{ 
+                  background: `${health.color}20`,
+                  color: health.color,
+                  border: `1px solid ${health.color}40`
+                }}
+              >
+                <div 
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: health.color }}
+                />
+                {health.label}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#D5C3B6] max-w-xs">
+              <ul className="text-xs space-y-1">
+                {health.issues.map((issue, i) => (
+                  <li key={i} className="flex items-center gap-1.5">
+                    <span style={{ color: health.color }}>•</span> {issue}
+                  </li>
+                ))}
+              </ul>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
       <div className="h-1 w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
 
       <div className="relative h-28 w-full flex-shrink-0 bg-[#1C1917]/60 overflow-hidden">

@@ -187,15 +187,15 @@ export async function POST(req: NextRequest) {
 
     const notifyUserId = maintenance.property.managedBy || maintenance.property.landlordId
     if (notifyUserId) {
-      await createNotification(
-        notifyUserId,
-        'MAINTENANCE_NEW',
-        'Nueva solicitud de mantención',
-        `${data.category}: ${data.description}`,
-        maintenance.property.managedBy
+      await createNotification({
+        userId: notifyUserId,
+        type: 'MAINTENANCE_NEW',
+        title: 'Nueva solicitud de mantención',
+        message: `${data.category}: ${data.description}`,
+        link: maintenance.property.managedBy
           ? `/broker/propiedades/${maintenance.propertyId}`
           : '/dashboard/mantenciones'
-      )
+      })
     }
 
     await logActivity(

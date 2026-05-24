@@ -108,15 +108,15 @@ export async function PATCH(
       return nextRequest
     })
 
-    await createNotification(
-      requestRow.broker.id,
-      'SYSTEM',
-      action === 'approve' ? 'Propiedad aprobada por el arrendador' : 'Propiedad rechazada por el arrendador',
-      action === 'approve'
+    await createNotification({
+      userId: requestRow.broker.id,
+      type: 'SYSTEM',
+      title: action === 'approve' ? 'Propiedad aprobada por el arrendador' : 'Propiedad rechazada por el arrendador',
+      message: action === 'approve'
         ? `${session.user.name || session.user.email} aprobó la propiedad ${propertyLabel(requestRow.property)} y ya quedó habilitada para tu administración.`
         : `${session.user.name || session.user.email} rechazó la propiedad ${propertyLabel(requestRow.property)} cargada en su nombre.`,
-      action === 'approve' ? '/broker/propiedades' : '/broker/propiedades?nuevo=pendientes',
-    )
+      link: action === 'approve' ? '/broker/propiedades' : '/broker/propiedades?nuevo=pendientes'
+    })
 
     await logActivity(
       session.user.id,

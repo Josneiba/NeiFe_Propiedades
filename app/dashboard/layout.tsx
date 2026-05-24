@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth-session'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
+import { NotificationToast } from '@/components/layout/notification-toast'
 
 export default async function DashboardLayout({
   children,
@@ -21,6 +22,7 @@ export default async function DashboardLayout({
       <main className="flex-1 lg:ml-0 p-4 lg:p-8 pt-16 lg:pt-8">
         {children}
       </main>
+      <NotificationToast />
     </div>
   )
 }

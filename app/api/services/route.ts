@@ -150,13 +150,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (property.tenantId) {
-      await createNotification(
-        property.tenantId,
-        'SYSTEM',
-        'Servicios del mes actualizados',
-        `Ya puedes revisar los cargos y boletas de ${data.month}/${data.year} en tu panel.`,
-        '/mi-arriendo/servicios'
-      )
+      await createNotification({
+        userId: property.tenantId,
+        type: 'SYSTEM',
+        title: 'Servicios del mes actualizados',
+        message: `Ya puedes revisar los cargos y boletas de ${data.month}/${data.year} en tu panel.`,
+        link: '/mi-arriendo/servicios'
+      })
     }
 
     return NextResponse.json({ service }, { status: 201 })

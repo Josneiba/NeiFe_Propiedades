@@ -159,13 +159,13 @@ export async function POST(
 
     if (result.invitation.type === 'BROKER_INVITE') {
       // Notificar al corredor que ya tiene autorización para gestionar propiedades.
-      await createNotification(
-        result.senderId,
-        'SYSTEM',
-        'Permiso aprobado por propietario',
-        `${session.user.name || session.user.email} aceptó tu invitación y te autorizó para administrar sus propiedades.`,
-        `/broker/propiedades/nueva${ownerEmailQuery}`
-      )
+      await createNotification({
+        userId: result.senderId,
+        type: 'SYSTEM',
+        title: 'Permiso aprobado por propietario',
+        message: `${session.user.name || session.user.email} aceptó tu invitación y te autorizó para administrar sus propiedades.`,
+        link: `/broker/propiedades/nueva${ownerEmailQuery}`
+      })
 
       await logActivity(
         session.user.id,
@@ -177,13 +177,13 @@ export async function POST(
       const propLabel =
         result.property?.name?.trim() || result.property?.address || 'propiedad'
 
-      await createNotification(
-        result.property!.landlordId,
-        'INVITATION_RECEIVED',
-        'Invitación aceptada',
-        `${session.user.name || session.user.email} aceptó tu invitación para ${propLabel}`,
-        `/dashboard/propiedades/${result.property!.id}`
-      )
+      await createNotification({
+        userId: result.property!.landlordId,
+        type: 'INVITATION_RECEIVED',
+        title: 'Invitación aceptada',
+        message: `${session.user.name || session.user.email} aceptó tu invitación para ${propLabel}`,
+        link: `/dashboard/propiedades/${result.property!.id}`
+      })
 
       await logActivity(
         session.user.id,

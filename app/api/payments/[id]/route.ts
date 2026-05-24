@@ -93,13 +93,13 @@ export async function PATCH(
         ? `/broker/pagos?status=PROCESSING&property=${payment.property.id}`
         : '/dashboard/pagos?status=PROCESSING'
 
-      await createNotification(
-        notifyUserId,
-        'PAYMENT_RECEIVED',
-        'Comprobante de pago recibido',
-        `El arrendatario subió un comprobante para ${payment.property.address}. Verifica y confirma el pago.`,
-        managerLink
-      )
+      await createNotification({
+        userId: notifyUserId,
+        type: 'PAYMENT_RECEIVED',
+        title: 'Comprobante de pago recibido',
+        message: `El arrendatario subió un comprobante para ${payment.property.address}. Verifica y confirma el pago.`,
+        link: managerLink
+      })
 
       return NextResponse.json({ payment: updated })
     }
@@ -149,13 +149,13 @@ export async function PATCH(
 
     // Crear notificaciones y logs según el status
     if (data.status === 'PAID' && payment.property.tenantId) {
-      await createNotification(
-        payment.property.tenantId,
-        'PAYMENT_RECEIVED',
-        'Pago confirmado',
-        `Tu pago de ${updated.month}/${updated.year} ha sido confirmado`,
-        '/mi-arriendo/pagos'
-      )
+      await createNotification({
+        userId: payment.property.tenantId,
+        type: 'PAYMENT_RECEIVED',
+        title: 'Pago confirmado',
+        message: `Tu pago de ${updated.month}/${updated.year} ha sido confirmado`,
+        link: '/mi-arriendo/pagos'
+      })
 
       await logActivity(
         session.user.id,
@@ -166,13 +166,13 @@ export async function PATCH(
     }
 
     if (data.status === 'OVERDUE' && payment.property.tenantId) {
-      await createNotification(
-        payment.property.tenantId,
-        'PAYMENT_OVERDUE',
-        'Pago vencido',
-        `Tu pago de ${updated.month}/${updated.year} está vencido`,
-        '/mi-arriendo/pagos'
-      )
+      await createNotification({
+        userId: payment.property.tenantId,
+        type: 'PAYMENT_OVERDUE',
+        title: 'Pago vencido',
+        message: `Tu pago de ${updated.month}/${updated.year} está vencido`,
+        link: '/mi-arriendo/pagos'
+      })
     }
 
     return NextResponse.json({ payment: updated })

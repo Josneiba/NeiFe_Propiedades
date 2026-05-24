@@ -79,23 +79,23 @@ export async function POST(req: NextRequest) {
 
     if (landlord) {
       // Notificación del sistema antiguo
-      await createNotification(
-        landlordId,
-        'SYSTEM',
-        'Solicitud de corredor recibida',
-        `El corredor ${session.user.name || session.user.email} solicita administrar tus propiedades.`,
-        '/dashboard/solicitudes-corredores'
-      )
+      await createNotification({
+        userId: landlordId,
+        type: 'SYSTEM',
+        title: 'Solicitud de corredor recibida',
+        message: `El corredor ${session.user.name || session.user.email} solicita administrar tus propiedades.`,
+        link: '/dashboard/solicitudes-corredores'
+      })
 
       // Si hay propertyId, enviar notificación específica de propiedad
       if (propertyId && propertyInfo) {
-        await createNotification(
-          landlordId,
-          'SYSTEM',
-          'Solicitud de acceso a propiedad específica',
-          `El corredor ${session.user.name || session.user.email} solicita administrar: ${propertyInfo.name || propertyInfo.address}`,
-          `/dashboard/propiedades/${propertyId}?tab=resumen`
-        )
+        await createNotification({
+          userId: landlordId,
+          type: 'SYSTEM',
+          title: 'Solicitud de acceso a propiedad específica',
+          message: `El corredor ${session.user.name || session.user.email} solicita administrar: ${propertyInfo.name || propertyInfo.address}`,
+          link: `/dashboard/propiedades/${propertyId}?tab=resumen`
+        })
       }
     }
 

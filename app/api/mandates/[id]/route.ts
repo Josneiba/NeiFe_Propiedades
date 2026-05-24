@@ -109,13 +109,13 @@ export async function PATCH(
           ? `/dashboard/propiedades/${mandate.propertyId}`
           : `/broker/propiedades/${mandate.propertyId}`
 
-      await createNotification(
-        recipientId,
-        'MANDATE_REVOKED',
-        'Mandato revocado',
-        `El mandato para ${mandate.property.name || mandate.property.address} fue revocado por ${revokerName}`,
+      await createNotification({
+        userId: recipientId,
+        type: 'MANDATE_REVOKED',
+        title: 'Mandato revocado',
+        message: `El mandato para ${mandate.property.name || mandate.property.address} fue revocado por ${revokerName}`,
         link
-      )
+      })
 
       await logActivity(
         session.user.id,

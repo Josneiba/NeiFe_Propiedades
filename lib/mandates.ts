@@ -215,13 +215,13 @@ export async function signMandate({
         ? `/broker/propiedades/${updated.propertyId}`
         : `/dashboard/propiedades/${updated.propertyId}`
 
-    await createNotification(
-      recipientId,
-      'MANDATE_SIGNED',
-      'Mandato activado',
-      `El mandato de ${propertyLabel} fue firmado por ambas partes`,
+    await createNotification({
+      userId: recipientId,
+      type: 'MANDATE_SIGNED',
+      title: 'Mandato activado',
+      message: `El mandato de ${propertyLabel} fue firmado por ambas partes`,
       link
-    )
+    })
   }
 
   await logActivity(
@@ -283,13 +283,13 @@ export async function revokeMandate(mandateId: string, userId: string) {
 
   const propertyLabel = getPropertyLabel(updated.property)
 
-  await createNotification(
-    updated.brokerId,
-    'MANDATE_REVOKED',
-    'Mandato revocado',
-    `El propietario revocó el mandato de ${propertyLabel}`,
-    `/broker/propiedades/${updated.propertyId}`
-  )
+  await createNotification({
+    userId: updated.brokerId,
+    type: 'MANDATE_REVOKED',
+    title: 'Mandato revocado',
+    message: `El propietario revocó el mandato de ${propertyLabel}`,
+    link: `/broker/propiedades/${updated.propertyId}`
+  })
 
   await logActivity(
     userId,

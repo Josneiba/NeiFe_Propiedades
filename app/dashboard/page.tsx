@@ -20,6 +20,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLoading from "./loading"
+import { differenceInDays } from 'date-fns'
+import { calculatePropertyHealth } from '@/lib/property-health'
+import PropertyHealthRow from '@/components/properties/property-health-row'
 
 export const dynamic = 'force-dynamic'
 
@@ -273,16 +276,29 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
     }),
   ])
 
-  const rentedProperties = properties.filter((p) => p.tenant)
+  const propertiesWithHealth = properties.map((p) => {
+    const currentPayment = p.payments[0]
+    const daysUntilExpiry = p.contractEnd ? differenceInDays(new Date(p.contractEnd), new Date()) : null
+    const health = calculatePropertyHealth({
+      paymentStatus: currentPayment?.status ?? null,
+      activeMaintenance: p._count?.maintenance ?? 0,
+      daysUntilContractExpiry: daysUntilExpiry,
+      hasTenant: !!p.tenant,
+    })
+
+    return { ...p, health }
+  })
+
+  const rentedProperties = propertiesWithHealth.filter((p) => p.tenant)
   const totalCollectedYear = allPaymentsYear.reduce((sum, payment) => sum + payment.amountCLP, 0)
   const occupancyRate =
-    properties.length > 0
-      ? Math.round((rentedProperties.length / properties.length) * 100)
+    propertiesWithHealth.length > 0
+      ? Math.round((rentedProperties.length / propertiesWithHealth.length) * 100)
       : 0
   const collectionRate =
     rentedProperties.length > 0
       ? Math.round(
-          (properties.filter((p) => p.payments[0]?.status === 'PAID').length / rentedProperties.length) * 100
+          (propertiesWithHealth.filter((p) => p.payments[0]?.status === 'PAID').length / rentedProperties.length) * 100
         ) || 0
       : 0
   const newStatementsCount = brokerStatements.filter((statement) => {
@@ -310,7 +326,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
                 />
               </div>
               <p className="mt-2 text-xs text-[#9C8578]">
-                {rentedProperties.length} de {properties.length} arrendadas
+                {rentedProperties.length} de {propertiesWithHealth.length} arrendadas
               </p>
             </div>
 
@@ -382,7 +398,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
       </Card>
 
       {/* Properties Grid - Separating Broker-Managed from Owner-Managed */}
-      {properties.length > 0 && (
+      {propertiesWithHealth.length > 0 && (
         <div className="space-y-6">
           {brokerStatements.length > 0 && (
             <Card id="rendiciones-recibidas" className="bg-[#2D3C3C] border-[#D5C3B6]/10">
@@ -452,15 +468,41 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
             </Card>
           )}
 
+          {/* Sección Requieren Atención */}
+          {propertiesWithHealth.some(p => p.health.status !== 'OK') && (
+            <Card className="bg-[#C27F79]/8 border-[#C27F79]/25">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <AlertTriangle className="h-4 w-4 text-[#C27F79]" />
+                  <p className="text-xs font-medium uppercase tracking-widest text-[#C27F79]">
+                    Requieren atención
+                  </p>
+                  <Badge className="bg-[#C27F79]/20 text-[#C27F79]">
+                    {propertiesWithHealth.filter(p => p.health.status !== 'OK').length}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  {propertiesWithHealth
+                    .filter(p => p.health.status !== 'OK')
+                    .sort((a, b) => a.health.score - b.health.score)
+                    .map(property => (
+                      <PropertyHealthRow key={property.id} property={property} />
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Broker-Managed Properties */}
-          {properties.some((p) => p.mandates.length > 0) && (
+          {propertiesWithHealth.some((p) => p.mandates.length > 0) && (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
               <CardContent className="p-5">
                 <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">
                   Propiedades administradas por corredor
                 </p>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {properties
+                  {propertiesWithHealth
                     .filter((p) => p.mandates.length > 0)
                     .map((property) => (
                       <PropertyCard
@@ -468,6 +510,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
                         property={property}
                         statusConfig={statusConfig}
                         isManagedByBroker
+                        health={property.health}
                       />
                     ))}
                 </div>
@@ -476,14 +519,14 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
           )}
 
           {/* Owner-Managed Properties */}
-          {properties.some((p) => p.mandates.length === 0) && (
+          {propertiesWithHealth.some((p) => p.mandates.length === 0) && (
             <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
               <CardContent className="p-5">
                 <p className="text-xs font-medium uppercase tracking-widest text-[#B8965A] mb-3">
                   Propiedades que gestionas
                 </p>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {properties
+                  {propertiesWithHealth
                     .filter((p) => p.mandates.length === 0)
                     .map((property) => (
                       <PropertyCard
@@ -491,6 +534,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
                         property={property}
                         statusConfig={statusConfig}
                         isManagedByBroker={false}
+                        health={property.health}
                       />
                     ))}
                 </div>
@@ -500,7 +544,7 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
         </div>
       )}
 
-      {properties.length === 0 && (
+      {propertiesWithHealth.length === 0 && (
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardContent className="p-10 text-center">
             <Building2 className="h-10 w-10 text-[#9C8578] mx-auto mb-4 opacity-50" />
@@ -521,7 +565,13 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
 
 async function DashboardContent({ session }: { session: any }) {
   try {
-    return (
+    const now = new Date()
+  const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth()
+  const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  const prevMonthName = monthNames[prevMonth]
+
+  return (
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -533,6 +583,12 @@ async function DashboardContent({ session }: { session: any }) {
             subtitleClassName="text-[#9C8578] mt-1"
           />
           <div className="flex flex-wrap items-center gap-2">
+            <a href={`/api/reports/monthly?month=${prevMonth}&year=${prevYear}`} download>
+              <Button className="bg-[#B8965A]/20 text-[#B8965A] hover:bg-[#B8965A]/30">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Resumen {prevMonthName}
+              </Button>
+            </a>
             <Link href="/dashboard/mapa">
               <Button className="bg-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/30">
                 <MapPin className="mr-2 h-4 w-4" />

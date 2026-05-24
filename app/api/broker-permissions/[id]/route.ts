@@ -52,13 +52,13 @@ export async function PATCH(
 
       await endBrokerLandlordPartnership(session.user.id, permission.brokerId)
 
-      await createNotification(
-        permission.brokerId,
-        'SYSTEM',
-        'Acceso revocado',
-        `${session.user.name || 'El propietario'} revocó tu acceso para administrar sus propiedades.`,
-        '/broker/mandatos'
-      )
+      await createNotification({
+        userId: permission.brokerId,
+        type: 'SYSTEM',
+        title: 'Acceso revocado',
+        message: `${session.user.name || 'El propietario'} revocó tu acceso para administrar sus propiedades.`,
+        link: '/broker/mandatos'
+      })
 
       await logActivity(
         session.user.id,
@@ -99,13 +99,13 @@ export async function PATCH(
       ? `${session.user.name} ha aprobado tu solicitud para administrar sus propiedades.`
       : `${session.user.name} ha rechazado tu solicitud para administrar sus propiedades.`
 
-    await createNotification(
-      permission.brokerId,
-      notificationType,
-      notificationTitle,
-      notificationMessage,
-      action === 'approve' ? '/broker/mandatos' : undefined
-    )
+    await createNotification({
+      userId: permission.brokerId,
+      type: notificationType,
+      title: notificationTitle,
+      message: notificationMessage,
+      link: action === 'approve' ? '/broker/mandatos' : undefined
+    })
 
     // Log de actividad
     await logActivity(

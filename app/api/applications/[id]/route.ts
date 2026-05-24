@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notifications'
 
 const updateSchema = z.object({
   status: z.enum(['PENDING', 'REVIEWING', 'APPROVED', 'REJECTED']),
@@ -27,6 +28,7 @@ export async function PATCH(
         property: {
           select: {
             id: true,
+            address: true,
             landlordId: true,
             managedBy: true,
             mandates: {
@@ -55,6 +57,25 @@ export async function PATCH(
       where: { id },
       data: { status: data.status },
     })
+
+    // Notificar al landlord cuando se aprueba/rechaza una postulación
+    if (data.status === 'APPROVED') {
+      await createNotification({
+        userId: application.property.landlordId,
+        type: 'SYSTEM',
+        title: 'Postulación aprobada',
+        message: `Aprobaste la postulación de ${application.name} para ${application.property.address}.`,
+        link: '/dashboard/postulaciones'
+      })
+    } else if (data.status === 'REJECTED') {
+      await createNotification({
+        userId: application.property.landlordId,
+        type: 'SYSTEM',
+        title: 'Postulación rechazada',
+        message: `Rechazaste la postulación de ${application.name} para ${application.property.address}.`,
+        link: '/dashboard/postulaciones'
+      })
+    }
 
     return NextResponse.json({ application: updated })
   } catch (error) {

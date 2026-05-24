@@ -112,13 +112,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    await createNotification(
-      property.tenant.id,
-      'SYSTEM',
-      data.subject,
-      data.message,
-      '/mi-arriendo'
-    )
+    await createNotification({
+      userId: property.tenant.id,
+      type: 'SYSTEM',
+      title: data.subject,
+      message: data.message,
+      link: '/mi-arriendo'
+    })
 
     let emailStatus: 'NOT_REQUESTED' | 'SENT' | 'FAILED' = 'NOT_REQUESTED'
     let emailProviderId: string | null = null

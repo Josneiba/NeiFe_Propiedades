@@ -232,13 +232,13 @@ export async function POST(req: NextRequest) {
     })
 
     // Notify the landlord - send both new and old notification types to ensure delivery
-    await createNotification(
-      property.landlordId,
-      'SYSTEM',
-      'Nueva solicitud de acceso a propiedad',
-      `El corredor ${session.user.name || session.user.email} solicita administrar la propiedad ${property.name || property.address}`,
-      `/dashboard/solicitudes-corredores?tab=propiedades`
-    )
+    await createNotification({
+      userId: property.landlordId,
+      type: 'SYSTEM',
+      title: 'Nueva solicitud de acceso a propiedad',
+      message: `El corredor ${session.user.name || session.user.email} solicita administrar la propiedad ${property.name || property.address}`,
+      link: `/dashboard/solicitudes-corredores?tab=propiedades`
+    })
 
     // Log activity
     await logActivity(

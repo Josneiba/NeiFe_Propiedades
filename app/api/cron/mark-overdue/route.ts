@@ -72,15 +72,15 @@ export async function GET(req: NextRequest) {
 
   for (const [landlordId, payments] of byLandlord) {
     const count = payments.length
-    await createNotification(
-      landlordId,
-      'PAYMENT_OVERDUE',
-      count === 1 ? 'Pago atrasado detectado' : `${count} pagos atrasados detectados`,
-      count === 1
+    await createNotification({
+      userId: landlordId,
+      type: 'PAYMENT_OVERDUE',
+      title: count === 1 ? 'Pago atrasado detectado' : `${count} pagos atrasados detectados`,
+      message: count === 1
         ? `El pago de ${payments[0].property.address} está atrasado.`
         : `Tienes ${count} pagos atrasados en tus propiedades.`,
-      '/dashboard/pagos?status=OVERDUE'
-    )
+      link: '/dashboard/pagos?status=OVERDUE'
+    })
   }
 
   return NextResponse.json({

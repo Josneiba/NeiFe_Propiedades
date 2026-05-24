@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { buildInvitationEmailHtml } from '@/components/email/invitation-template'
 import { getResendFrom } from '@/lib/resend-from'
 import { getPublicOrigin } from '@/lib/public-origin'
+import { logActivity } from '@/lib/activity'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -92,6 +93,16 @@ export async function POST(req: NextRequest) {
         status: 'PENDING',
       },
     })
+
+    // Log activity if propertyId is present
+    if (data.propertyId) {
+      await logActivity(
+        session.user.id,
+        'TENANT_INVITED',
+        'Arrendatario invitado',
+        data.propertyId
+      )
+    }
 
     const inviteUrl = `${publicOrigin}/invitacion/${invitation.token}`
 

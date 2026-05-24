@@ -69,13 +69,13 @@ export async function POST(
     })
 
     if (property.tenant) {
-      await createNotification(
-        property.tenant.id,
-        'SYSTEM',
-        'Reajuste de renta aplicado',
-        `Tu renta fue reajustada según IPC (${ipcRate}%). Nueva renta: $${newCLP.toLocaleString('es-CL')} CLP a partir del próximo mes.`,
-        '/mi-arriendo/contrato'
-      )
+      await createNotification({
+        userId: property.tenant.id,
+        type: 'SYSTEM',
+        title: 'Reajuste de renta aplicado',
+        message: `Tu renta fue reajustada según IPC (${ipcRate}%). Nueva renta: $${newCLP.toLocaleString('es-CL')} CLP a partir del próximo mes.`,
+        link: '/mi-arriendo/contrato'
+      })
     }
 
     return NextResponse.json({

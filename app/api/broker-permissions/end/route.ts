@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
 
     await endBrokerLandlordPartnership(landlordId, session.user.id)
 
-    await createNotification(
-      landlordId,
-      'SYSTEM',
-      'Corredor dejó de administrar',
-      `${session.user.name || session.user.email} dejó de administrar tus propiedades.`,
-      '/dashboard/solicitudes-corredores'
-    )
+    await createNotification({
+      userId: landlordId,
+      type: 'SYSTEM',
+      title: 'Corredor dejó de administrar',
+      message: `${session.user.name || session.user.email} dejó de administrar tus propiedades.`,
+      link: '/dashboard/solicitudes-corredores'
+    })
 
     await logActivity(
       session.user.id,

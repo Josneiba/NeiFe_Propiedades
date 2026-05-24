@@ -1,6 +1,7 @@
 'use client'
 
 import { useNotifications } from '@/hooks/useNotifications'
+import { getNotificationVisual } from '@/components/layout/notification-visuals'
 import { Bell, Check, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
@@ -166,35 +167,45 @@ export function NotificationBell({ userRole }: NotificationBellProps) {
               <p className="text-[#9C8578] text-sm">Sin notificaciones nuevas</p>
             </div>
           ) : (
-            notifications.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => handleClick(n.id, n.link, n.isRead, n.title, n.message)}
-                className={`w-full text-left px-4 py-3 border-b border-[#5E8B8C]/10 hover:bg-[#5E8B8C]/10 transition-colors flex gap-3 ${
-                  !n.isRead ? 'bg-[#5E8B8C]/5' : ''
-                }`}
-              >
-                <div
-                  className="w-2 h-2 mt-1.5 rounded-full flex-shrink-0"
-                  style={{ background: n.isRead ? 'transparent' : '#C27F79' }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-sm break-words ${
-                      !n.isRead ? 'text-[#D5C3B6] font-medium' : 'text-[#9C8578]'
-                    }`}
+            notifications.map((n) => {
+              const iconConfig = getNotificationVisual(n.type)
+              const IconComponent = iconConfig.icon
+
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => handleClick(n.id, n.link, n.isRead, n.title, n.message)}
+                  className={`w-full text-left px-4 py-3 border-b border-[#5E8B8C]/10 hover:bg-[#5E8B8C]/10 transition-colors flex gap-3 ${
+                    !n.isRead ? 'bg-[#5E8B8C]/5' : ''
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${iconConfig.color}15` }}
                   >
-                    {n.title}
-                  </p>
-                  <p className="text-xs text-[#9C8578] mt-0.5 line-clamp-3 break-words">{n.message}</p>
-                  <p className="text-[10px] text-[#9C8578]/50 mt-1">
-                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
-                  </p>
-                </div>
-                {n.link && <ExternalLink className="w-3 h-3 text-[#9C8578] flex-shrink-0 mt-1" />}
-              </button>
-            ))
+                    <IconComponent
+                      className="h-4 w-4"
+                      style={{ stroke: iconConfig.color }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-sm break-words ${
+                        !n.isRead ? 'text-[#D5C3B6] font-medium' : 'text-[#9C8578]'
+                      }`}
+                    >
+                      {n.title}
+                    </p>
+                    <p className="text-xs text-[#9C8578] mt-0.5 line-clamp-3 break-words">{n.message}</p>
+                    <p className="text-[10px] text-[#9C8578]/50 mt-1">
+                      {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
+                    </p>
+                  </div>
+                  {n.link && <ExternalLink className="w-3 h-3 text-[#9C8578] flex-shrink-0 mt-1" />}
+                </button>
+              )
+            })
           )}
         </div>
       </div>

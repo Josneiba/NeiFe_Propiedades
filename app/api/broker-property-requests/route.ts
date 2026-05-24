@@ -210,13 +210,13 @@ export async function POST(req: NextRequest) {
       return { property, requestRow }
     })
 
-    await createNotification(
-      landlord.id,
-      'SYSTEM',
-      'Nueva propiedad cargada por tu corredor',
-      `${session.user.name || session.user.email} creó una propiedad a tu nombre y espera tu aprobación para administrarla.`,
-      '/dashboard/solicitudes-corredores?tab=altas',
-    )
+    await createNotification({
+      userId: landlord.id,
+      type: 'SYSTEM',
+      title: 'Nueva propiedad cargada por tu corredor',
+      message: `${session.user.name || session.user.email} creó una propiedad a tu nombre y espera tu aprobación para administrarla.`,
+      link: '/dashboard/solicitudes-corredores?tab=altas'
+    })
 
     await logActivity(
       session.user.id,
