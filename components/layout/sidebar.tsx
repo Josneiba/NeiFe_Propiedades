@@ -30,20 +30,6 @@ interface SidebarProps {
   userId?: string
 }
 
-const landlordNavItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home, id: undefined },
-  { href: "/dashboard/propiedades", label: "Propiedades", icon: Building2, id: undefined },
-  { href: "/dashboard/mapa", label: "Mapa", icon: MapPin, id: undefined },
-  { href: "/dashboard/calendario", label: "Calendario", icon: Calendar, id: undefined },
-  { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard, id: "sidebar-pagos" },
-  { href: "/dashboard/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
-  { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
-  { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },
-  { href: "/dashboard/proveedores", label: "Proveedores", icon: Users, id: "sidebar-servicios" },
-  { href: "/dashboard/solicitudes-corredores", label: "Corredores", icon: User, id: undefined },
-  { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, id: undefined },
-]
-
 const landlordNavGroups = [
   {
     label: "Vista General",
@@ -120,7 +106,6 @@ const brokerNavGroups = [
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const navItems = role === "landlord" ? landlordNavItems : tenantNavItems
 
   return (
     <>
@@ -128,7 +113,7 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden text-[#FAF6F2] hover:bg-[#D5C3B6]/10"
+        className="fixed top-4 left-4 z-50 lg:hidden text-[#FAF6F2] hover:bg-[#D5C3B6]/15 bg-[#2D3C3C]/80 backdrop-blur-sm rounded-xl shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -236,10 +221,10 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
           </nav>
         ) : (
           <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-            <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]">
+            <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]/60">
               Mi Arriendo
             </p>
-            {navItems.map((item) => {
+            {tenantNavItems.map((item) => {
               const isActive = pathname === item.href || 
                 (item.href !== "/dashboard" && item.href !== "/mi-arriendo" && pathname.startsWith(item.href))
               return (

@@ -78,45 +78,12 @@ export function PropertyCard({
     <Link
       href={href ?? `/dashboard/propiedades/${property.id}`}
       className={cn(
-        'group flex min-h-[260px] flex-col rounded-2xl border overflow-hidden transition-all duration-200',
+        'relative group flex min-h-[260px] flex-col rounded-2xl border overflow-hidden transition-all duration-200',
         isManagedByBroker
           ? 'border-[#5E8B8C]/20 bg-[#244042]/40 hover:border-[#5E8B8C]/40'
           : 'border-[#D5C3B6]/10 bg-[#2D3C3C] hover:border-[#5E8B8C]/30',
       )}
     >
-      {health && (
-        <div 
-          className="absolute top-3 right-3 z-10"
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold"
-                style={{ 
-                  background: `${health.color}20`,
-                  color: health.color,
-                  border: `1px solid ${health.color}40`
-                }}
-              >
-                <div 
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: health.color }}
-                />
-                {health.label}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#D5C3B6] max-w-xs">
-              <ul className="text-xs space-y-1">
-                {health.issues.map((issue, i) => (
-                  <li key={i} className="flex items-center gap-1.5">
-                    <span style={{ color: health.color }}>•</span> {issue}
-                  </li>
-                ))}
-              </ul>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      )}
       <div className="h-1 w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
 
       <div className="relative h-28 w-full flex-shrink-0 bg-[#1C1917]/60 overflow-hidden">
@@ -152,9 +119,40 @@ export function PropertyCard({
               {property.commune}
             </p>
           </div>
-          <Badge className={cn('shrink-0 text-[11px] px-2 py-0.5', statusLabel?.className || 'bg-gray-600 text-white')}>
-            {statusLabel?.label || 'Sin estado'}
-          </Badge>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <Badge className={cn('text-[11px] px-2 py-0.5', statusLabel?.className || 'bg-gray-600 text-white')}>
+              {statusLabel?.label || 'Sin estado'}
+            </Badge>
+            {health && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold cursor-default"
+                    style={{
+                      background: `${health.color}20`,
+                      color: health.color,
+                      border: `1px solid ${health.color}40`,
+                    }}
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: health.color }}
+                    />
+                    {health.label}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#2D3C3C] border-[#D5C3B6]/10 text-[#D5C3B6] max-w-xs">
+                  <ul className="text-xs space-y-1">
+                    {health.issues.map((issue, i) => (
+                      <li key={i} className="flex items-center gap-1.5">
+                        <span style={{ color: health.color }}>•</span> {issue}
+                      </li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

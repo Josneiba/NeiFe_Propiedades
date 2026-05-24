@@ -1,11 +1,16 @@
 "use client"
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle } from 'lucide-react'
 import type { PropertyHealth } from '@/lib/property-health'
 
 interface Props {
-  property: any // keep flexible for now
+  property: {
+    id: string
+    name?: string | null
+    address: string
+    commune: string
+    health: PropertyHealth
+  }
 }
 
 export default function PropertyHealthRow({ property }: Props) {

@@ -551,11 +551,11 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
             <p className="text-[#9C8578] text-base mb-4">
               No tienes propiedades registradas aún
             </p>
-            <Link href="/dashboard/propiedades">
-              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+            <Button asChild className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2]">
+              <Link href="/dashboard/propiedades/nueva">
                 Agregar Primera Propiedad
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -583,30 +583,30 @@ async function DashboardContent({ session }: { session: any }) {
             subtitleClassName="text-[#9C8578] mt-1"
           />
           <div className="flex flex-wrap items-center gap-2">
-            <a href={`/api/reports/monthly?month=${prevMonth}&year=${prevYear}`} download>
-              <Button className="bg-[#B8965A]/20 text-[#B8965A] hover:bg-[#B8965A]/30">
+              <Button asChild className="bg-[#B8965A]/20 text-[#B8965A] hover:bg-[#B8965A]/30">
+              <a href={`/api/reports/monthly?month=${prevMonth}&year=${prevYear}`} download>
                 <CreditCard className="mr-2 h-4 w-4" />
                 Resumen {prevMonthName}
-              </Button>
-            </a>
-            <Link href="/dashboard/mapa">
-              <Button className="bg-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/30">
+              </a>
+            </Button>
+            <Button asChild className="bg-[#D5C3B6]/20 text-[#D5C3B6] hover:bg-[#D5C3B6]/30">
+              <Link href="/dashboard/mapa">
                 <MapPin className="mr-2 h-4 w-4" />
                 Mapa
-              </Button>
-            </Link>
-            <Link href="/dashboard/pagos">
-              <Button className="bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30">
+              </Link>
+            </Button>
+            <Button asChild className="bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30">
+              <Link href="/dashboard/pagos">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Pagos
-              </Button>
-            </Link>
-            <Link href="/dashboard/propiedades" id="btn-nueva-propiedad">
-              <Button className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] shadow-lg shadow-[#75524C]/20 transition-all duration-300">
+              </Link>
+            </Button>
+            <Button asChild className="bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] shadow-lg shadow-[#75524C]/20 transition-all duration-300">
+              <Link href="/dashboard/propiedades/nueva" id="btn-nueva-propiedad">
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Propiedad
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
 

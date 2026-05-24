@@ -1,14 +1,14 @@
 'use client'
 
 import { getNotificationVisual, type NotificationItem } from '@/components/layout/notification-visuals'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function NotificationToast() {
   const [visible, setVisible] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const handleNewNotification = (event: CustomEvent) => {
@@ -16,21 +16,19 @@ export function NotificationToast() {
       setNotifications(newNotifications)
       setVisible(true)
 
-      // Auto-hide after 4 seconds
-      if (timeoutId) clearTimeout(timeoutId)
-      const id = setTimeout(() => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => {
         setVisible(false)
       }, 4000)
-      setTimeoutId(id)
     }
 
     window.addEventListener('neife:new-notification', handleNewNotification as EventListener)
 
     return () => {
       window.removeEventListener('neife:new-notification', handleNewNotification as EventListener)
-      if (timeoutId) clearTimeout(timeoutId)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
-  }, [timeoutId])
+  }, [])
 
   if (!visible || notifications.length === 0) return null
 

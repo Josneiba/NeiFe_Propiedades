@@ -373,12 +373,12 @@ export default function PropertyDetailPage() {
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
         <div className="hidden md:block">
           <TabsList className="bg-muted w-full justify-start overflow-x-auto">
-            <TabsTrigger value="resumen">Resumen</TabsTrigger>
-            <TabsTrigger value="financiero">Financiero</TabsTrigger>
-            <TabsTrigger value="operacion">Operación</TabsTrigger>
-            <TabsTrigger value="contrato">Contrato y Documentos</TabsTrigger>
-            <TabsTrigger value="gestion">Gestión</TabsTrigger>
-            <TabsTrigger value="historial">Historial</TabsTrigger>
+            <TabsTrigger value="resumen" className="shrink-0">Resumen</TabsTrigger>
+            <TabsTrigger value="financiero" className="shrink-0">Financiero</TabsTrigger>
+            <TabsTrigger value="operacion" className="shrink-0">Operación</TabsTrigger>
+            <TabsTrigger value="contrato" className="shrink-0">Contrato</TabsTrigger>
+            <TabsTrigger value="gestion" className="shrink-0">Gestión</TabsTrigger>
+            <TabsTrigger value="historial" className="shrink-0">Historial</TabsTrigger>
           </TabsList>
         </div>
         <div className="md:hidden">
@@ -393,7 +393,7 @@ export default function PropertyDetailPage() {
               <option value="resumen">Resumen</option>
               <option value="financiero">Financiero</option>
               <option value="operacion">Operación</option>
-              <option value="contrato">Contrato y Documentos</option>
+              <option value="contrato">Contrato</option>
               <option value="gestion">Gestión</option>
               <option value="historial">Historial</option>
             </select>

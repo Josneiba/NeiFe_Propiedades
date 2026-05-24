@@ -6,6 +6,7 @@ import { Activity, CreditCard, Wrench, FileText, UserPlus } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { formatDateCompact } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 interface TimelineEvent {
   id: string
@@ -87,7 +88,9 @@ export function PropertyTimeline({ propertyId }: Props) {
     <div className="space-y-4">
       <div className="relative">
         {/* Línea vertical conectora */}
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-[rgba(213,195,182,0.15)]" />
+        {visibleEvents.length > 1 && (
+          <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-[rgba(213,195,182,0.15)]" />
+        )}
         
         <div className="space-y-4">
           {visibleEvents.map((event, index) => {
@@ -145,5 +148,3 @@ export function PropertyTimeline({ propertyId }: Props) {
     </div>
   )
 }
-
-import { cn } from '@/lib/utils'
