@@ -9,6 +9,7 @@ export function useNotifications() {
   const esRef = useRef<EventSource | null>(null)
   const retryRef = useRef<NodeJS.Timeout>()
   const retryCount = useRef(0)
+  const prevIdsRef = useRef<Set<string>>(new Set())
 
   const connect = useCallback(() => {
     esRef.current?.close()
@@ -20,15 +21,17 @@ export function useNotifications() {
         const parsed = JSON.parse(event.data)
         if (Array.isArray(parsed)) {
           // Detectar si hay notificaciones nuevas vs el estado anterior
-          const prevIds = new Set(notifications.map(n => n.id))
-          const incoming = parsed.filter(n => !n.isRead && !prevIds.has(n.id))
+          const incoming = parsed.filter((n: NotificationItem) => !n.isRead && !prevIdsRef.current.has(n.id))
 
-          if (incoming.length > 0 && notifications.length > 0) {
+          if (incoming.length > 0 && prevIdsRef.current.size > 0) {
             // Emitir evento custom para que el toast pueda escucharlo
             window.dispatchEvent(new CustomEvent('neife:new-notification', {
               detail: { notifications: incoming }
             }))
           }
+
+          // Actualizar la referencia con los ids actuales
+          prevIdsRef.current = new Set(parsed.map((n: NotificationItem) => n.id))
 
           setNotifications(parsed)
           setUnreadCount(parsed.filter((n) => !n.isRead).length)

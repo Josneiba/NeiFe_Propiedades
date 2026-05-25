@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, RadioTower, UserRoundSearch } from "lucide-react"
+import ApplicationActions from '@/components/dashboard/application-actions'
 
 const statusLabels = {
   PENDING: "Pendiente",
@@ -135,7 +136,7 @@ export default async function DashboardPostulacionesPage() {
                   </div>
                 ) : null}
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <Button variant="outline" className="border-[#D5C3B6]/20 text-[#D5C3B6]" asChild>
                     <Link href={`/dashboard/propiedades/${application.property.id}?tab=postulaciones`}>
                       Ver en propiedad
@@ -160,6 +161,7 @@ export default async function DashboardPostulacionesPage() {
                         </a>
                       </Button>
                     ))}
+                  <ApplicationActions applicationId={application.id} status={application.status} />
                 </div>
               </CardContent>
             </Card>

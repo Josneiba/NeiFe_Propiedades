@@ -769,6 +769,7 @@ model BrokerMessage {
   tenantId    String
   subject     String
   message     String
+  isRead      Boolean           @default(false)
   type        BrokerMessageType @default(GENERAL)
   sendEmail   Boolean           @default(false)
   emailStatus EmailDeliveryStatus @default(NOT_REQUESTED)

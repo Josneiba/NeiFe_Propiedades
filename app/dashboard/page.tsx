@@ -17,6 +17,7 @@ import {
   Plus, 
   MapPin, 
   CreditCard,
+  FileDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLoading from "./loading"
@@ -566,12 +567,12 @@ async function DashboardPropertyList({ landlordId }: { landlordId: string }) {
 async function DashboardContent({ session }: { session: any }) {
   try {
     const now = new Date()
-  const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth()
-  const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
-  const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const prevMonthName = monthNames[prevMonth]
+    const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth()
+    const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+    const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    const prevMonthName = monthNames[prevMonth]
 
-  return (
+    return (
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -585,7 +586,7 @@ async function DashboardContent({ session }: { session: any }) {
           <div className="flex flex-wrap items-center gap-2">
               <Button asChild className="bg-[#B8965A]/20 text-[#B8965A] hover:bg-[#B8965A]/30">
               <a href={`/api/reports/monthly?month=${prevMonth}&year=${prevYear}`} download>
-                <CreditCard className="mr-2 h-4 w-4" />
+                <FileDown className="mr-2 h-4 w-4" />
                 Resumen {prevMonthName}
               </a>
             </Button>

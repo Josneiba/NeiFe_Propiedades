@@ -121,3 +121,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(213, 195, 182, 0.35);
 }
+
+/* Tab content fade helper */
+@keyframes tab-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.tab-content-enter {
+  animation: tab-fade-in 160ms ease;
+}
