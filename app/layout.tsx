@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { Providers } from '@/app/providers'
+import { getConfiguredPublicOrigin } from '@/lib/public-origin'
 import './globals.css'
+
+const appOrigin = getConfiguredPublicOrigin() || 'https://neife.cl'
 
 export const metadata: Metadata = {
   title: 'NeiFe Propiedades | Gestión de arriendos',
@@ -15,11 +18,11 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://neife.cl'),
+  metadataBase: new URL(appOrigin),
   openGraph: {
     title: 'NeiFe Propiedades | Gestión de arriendos',
     description: 'Plataforma para propietarios, arrendatarios y corredores de propiedades',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://neife.cl',
+    url: appOrigin,
     siteName: 'NeiFe Propiedades',
     locale: 'es_CL',
     type: 'website',

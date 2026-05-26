@@ -4,6 +4,7 @@ import { Resend } from 'resend'
 import { getCronSecretConfigError, hasSafeCronSecret } from '@/lib/cron-secret'
 import { getResendFrom } from '@/lib/resend-from'
 import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email-composer'
+import { getConfiguredPublicOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -55,7 +56,7 @@ function getUtcCalendarDayDifference(targetDate: Date, fromDate: Date) {
 }
 
 function getDashboardUrl(req: NextRequest, propertyId: string) {
-  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
+  const configuredOrigin = getConfiguredPublicOrigin()
   const baseUrl = configuredOrigin || req.nextUrl.origin
   return `${baseUrl}/dashboard/contratos?property=${propertyId}`
 }

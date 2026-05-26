@@ -152,14 +152,14 @@ export default async function LandingPage() {
               Privacidad
             </Link>
           </nav>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Link href="/login" className="hidden sm:inline-flex">
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/login" className="inline-flex">
               <Button variant="ghost" size="sm" className="text-[#D5C3B6] hover:bg-[#D5C3B6]/10">
                 Iniciar Sesión
               </Button>
             </Link>
             <Link href="/registro">
-              <Button size="sm" className="rounded-lg bg-[#75524C] hover:bg-[#75524C]/90 text-[#FAF6F2] shadow-md shadow-[#75524C]/15 transition-all duration-300">
+              <Button size="sm" className="rounded-lg bg-[#75524C] px-3 sm:px-4 hover:bg-[#75524C]/90 text-[#FAF6F2] shadow-md shadow-[#75524C]/15 transition-all duration-300">
                 Comenzar gratis
               </Button>
             </Link>
