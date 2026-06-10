@@ -18,7 +18,10 @@ import {
   Menu,
   X,
   MapPin,
-  Calendar
+  Calendar,
+  LayoutDashboard,
+  BarChart3,
+  Kanban,
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -99,6 +102,15 @@ const brokerNavGroups = [
     label: "Sistema",
     items: [
       { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      { href: "/broker/crm", label: "Centro CRM", icon: Home, id: undefined },
+      { href: "/broker/crm/contactos", label: "Contactos", icon: Users, id: undefined },
+      { href: "/broker/crm/workspace", label: "Workspace", icon: Kanban, id: undefined },
+      { href: "/broker/crm/analytics", label: "Análisis", icon: BarChart3, id: undefined },
     ],
   },
 ] as const

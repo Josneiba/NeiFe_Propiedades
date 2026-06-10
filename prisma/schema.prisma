@@ -59,6 +59,12 @@ model User {
   propertyCreationRequestsAsBroker BrokerPropertyCreationRequest[] @relation("BrokerPropertyCreationBroker")
   propertyCreationRequestsAsLandlord BrokerPropertyCreationRequest[] @relation("BrokerPropertyCreationLandlord")
 
+  // CRM relations (Fase CRM Junio 2026)
+  crmContacts    CrmContact[]   @relation("CrmBrokerContacts")
+  crmProperties  CrmProperty[]  @relation("CrmBrokerProperties")
+  crmDeals       CrmDeal[]      @relation("CrmBrokerDeals")
+  crmActivities  CrmActivity[]  @relation("CrmBrokerActivities")
+
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
 
@@ -855,4 +861,247 @@ enum DepositStatus {
 enum ChecklistType {
   CHECKIN
   CHECKOUT
+}
+
+// ─────────────────────────────────────────────────────────────
+// CRM MODULE — Agregado en Fase CRM (Junio 2026)
+// ─────────────────────────────────────────────────────────────
+
+model CrmContact {
+  id        String           @id @default(cuid())
+  code      String           @unique // Ej: "PROP-0041" — generado en servidor
+  type      CrmContactType
+  name      String
+  email     String?
+  phone     String?
+  rut       String?
+  notes     String?
+  source    CrmLeadSource
+  priority  CrmPriority      @default(MEDIUM)
+  status    CrmContactStatus @default(ACTIVE)
+  brokerId  String
+  broker    User             @relation("CrmBrokerContacts", fields: [brokerId], references: [id])
+
+  // Vinculación al sistema NeiFe cuando el arrendatario ya tiene cuenta
+  neifeUserId String?
+
+  deals      CrmDealContact[]
+  activities CrmActivity[]
+  score      CrmContactScore?
+  ownedProperties CrmProperty[] @relation("CrmPropertyOwner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId, status])
+  @@index([code])
+}
+
+model CrmProperty {
+  id            String            @id @default(cuid())
+  code          String            @unique // Ej: "INMU-0089"
+  address       String
+  commune       String
+  type          CrmPropertyType
+  bedrooms      Int?
+  bathrooms     Int?
+  sqMeters      Float?
+  operationType CrmOperationType
+  askingPrice   Float?
+  crmStatus     CrmPropertyStatus @default(LEAD)
+  ownerId       String?
+  owner         CrmContact?       @relation("CrmPropertyOwner", fields: [ownerId], references: [id])
+  brokerId      String
+  broker        User              @relation("CrmBrokerProperties", fields: [brokerId], references: [id])
+  deals         CrmDeal[]
+  notes         String?
+
+  // Vinculación a NeiFe post-firma
+  neifePropertyId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId, crmStatus])
+}
+
+model CrmDeal {
+  id            String          @id @default(cuid())
+  code          String          @unique // Ej: "OPE-0055"
+  title         String
+  stage         CrmDealStage    @default(NUEVO_LEAD)
+  phase         CrmPhase        @default(PRE_VENTA)
+  operationType CrmOperationType
+  value         Float?
+  commission    Float?
+  brokerId      String
+  broker        User            @relation("CrmBrokerDeals", fields: [brokerId], references: [id])
+  propertyId    String?
+  property      CrmProperty?    @relation(fields: [propertyId], references: [id])
+  contacts      CrmDealContact[]
+  activities    CrmActivity[]
+  status        CrmDealStatus   @default(ACTIVE)
+  lostReason    String?
+  wonAt         DateTime?
+  dueDate       DateTime?
+  notes         String?
+
+  // Vinculación a NeiFe cuando se gana
+  neifeContractId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId, status, stage])
+}
+
+model CrmDealContact {
+  id        String      @id @default(cuid())
+  dealId    String
+  deal      CrmDeal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   CrmContact  @relation(fields: [contactId], references: [id])
+  role      CrmDealRole
+  isPrimary Boolean     @default(false)
+  addedAt   DateTime    @default(now())
+
+  @@unique([dealId, contactId])
+}
+
+model CrmActivity {
+  id          String          @id @default(cuid())
+  type        CrmActivityType
+  title       String
+  description String?
+  brokerId    String
+  broker      User            @relation("CrmBrokerActivities", fields: [brokerId], references: [id])
+  dealId      String?
+  deal        CrmDeal?        @relation(fields: [dealId], references: [id])
+  contactId   String?
+  contact     CrmContact?     @relation(fields: [contactId], references: [id])
+  scheduledAt DateTime?
+  completedAt DateTime?
+  isDone      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+
+  @@index([brokerId, isDone])
+  @@index([dealId])
+}
+
+model CrmContactScore {
+  id               String     @id @default(cuid())
+  contactId        String     @unique
+  contact          CrmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  score            Float      @default(50)
+  lastActivityDays Int        @default(0)
+  urgencyLevel     String     @default("MEDIUM")
+  recommendation   String?
+  calculatedAt     DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+// ── Enums CRM ────────────────────────────────────────────────
+
+enum CrmContactType {
+  PROPIETARIO
+  ARRENDATARIO
+  INVERSIONISTA
+  LEAD
+}
+
+enum CrmLeadSource {
+  PORTAL
+  REFERIDO
+  RRSS
+  LLAMADA_DIRECTA
+  LETRERO
+  OTRO
+}
+
+enum CrmPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CrmContactStatus {
+  ACTIVE
+  INACTIVE
+  CONVERTED
+  LOST
+}
+
+enum CrmPropertyType {
+  DEPARTAMENTO
+  CASA
+  OFICINA
+  LOCAL_COMERCIAL
+  ESTACIONAMIENTO
+  OTRO
+}
+
+enum CrmOperationType {
+  ARRIENDO
+  VENTA
+  AMBOS
+}
+
+enum CrmPropertyStatus {
+  LEAD
+  CONTACTANDO
+  EN_EVALUACION
+  MANDATO_FIRMADO
+  PUBLICADA
+  RESERVADA
+  CONVERTIDA
+  PERDIDA
+}
+
+enum CrmDealStage {
+  // PRE-VENTA
+  NUEVO_LEAD
+  CONTACTO_INICIADO
+  VISITA_AGENDADA
+  PROPIEDAD_CAPTADA
+  // VENTA
+  PUBLICADA
+  MOSTRANDO
+  OFERTA_RECIBIDA
+  DOCS_REVISION
+  NEGOCIANDO
+  // POST-VENTA
+  FIRMA_CONTRATO
+  ENTREGA_LLAVES
+  // CIERRE
+  ADMINISTRAR
+}
+
+enum CrmPhase {
+  PRE_VENTA
+  VENTA
+  POST_VENTA
+}
+
+enum CrmDealStatus {
+  ACTIVE
+  WON
+  LOST
+}
+
+enum CrmDealRole {
+  PROPIETARIO
+  ARRENDATARIO
+  AVAL
+  OTRO
+}
+
+enum CrmActivityType {
+  LLAMADA
+  VISITA
+  EMAIL
+  WHATSAPP
+  REUNION
+  NOTA
+  TAREA
+  DOCUMENTO
 }
