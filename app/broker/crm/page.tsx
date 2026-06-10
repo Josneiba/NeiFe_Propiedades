@@ -28,7 +28,7 @@ export default async function CrmDashboardPage() {
     prisma.crmDeal.count({ where: { brokerId, status: 'ACTIVE' } }),
     prisma.crmDeal.count({ where: { brokerId, status: 'WON', wonAt: { gte: monthStart } } }),
     prisma.crmContactScore.count({
-      where: { contact: { brokerId }, lastActivityDays: { gte: 5 }, contact: { status: 'ACTIVE' } },
+      where: { contact: { brokerId, status: 'ACTIVE' }, lastActivityDays: { gte: 5 } },
     }),
     prisma.crmContactScore.findMany({
       where: { contact: { brokerId, status: 'ACTIVE' } },

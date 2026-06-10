@@ -2,7 +2,6 @@
 import { auth } from '@/lib/auth-session'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { recalculateAllScores } from '@/lib/crm-scoring'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,17 +116,6 @@ export default async function MetricasPage() {
         </div>
       </div>
 
-      {/* Botón para recalcular scores */}
-      <div className="flex justify-end">
-        <button
-          onClick={async () => {
-            await recalculateAllScores()
-          }}
-          className="text-xs text-[#9C8578] hover:text-[#D5C3B6] underline"
-        >
-          Recalcular todos los scores
-        </button>
-      </div>
     </div>
   )
 }
