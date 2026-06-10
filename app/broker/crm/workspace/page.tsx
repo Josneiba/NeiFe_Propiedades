@@ -1,367 +1,339 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import {
-  DndContext,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core'
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState, useCallback } from 'react'
+import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { KanbanColumn } from '@/components/broker/crm/kanban-column'
+import { KanbanCard, type DealCardData } from '@/components/broker/crm/kanban-card'
+import { MobileListView } from '@/components/broker/crm/mobile-list-view'
+import { DealDrawer } from '@/components/broker/crm/deal-drawer'
+import { NewDealModal } from '@/components/broker/crm/new-deal-modal'
+import { AdminConfirmModal } from '@/components/broker/crm/admin-confirm-modal'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Plus, RefreshCw } from 'lucide-react'
-import Link from 'next/link'
-import { useToast } from '@/hooks/use-toast'
+import { STAGE_COLUMNS, PHASE_LABELS } from '@/lib/crm-stage-utils'
+import { CrmDealStage, CrmPhase } from '@prisma/client'
+import { toast } from 'sonner'
 
-interface DealCard {
-  id: string
-  publicId: string
-  title: string
-  contact: {
-    name: string
-    type: 'OWNER' | 'TENANT' | 'BUYER' | 'INVESTOR'
-  }
-  property?: {
-    name: string
-    type: string
-  }
-  value?: number
-  probability?: number
-  score?: number
-  stage: string
-  daysInStage?: number
-  nextFollowUp?: string
-}
-
-const PIPELINE_STAGES = [
-  {
-    id: 'PROSPECTING',
-    name: 'Prospecting',
-    label: 'Prospeccion',
-    color: '#9333ea',
-    textColor: 'text-purple-900',
-    phase: 'PRE_VENTA',
-  },
-  {
-    id: 'INITIAL_CONTACT',
-    name: 'Initial Contact',
-    label: 'Contacto Inicial',
-    color: '#0ea5e9',
-    textColor: 'text-blue-900',
-    phase: 'PRE_VENTA',
-  },
-  {
-    id: 'QUALIFIED',
-    name: 'Qualified',
-    label: 'Calificado',
-    color: '#06b6d4',
-    textColor: 'text-cyan-900',
-    phase: 'VENTA',
-  },
-  {
-    id: 'PROPOSAL',
-    name: 'Proposal',
-    label: 'Propuesta',
-    color: '#14b8a6',
-    textColor: 'text-teal-900',
-    phase: 'VENTA',
-  },
-  {
-    id: 'NEGOTIATION',
-    name: 'Negotiation',
-    label: 'Negociacion',
-    color: '#f59e0b',
-    textColor: 'text-amber-900',
-    phase: 'VENTA',
-  },
-  {
-    id: 'CLOSING',
-    name: 'Closing',
-    label: 'Cierre',
-    color: '#10b981',
-    textColor: 'text-emerald-900',
-    phase: 'POST_VENTA',
-  },
-  {
-    id: 'WON',
-    name: 'Won',
-    label: 'Ganado',
-    color: '#22c55e',
-    textColor: 'text-green-900',
-    phase: 'ADMINISTRAR',
-  },
-  {
-    id: 'LOST',
-    name: 'Lost',
-    label: 'Perdido',
-    color: '#ef4444',
-    textColor: 'text-red-900',
-    phase: 'ADMINISTRAR',
-  },
+// Fases y sus columnas
+const PHASES: { phase: CrmPhase; label: string; color: string }[] = [
+  { phase: 'PRE_VENTA',  label: 'Pre-Venta',  color: '#1a3a5c' },
+  { phase: 'VENTA',      label: 'Venta',       color: '#0e4d3a' },
+  { phase: 'POST_VENTA', label: 'Post-Venta',  color: '#4a1a5c' },
 ]
 
+// Filtro de columnas visibles — el corazón del nuevo sistema de filtros
+type PhaseFilter = CrmPhase | 'ALL'
+
 export default function WorkspacePage() {
-  const { toast } = useToast()
-  const [deals, setDeals] = useState<DealCard[]>([])
+  const [deals, setDeals] = useState<DealCardData[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeDragDeal, setActiveDragDeal] = useState<DealCardData | null>(null)
+  const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
+  const [pendingAdminDeal, setPendingAdminDeal] = useState<DealCardData | null>(null)
+  const [showNewDeal, setShowNewDeal] = useState(false)
+
+  // Filtros de columnas visibles
+  const [activePhases, setActivePhases] = useState<Set<CrmPhase>>(
+    new Set(['PRE_VENTA', 'VENTA', 'POST_VENTA'])
+  )
+  const [filterOp, setFilterOp] = useState<'ALL' | 'ARRIENDO' | 'VENTA'>('ALL')
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  // Load deals
-  useEffect(() => {
-    const loadDeals = async () => {
-      try {
-        setIsLoading(true)
-        const res = await fetch('/api/crm/deals')
-        if (!res.ok) throw new Error('Error loading deals')
-        const data = await res.json()
+  const loadDeals = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const params = new URLSearchParams({ status: 'ACTIVE' })
+      if (filterOp !== 'ALL') params.set('operationType', filterOp)
+      const res = await fetch(`/api/crm/deals?${params}`)
+      if (!res.ok) throw new Error('Error al cargar deals')
+      const data = await res.json()
 
-        // Mock data for now
-        const mockDeals: DealCard[] = [
-          {
-            id: '1',
-            publicId: 'OPE-001234',
-            title: 'Venta Depto Providencia',
-            contact: { name: 'Juan Pérez', type: 'BUYER' },
-            property: { name: 'Av. Providencia 1234, Piso 5', type: 'Departamento' },
-            value: 250000,
-            probability: 80,
-            stage: 'NEGOTIATION',
-            daysInStage: 14,
-          },
-          {
-            id: '2',
-            publicId: 'OPE-001235',
-            title: 'Arriendo Casa Ñuñoa',
-            contact: { name: 'María García', type: 'TENANT' },
-            property: { name: 'Calle Los Copihues 456, Ñuñoa', type: 'Casa' },
-            value: 1500,
-            probability: 60,
-            stage: 'PROPOSAL',
-            daysInStage: 8,
-          },
-          {
-            id: '3',
-            publicId: 'OPE-001236',
-            title: 'Propiedad Nueva Propietario',
-            contact: { name: 'Carlos Martínez', type: 'OWNER' },
-            property: { name: 'Paseo Ahumada 789', type: 'Casa' },
-            value: 500000,
-            probability: 40,
-            stage: 'QUALIFIED',
-            daysInStage: 35,
-          },
-          {
-            id: '4',
-            publicId: 'OPE-001237',
-            title: 'Compra Oficina Centro',
-            contact: { name: 'Pedro López', type: 'BUYER' },
-            stage: 'PROSPECTING',
-            value: 750000,
-            probability: 20,
-            daysInStage: 45,
-          },
-        ]
-
-        setDeals(mockDeals)
-      } catch (error) {
-        console.error('Error loading deals:', error)
-        toast({
-          title: 'Error',
-          description: 'No se pudieron cargar las oportunidades',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsLoading(false)
-      }
+      // Calcular daysInStage en el cliente (o el API lo puede devolver)
+      const enriched: DealCardData[] = data.map((d: any) => ({
+        id: d.id,
+        code: d.code,
+        title: d.title,
+        stage: d.stage,
+        operationType: d.operationType,
+        value: d.value,
+        property: d.property,
+        contacts: d.contacts || [],
+        lastActivityAt: d.activities?.[0]?.createdAt ?? null,
+        daysInStage: 0, // se puede calcular si la API devuelve stageUpdatedAt
+      }))
+      setDeals(enriched)
+    } catch (e) {
+      toast.error('No se pudieron cargar las oportunidades')
+    } finally {
+      setIsLoading(false)
     }
+  }, [filterOp])
 
-    loadDeals()
-  }, [toast])
+  useEffect(() => { loadDeals() }, [loadDeals])
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (over && active.id !== over.id) {
-      const activeStage = deals.find((d) => d.id === active.id)?.stage
-      const newStage = PIPELINE_STAGES.find((s) => s.id === over.id)?.id
-
-      if (activeStage && newStage && activeStage !== newStage) {
-        // Optimistic update
-        setDeals(
-          deals.map((d) =>
-            d.id === active.id
-              ? { ...d, stage: newStage }
-              : d
-          )
-        )
-
-        try {
-          // Call API to update deal stage
-          const res = await fetch(`/api/crm/deals/${active.id}/stage`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stage: newStage }),
-          })
-
-          if (!res.ok) throw new Error('Error updating deal stage')
-
-          toast({
-            title: 'Éxito',
-            description: 'Oportunidad movida correctamente',
-          })
-        } catch (error) {
-          // Revert on error
-          setDeals(
-            deals.map((d) =>
-              d.id === active.id
-                ? { ...d, stage: activeStage }
-                : d
-            )
-          )
-          toast({
-            title: 'Error',
-            description: 'No se pudo actualizar la oportunidad',
-            variant: 'destructive',
-          })
-        }
+  // Toggle de fase (click activa/desactiva, doble click activa solo esa)
+  function togglePhase(phase: CrmPhase) {
+    setActivePhases((prev) => {
+      const next = new Set(prev)
+      if (next.has(phase)) {
+        if (next.size === 1) return next // no dejar vacío
+        next.delete(phase)
+      } else {
+        next.add(phase)
       }
-    }
+      return next
+    })
   }
 
-  const handleDeleteDeal = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta oportunidad?')) return
+  // Columnas visibles según filtros activos
+  const visibleColumns = STAGE_COLUMNS.filter(
+    (col) => activePhases.has(col.phase) || col.stage === 'ADMINISTRAR'
+  )
+
+  function getDealsByStage(stage: CrmDealStage): DealCardData[] {
+    return deals.filter((d) => d.stage === stage)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    setActiveDragDeal(null)
+    if (!over) return
+
+    const draggedDeal = deals.find((d) => d.id === active.id)
+    const newStage = over.id as CrmDealStage
+    if (!draggedDeal || draggedDeal.stage === newStage) return
+
+    // Si destino es ADMINISTRAR, mostrar modal de confirmación
+    if (newStage === 'ADMINISTRAR') {
+      setPendingAdminDeal(draggedDeal)
+      return
+    }
+
+    // Optimistic update
+    const prevDeals = [...deals]
+    setDeals((prev) => prev.map((d) => d.id === draggedDeal.id ? { ...d, stage: newStage } : d))
 
     try {
-      const res = await fetch(`/api/crm/deals/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Error deleting deal')
-
-      setDeals(deals.filter((d) => d.id !== id))
-      toast({
-        title: 'Éxito',
-        description: 'Oportunidad eliminada correctamente',
+      const res = await fetch(`/api/crm/deals/${draggedDeal.id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newStage }),
       })
-    } catch (error) {
-      console.error('Error deleting deal:', error)
-      toast({
-        title: 'Error',
-        description: 'No se pudo eliminar la oportunidad',
-        variant: 'destructive',
-      })
+      if (!res.ok) throw new Error('Error')
+      toast.success(`Movido a ${STAGE_COLUMNS.find(s => s.stage === newStage)?.label}`)
+    } catch {
+      setDeals(prevDeals)
+      toast.error('No se pudo mover la oportunidad')
     }
   }
 
-  // Group deals by stage
-  const dealsByStage = PIPELINE_STAGES.reduce(
-    (acc, stage) => ({
-      ...acc,
-      [stage.id]: deals.filter((d) => d.stage === stage.id),
-    }),
-    {} as Record<string, DealCard[]>
-  )
+  async function handleAdminConfirm() {
+    if (!pendingAdminDeal) return
+    try {
+      const res = await fetch(`/api/crm/deals/${pendingAdminDeal.id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newStage: 'ADMINISTRAR' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      toast.success('✅ Propiedad creada en administración')
+      setDeals((prev) => prev.filter((d) => d.id !== pendingAdminDeal.id))
+      setPendingAdminDeal(null)
+      if (data.redirectTo) {
+        setTimeout(() => window.location.href = data.redirectTo, 1500)
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Error al trasladar a administración')
+    }
+  }
+
+  const totalDeals = deals.length
+  const phaseBreakdown = PHASES.map((p) => ({
+    ...p,
+    count: deals.filter((d) => {
+      const col = STAGE_COLUMNS.find((c) => c.stage === d.stage)
+      return col?.phase === p.phase
+    }).length,
+  }))
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#D5C3B6]/10">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Workspace - Pipeline</h1>
-          <p className="text-gray-600 mt-1">
-            Gestiona tus oportunidades arrastrando entre etapas
+          <h1 className="text-xl font-semibold text-[#FAF6F2]">Workspace</h1>
+          <p className="text-xs text-[#9C8578] mt-0.5">
+            {totalDeals} oportunidades activas
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.reload()}
+            onClick={loadDeals}
+            className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#FAF6F2]"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
+            <RefreshCw className="h-3.5 w-3.5" />
           </Button>
-          <Button asChild size="sm">
-            <Link href="/broker/crm/oportunidades/nueva" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nueva Oportunidad
-            </Link>
+          <Button
+            size="sm"
+            onClick={() => setShowNewDeal(true)}
+            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2]"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nueva oportunidad
           </Button>
         </div>
       </div>
 
-      {/* Phase indicator */}
-      <div className="flex gap-1 bg-gray-50 p-3 rounded-lg border">
-        {['PRE_VENTA', 'VENTA', 'POST_VENTA', 'ADMINISTRAR'].map((phase) => {
-          const color = {
-            PRE_VENTA: 'bg-purple-100 text-purple-800',
-            VENTA: 'bg-blue-100 text-blue-800',
-            POST_VENTA: 'bg-green-100 text-green-800',
-            ADMINISTRAR: 'bg-gray-100 text-gray-800',
-          }[phase]
+      {/* Filtros de columnas visibles */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10">
+        {/* Todas */}
+        <button
+          onClick={() => setActivePhases(new Set(['PRE_VENTA', 'VENTA', 'POST_VENTA']))}
+          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            activePhases.size === 3
+              ? 'bg-[#D5C3B6]/15 text-[#FAF6F2]'
+              : 'text-[#9C8578] hover:text-[#D5C3B6]'
+          }`}
+        >
+          Todas
+        </button>
 
-          const label = {
-            PRE_VENTA: 'Pre-Venta',
-            VENTA: 'Venta',
-            POST_VENTA: 'Post-Venta',
-            ADMINISTRAR: 'Administrar',
-          }[phase]
+        {/* Botón por fase — toggle individual */}
+        {PHASES.map((p) => (
+          <button
+            key={p.phase}
+            onClick={() => togglePhase(p.phase)}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+              activePhases.has(p.phase)
+                ? 'text-[#FAF6F2]'
+                : 'text-[#9C8578] hover:text-[#D5C3B6] opacity-50'
+            }`}
+            style={activePhases.has(p.phase) ? { backgroundColor: p.color + '55' } : {}}
+          >
+            {p.label}
+            <span className="ml-1.5 opacity-70">{phaseBreakdown.find(pb => pb.phase === p.phase)?.count}</span>
+          </button>
+        ))}
 
-          return (
-            <div
-              key={phase}
-              className={`px-3 py-1.5 rounded text-sm font-medium ${color}`}
-            >
-              {label}
-            </div>
-          )
-        })}
+        {/* Separador */}
+        <div className="w-px h-5 bg-[#D5C3B6]/20 mx-1" />
+
+        {/* Filtro por tipo de operación */}
+        {(['ALL', 'ARRIENDO', 'VENTA'] as const).map((op) => (
+          <button
+            key={op}
+            onClick={() => setFilterOp(op)}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+              filterOp === op
+                ? 'bg-[#B8965A]/20 text-[#B8965A]'
+                : 'text-[#9C8578] hover:text-[#D5C3B6]'
+            }`}
+          >
+            {op === 'ALL' ? 'Arriendo + Venta' : op === 'ARRIENDO' ? 'Solo Arriendo' : 'Solo Venta'}
+          </button>
+        ))}
       </div>
 
-      {/* Loading state */}
+      {/* Kanban Board - Desktop */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-gray-600">Cargando oportunidades...</p>
-          </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-[#9C8578] text-sm animate-pulse">Cargando oportunidades...</p>
         </div>
       ) : (
-        /* Kanban Board */
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-4 min-w-max">
-              {PIPELINE_STAGES.map((stage) => (
-                <KanbanColumn
-                  key={stage.id}
-                  stage={{
-                    ...stage,
-                    dealCount: dealsByStage[stage.id].length,
-                  }}
-                  deals={dealsByStage[stage.id]}
-                  onDeleteDeal={handleDeleteDeal}
-                />
-              ))}
-            </div>
+        <>
+          {/* Mobile view - list */}
+          <div className="lg:hidden flex-1 overflow-y-auto">
+            <MobileListView deals={deals} onCardClick={setSelectedDeal} />
           </div>
-        </DndContext>
+
+          {/* Desktop view - Kanban */}
+          <DndContext
+            sensors={sensors}
+            onDragStart={(e) => {
+              const deal = deals.find((d) => d.id === e.active.id)
+              setActiveDragDeal(deal ?? null)
+            }}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="hidden lg:flex flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-3 h-full px-6 py-4" style={{ minWidth: 'max-content' }}>
+                {visibleColumns.map((col, i) => {
+                  // Separador de fase
+                  const prevCol = visibleColumns[i - 1]
+                  const showSeparator = i > 0 && prevCol && prevCol.phase !== col.phase
+
+                  return (
+                    <div key={col.stage} className="flex items-stretch gap-3">
+                      {showSeparator && (
+                        <div className="flex flex-col items-center justify-center px-1">
+                          <div className="w-px flex-1 bg-[#D5C3B6]/15" />
+                          <span className="text-[9px] uppercase tracking-widest text-[#9C8578]/60 rotate-90 my-4 whitespace-nowrap">
+                            {PHASE_LABELS[col.phase]}
+                          </span>
+                          <div className="w-px flex-1 bg-[#D5C3B6]/15" />
+                        </div>
+                      )}
+                      <KanbanColumn
+                        stage={col.stage}
+                        deals={getDealsByStage(col.stage)}
+                        onCardClick={setSelectedDeal}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Drag overlay — muestra la card mientras se arrastra */}
+            <DragOverlay>
+              {activeDragDeal && (
+                <div className="opacity-90 shadow-2xl rotate-2">
+                  <KanbanCard
+                    deal={activeDragDeal}
+                    stageColor={STAGE_COLUMNS.find((s) => s.stage === activeDragDeal.stage)?.color ?? '#999'}
+                    onClick={() => {}}
+                  />
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
+        </>
       )}
 
-      {/* Summary */}
-      {!isLoading && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border">
-          Total de oportunidades: <span className="font-semibold">{deals.length}</span>
-        </div>
+      {/* Drawer de detalle */}
+      {selectedDeal && (
+        <DealDrawer
+          deal={selectedDeal}
+          open={!!selectedDeal}
+          onClose={() => setSelectedDeal(null)}
+          onUpdate={loadDeals}
+        />
+      )}
+
+      {/* Modal crear deal */}
+      {showNewDeal && (
+        <NewDealModal
+          open={showNewDeal}
+          onClose={() => setShowNewDeal(false)}
+          onCreated={loadDeals}
+        />
+      )}
+
+      {/* Modal confirmar ADMINISTRAR */}
+      {pendingAdminDeal && (
+        <AdminConfirmModal
+          deal={pendingAdminDeal}
+          open={!!pendingAdminDeal}
+          onConfirm={handleAdminConfirm}
+          onCancel={() => setPendingAdminDeal(null)}
+        />
       )}
     </div>
   )

@@ -1,23 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ContactsTable } from '@/components/broker/crm/contacts-table'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
 import { NewContactModal } from '@/components/broker/crm/new-contact-modal'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 interface Contact {
   id: string
-  publicId: string
+  code: string
   name: string
   email: string | null
   phone: string | null
-  type: 'OWNER' | 'TENANT' | 'BUYER' | 'INVESTOR'
-  status: string
-  priority: 'HIGH' | 'NORMAL' | 'LOW'
-  linkedProperties: number
-  lastActivity?: string
-  score?: number
+  type: 'PROPIETARIO' | 'ARRENDATARIO' | 'INVERSIONISTA' | 'LEAD'
+  status: 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'LOST'
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  deals: Array<{ deal: { id: string; code: string; title: string; stage: string } }>
+  score: { score: number; recommendation: string } | null
 }
 
 interface NewContactFormData {
@@ -31,7 +30,6 @@ interface NewContactFormData {
 }
 
 export default function ContactosPage() {
-  const { toast } = useToast()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -40,101 +38,55 @@ export default function ContactosPage() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('all')
   const [status, setStatus] = useState('all')
-  const [priority, setPriority] = useState('all')
 
-  // Load contacts
-  useEffect(() => {
-    const loadContacts = async () => {
-      try {
-        setIsLoading(true)
-        const res = await fetch('/api/crm/contacts')
-        if (!res.ok) throw new Error('Error loading contacts')
-        const data = await res.json()
-        
-        // Mock data for now until contacts API is fully working
-        const mockContacts: Contact[] = [
-          {
-            id: '1',
-            publicId: 'LEAD-001234',
-            name: 'Juan Pérez López',
-            email: 'juan@ejemplo.com',
-            phone: '+56 9 1234 5678',
-            type: 'OWNER',
-            status: 'ACTIVE',
-            priority: 'HIGH',
-            linkedProperties: 3,
-          },
-          {
-            id: '2',
-            publicId: 'LEAD-001235',
-            name: 'María García Rodríguez',
-            email: 'maria@ejemplo.com',
-            phone: '+56 9 2345 6789',
-            type: 'TENANT',
-            status: 'INTERESTED',
-            priority: 'NORMAL',
-            linkedProperties: 1,
-          },
-          {
-            id: '3',
-            publicId: 'LEAD-001236',
-            name: 'Carlos Martínez',
-            email: null,
-            phone: '+56 9 3456 7890',
-            type: 'BUYER',
-            status: 'NEGOTIATING',
-            priority: 'HIGH',
-            linkedProperties: 2,
-          },
-        ]
-        
-        setContacts(mockContacts)
-      } catch (error) {
-        console.error('Error loading contacts:', error)
-        toast({
-          title: 'Error',
-          description: 'No se pudieron cargar los contactos',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsLoading(false)
-      }
+  const loadContacts = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const params = new URLSearchParams()
+      if (search) params.set('q', search)
+      if (type !== 'all') params.set('type', type.toUpperCase())
+      if (status !== 'all') params.set('status', status.toUpperCase())
+      
+      const res = await fetch(`/api/crm/contacts?${params}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setContacts(data)
+    } catch {
+      toast.error('No se pudieron cargar los contactos')
+    } finally {
+      setIsLoading(false)
     }
+  }, [search, type, status])
 
-    loadContacts()
-  }, [toast])
+  useEffect(() => { loadContacts() }, [loadContacts])
 
   // Apply filters
   useEffect(() => {
     let filtered = contacts
 
-    // Search filter
+    // Search filter (client-side fallback)
     if (search) {
       filtered = filtered.filter(
         (c) =>
           c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.publicId.toLowerCase().includes(search.toLowerCase()) ||
-          c.email?.toLowerCase().includes(search.toLowerCase())
+          c.code.toLowerCase().includes(search.toLowerCase()) ||
+          c.email?.toLowerCase().includes(search.toLowerCase()) ||
+          c.phone?.includes(search)
       )
     }
 
     // Type filter
     if (type !== 'all') {
-      filtered = filtered.filter((c) => c.type === type)
+      filtered = filtered.filter((c) => c.type === type.toUpperCase())
     }
 
     // Status filter
     if (status !== 'all') {
-      filtered = filtered.filter((c) => c.status === status)
-    }
-
-    // Priority filter
-    if (priority !== 'all') {
-      filtered = filtered.filter((c) => c.priority === priority)
+      filtered = filtered.filter((c) => c.status === status.toUpperCase())
     }
 
     setFilteredContacts(filtered)
-  }, [contacts, search, type, status, priority])
+  }, [contacts, search, type, status])
 
   const handleCreateContact = async (data: NewContactFormData) => {
     try {
@@ -144,22 +96,14 @@ export default function ContactosPage() {
         body: JSON.stringify(data),
       })
 
-      if (!res.ok) throw new Error('Error creating contact')
+      if (!res.ok) throw new Error()
       
       const newContact = await res.json()
       setContacts([...contacts, newContact])
       
-      toast({
-        title: 'Éxito',
-        description: 'Contacto creado correctamente',
-      })
-    } catch (error) {
-      console.error('Error creating contact:', error)
-      toast({
-        title: 'Error',
-        description: 'No se pudo crear el contacto',
-        variant: 'destructive',
-      })
+      toast.success('Contacto creado correctamente')
+    } catch {
+      toast.error('No se pudo crear el contacto')
     }
   }
 
@@ -168,20 +112,12 @@ export default function ContactosPage() {
 
     try {
       const res = await fetch(`/api/crm/contacts/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Error deleting contact')
+      if (!res.ok) throw new Error()
 
       setContacts(contacts.filter((c) => c.id !== id))
-      toast({
-        title: 'Éxito',
-        description: 'Contacto eliminado correctamente',
-      })
-    } catch (error) {
-      console.error('Error deleting contact:', error)
-      toast({
-        title: 'Error',
-        description: 'No se pudo eliminar el contacto',
-        variant: 'destructive',
-      })
+      toast.success('Contacto eliminado correctamente')
+    } catch {
+      toast.error('No se pudo eliminar el contacto')
     }
   }
 
@@ -189,7 +125,6 @@ export default function ContactosPage() {
     setSearch('')
     setType('all')
     setStatus('all')
-    setPriority('all')
   }
 
   return (
@@ -213,8 +148,8 @@ export default function ContactosPage() {
         onTypeChange={setType}
         status={status}
         onStatusChange={setStatus}
-        priority={priority}
-        onPriorityChange={setPriority}
+        priority="all"
+        onPriorityChange={() => {}}
         onReset={handleReset}
       />
 

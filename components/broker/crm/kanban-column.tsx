@@ -1,95 +1,71 @@
 'use client'
 
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useDroppable } from '@dnd-kit/core'
 import { Badge } from '@/components/ui/badge'
-import { KanbanCard, type DealCard } from './kanban-card'
+import { KanbanCard, type DealCardData } from './kanban-card'
+import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
+import { CrmDealStage } from '@prisma/client'
 
 interface KanbanColumnProps {
-  stage: {
-    id: string
-    name: string
-    label: string
-    color: string
-    textColor: string
-    dealCount: number
-  }
-  deals: DealCard[]
-  onDeleteDeal?: (id: string) => void
-  onMoveDeal?: (dealId: string, newStage: string) => void
+  stage: CrmDealStage
+  deals: DealCardData[]
+  onCardClick: (deal: DealCardData) => void
 }
 
-export function KanbanColumn({
-  stage,
-  deals,
-  onDeleteDeal,
-  onMoveDeal,
-}: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useSortable({
-    id: stage.id,
-    data: {
-      type: 'Column',
-      stage: stage.id,
-    },
-  })
+export function KanbanColumn({ stage, deals, onCardClick }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage })
 
-  const dealIds = deals.map((d) => d.id)
+  const stageConfig = STAGE_COLUMNS.find((s) => s.stage === stage)!
+  const isAdmin = stage === 'ADMINISTRAR'
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex-shrink-0 w-[350px] transition-colors rounded-lg ${
-        isOver ? 'bg-gray-100' : ''
+      className={`flex-shrink-0 flex flex-col rounded-xl transition-colors duration-150 ${
+        isOver ? 'bg-[#D5C3B6]/10' : 'bg-transparent'
       }`}
+      style={{ width: '240px', minHeight: '500px' }}
     >
-      <Card className="h-full flex flex-col border-t-4" style={{ borderTopColor: stage.color }}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base">{stage.label}</CardTitle>
-              <Badge variant="secondary">{stage.dealCount}</Badge>
-            </div>
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: stage.color }}
-              title={stage.id}
-            />
-          </div>
-        </CardHeader>
+      {/* Column header */}
+      <div
+        className="flex items-center justify-between px-3 py-2.5 rounded-t-xl mb-2"
+        style={{ backgroundColor: stageConfig.color + '22', borderTop: `3px solid ${stageConfig.color}` }}
+      >
+        <span className="text-xs font-semibold uppercase tracking-wide text-[#FAF6F2]/80">
+          {stageConfig.label}
+        </span>
+        <Badge
+          variant="secondary"
+          className="text-xs px-1.5 py-0"
+          style={{ backgroundColor: stageConfig.color + '44', color: '#FAF6F2' }}
+        >
+          {deals.length}
+        </Badge>
+      </div>
 
-        <CardContent className="flex-1 overflow-y-auto space-y-0 pr-2">
-          <SortableContext
-            items={dealIds}
-            strategy={verticalListSortingStrategy}
-            id={stage.id}
+      {/* Cards */}
+      <div className="flex-1 space-y-2 px-1">
+        {deals.length === 0 ? (
+          <div
+            className={`flex items-center justify-center h-24 rounded-lg border-2 border-dashed transition-colors ${
+              isOver ? 'border-[#5E8B8C] bg-[#5E8B8C]/5' : 'border-[#D5C3B6]/20'
+            }`}
           >
-            <div className="space-y-3">
-              {deals.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-gray-400">
-                  <div className="text-center">
-                    <p className="text-sm">Sin oportunidades</p>
-                    <p className="text-xs">Arrastra aquí para agregar</p>
-                  </div>
-                </div>
-              ) : (
-                deals.map((deal) => (
-                  <KanbanCard
-                    key={deal.id}
-                    deal={deal}
-                    onDelete={onDeleteDeal}
-                    onMove={onMoveDeal}
-                  />
-                ))
-              )}
-            </div>
-          </SortableContext>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-[#9C8578]">
+              {isOver ? 'Soltar aquí' : 'Sin deals'}
+            </p>
+          </div>
+        ) : (
+          deals.map((deal) => (
+            <KanbanCard
+              key={deal.id}
+              deal={deal}
+              stageColor={stageConfig.color}
+              onClick={() => onCardClick(deal)}
+            />
+          ))
+        )}
+      </div>
     </div>
   )
 }

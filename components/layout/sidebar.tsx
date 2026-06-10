@@ -22,10 +22,13 @@ import {
   LayoutDashboard,
   BarChart3,
   Kanban,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/layout/notification-bell"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SidebarProps {
   role: "landlord" | "tenant" | "broker"
@@ -79,6 +82,15 @@ const tenantNavItems = [
 
 const brokerNavGroups = [
   {
+    label: "CRM",
+    items: [
+      { href: "/broker/crm", label: "Centro CRM", icon: LayoutDashboard, id: undefined },
+      { href: "/broker/crm/contactos", label: "Contactos", icon: Users, id: undefined },
+      { href: "/broker/crm/workspace", label: "Workspace", icon: Kanban, id: undefined },
+      { href: "/broker/crm/metricas", label: "Métricas", icon: BarChart3, id: undefined },
+    ],
+  },
+  {
     label: "General",
     items: [
       { href: "/broker", label: "Panel", icon: Home, id: undefined },
@@ -104,20 +116,12 @@ const brokerNavGroups = [
       { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
     ],
   },
-  {
-    label: "CRM",
-    items: [
-      { href: "/broker/crm", label: "Centro CRM", icon: Home, id: undefined },
-      { href: "/broker/crm/contactos", label: "Contactos", icon: Users, id: undefined },
-      { href: "/broker/crm/workspace", label: "Workspace", icon: Kanban, id: undefined },
-      { href: "/broker/crm/analytics", label: "Análisis", icon: BarChart3, id: undefined },
-    ],
-  },
 ] as const
 
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   return (
     <>
@@ -142,50 +146,73 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#2D3C3C] flex flex-col transform transition-transform duration-300 ease-in-out lg:transform-none border-r border-[#D5C3B6]/10",
+          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:transform-none border-r border-[#D5C3B6]/10 bg-[#2D3C3C]",
+          isCollapsed ? "lg:w-16" : "lg:w-72",
+          "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Logo */}
-        <div id="sidebar-logo" className="flex items-center justify-between px-6 py-6 border-b border-[#D5C3B6]/10">
-          <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
-          <NotificationBell userRole={role} />
+        <div id="sidebar-logo" className={cn(
+          "flex items-center justify-between border-b border-[#D5C3B6]/10 transition-all duration-300",
+          isCollapsed ? "px-2 py-4 justify-center" : "px-6 py-6"
+        )}>
+          {!isCollapsed && (
+            <>
+              <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
+              <NotificationBell userRole={role} />
+            </>
+          )}
+          {isCollapsed && (
+            <span className="text-lg font-serif font-semibold tracking-tight text-[#D5C3B6]">NF</span>
+          )}
         </div>
 
         {/* Navigation */}
         {role === "landlord" ? (
-          <nav className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
+          <nav className={cn("flex-1 overflow-y-auto space-y-6 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
             {landlordNavGroups.map((group) => (
               <div key={group.label}>
-                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
-                  {group.label}
-                </p>
+                {!isCollapsed && (
+                  <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
+                    {group.label}
+                  </p>
+                )}
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
                     const isActive =
                       pathname === item.href ||
                       (item.href !== "/dashboard" && pathname.startsWith(item.href))
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        id={item.id}
-                        onClick={() => setIsOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                          isActive
-                            ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                            : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                      <Tooltip key={item.href} delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={item.href}
+                            id={item.id}
+                            onClick={() => setIsOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
+                              isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
+                              isActive
+                                ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                            )}
+                          >
+                            <item.icon
+                              className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                            />
+                            {!isCollapsed && item.label}
+                            {!isCollapsed && isActive && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                            )}
+                          </Link>
+                        </TooltipTrigger>
+                        {isCollapsed && (
+                          <TooltipContent side="right">
+                            <p>{item.label}</p>
+                          </TooltipContent>
                         )}
-                      >
-                        <item.icon
-                          className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
-                        />
-                        {item.label}
-                        {isActive && (
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
-                        )}
-                      </Link>
+                      </Tooltip>
                     )
                   })}
                 </div>
@@ -193,38 +220,49 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
             ))}
           </nav>
         ) : role === "broker" ? (
-          <nav className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
+          <nav className={cn("flex-1 overflow-y-auto space-y-6 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
             {brokerNavGroups.map((group) => (
               <div key={group.label}>
-                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
-                  {group.label}
-                </p>
+                {!isCollapsed && (
+                  <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#B8965A]/60">
+                    {group.label}
+                  </p>
+                )}
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
                     const isActive =
                       pathname === item.href ||
                       (item.href !== "/broker" && pathname.startsWith(item.href))
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        id={item.id}
-                        onClick={() => setIsOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                          isActive
-                            ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                            : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                      <Tooltip key={item.href} delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={item.href}
+                            id={item.id}
+                            onClick={() => setIsOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
+                              isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
+                              isActive
+                                ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                            )}
+                          >
+                            <item.icon
+                              className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                            />
+                            {!isCollapsed && item.label}
+                            {!isCollapsed && isActive && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                            )}
+                          </Link>
+                        </TooltipTrigger>
+                        {isCollapsed && (
+                          <TooltipContent side="right">
+                            <p>{item.label}</p>
+                          </TooltipContent>
                         )}
-                      >
-                        <item.icon
-                          className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
-                        />
-                        {item.label}
-                        {isActive && (
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
-                        )}
-                      </Link>
+                      </Tooltip>
                     )
                   })}
                 </div>
@@ -232,68 +270,109 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
             ))}
           </nav>
         ) : (
-          <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-            <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]/60">
-              Mi Arriendo
-            </p>
+          <nav className={cn("flex-1 overflow-y-auto space-y-1 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
+            {!isCollapsed && (
+              <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]/60">
+                Mi Arriendo
+              </p>
+            )}
             {tenantNavItems.map((item) => {
               const isActive = pathname === item.href || 
                 (item.href !== "/dashboard" && item.href !== "/mi-arriendo" && pathname.startsWith(item.href))
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  id={item.id}
-                  onClick={() => setIsOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
-                    isActive
-                      ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                      : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                <Tooltip key={item.href} delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      id={item.id}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300",
+                        isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-3",
+                        isActive
+                          ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
+                          : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                      )}
+                    >
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-colors duration-300",
+                        isActive ? "text-[#5E8B8C]" : ""
+                      )} />
+                      {!isCollapsed && item.label}
+                      {!isCollapsed && isActive && (
+                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  {isCollapsed && (
+                    <TooltipContent side="right">
+                      <p>{item.label}</p>
+                    </TooltipContent>
                   )}
-                >
-                  <item.icon className={cn(
-                    "h-5 w-5 transition-colors duration-300",
-                    isActive ? "text-[#5E8B8C]" : ""
-                  )} />
-                  {item.label}
-                  {isActive && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
-                  )}
-                </Link>
+                </Tooltip>
               )
             })}
           </nav>
         )}
 
         {/* User section */}
-        <div className="border-t border-[#D5C3B6]/10 p-4">
-          <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-[#1C1917]/30">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5E8B8C] to-[#5E8B8C]/70 flex items-center justify-center shadow-lg flex-shrink-0">
-              <User className="h-5 w-5 text-[#FAF6F2]" />
+        <div className={cn("border-t border-[#D5C3B6]/10 space-y-3", isCollapsed ? "p-2" : "p-4")}>
+          {/* Collapse button (desktop only) */}
+          {isCollapsed && (
+            <div className="flex justify-center mb-2">
+              <NotificationBell userRole={role} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#FAF6F2] truncate">
-                {userName}
-              </p>
-              <span className={cn(
-                "inline-block px-2 py-0.5 text-xs rounded-full font-medium uppercase tracking-wider",
-                role === "landlord" 
-                  ? "bg-[#75524C]/30 text-[#D5C3B6]" 
-                  : role === "broker"
-                  ? "bg-[#5E8B8C]/30 text-[#5E8B8C]"
-                  : "bg-[#5E8B8C]/30 text-[#5E8B8C]"
-              )}>
-                {role === "landlord" ? "Arrendador" : role === "broker" ? "Corredor" : "Arrendatario"}
-              </span>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex items-center justify-center w-full py-3 border border-[#D5C3B6]/10 rounded-lg text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
+            title={isCollapsed ? "Expandir" : "Contraer"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <>
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Contraer
+              </>
+            )}
+          </button>
+
+          {/* User info */}
+          {!isCollapsed && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1C1917]/30">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5E8B8C] to-[#5E8B8C]/70 flex items-center justify-center shadow-lg flex-shrink-0">
+                <User className="h-5 w-5 text-[#FAF6F2]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#FAF6F2] truncate">
+                  {userName}
+                </p>
+                <span className={cn(
+                  "inline-block px-2 py-0.5 text-xs rounded-full font-medium uppercase tracking-wider",
+                  role === "landlord" 
+                    ? "bg-[#75524C]/30 text-[#D5C3B6]" 
+                    : role === "broker"
+                    ? "bg-[#5E8B8C]/30 text-[#5E8B8C]"
+                    : "bg-[#5E8B8C]/30 text-[#5E8B8C]"
+                )}>
+                  {role === "landlord" ? "Propietario" : role === "broker" ? "Corredor" : "Arrendatario"}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Logout button */}
           <Link
             href="/"
-            className="flex items-center gap-2 px-4 py-3 text-sm text-[#9C8578] hover:text-[#C27F79] transition-colors duration-300 rounded-xl hover:bg-[#C27F79]/10"
+            className={cn(
+              "flex items-center gap-2 px-4 py-3 text-sm text-[#9C8578] hover:text-[#C27F79] transition-colors duration-300 rounded-xl hover:bg-[#C27F79]/10",
+              isCollapsed && "justify-center"
+            )}
+            title={isCollapsed ? "Cerrar sesión" : undefined}
           >
             <LogOut className="h-4 w-4" />
-            Cerrar sesión
+            {!isCollapsed && "Cerrar sesión"}
           </Link>
         </div>
       </aside>

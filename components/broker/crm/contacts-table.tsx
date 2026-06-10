@@ -22,16 +22,15 @@ import Link from 'next/link'
 
 interface Contact {
   id: string
-  publicId: string
+  code: string
   name: string
   email: string | null
   phone: string | null
-  type: 'OWNER' | 'TENANT' | 'BUYER' | 'INVESTOR'
-  status: string
-  priority: 'HIGH' | 'NORMAL' | 'LOW'
-  linkedProperties: number
-  lastActivity?: string
-  score?: number
+  type: 'PROPIETARIO' | 'ARRENDATARIO' | 'INVERSIONISTA' | 'LEAD'
+  status: 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'LOST'
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  deals: Array<{ deal: { id: string; code: string; title: string; stage: string } }>
+  score: { score: number; recommendation: string } | null
 }
 
 interface ContactsTableProps {
@@ -42,29 +41,29 @@ interface ContactsTableProps {
 }
 
 const typeColors: Record<string, string> = {
-  OWNER: 'bg-blue-100 text-blue-800',
-  TENANT: 'bg-green-100 text-green-800',
-  BUYER: 'bg-purple-100 text-purple-800',
-  INVESTOR: 'bg-orange-100 text-orange-800',
+  PROPIETARIO: 'bg-blue-100 text-blue-800',
+  ARRENDATARIO: 'bg-green-100 text-green-800',
+  INVERSIONISTA: 'bg-purple-100 text-purple-800',
+  LEAD: 'bg-orange-100 text-orange-800',
 }
 
 const typeLabels: Record<string, string> = {
-  OWNER: 'Propietario',
-  TENANT: 'Arrendatario',
-  BUYER: 'Comprador',
-  INVESTOR: 'Inversor',
+  PROPIETARIO: 'Propietario',
+  ARRENDATARIO: 'Arrendatario',
+  INVERSIONISTA: 'Inversor',
+  LEAD: 'Lead',
 }
 
 const statusColors: Record<string, string> = {
   ACTIVE: 'bg-green-100 text-green-800',
-  INTERESTED: 'bg-blue-100 text-blue-800',
-  NEGOTIATING: 'bg-yellow-100 text-yellow-800',
+  CONVERTED: 'bg-blue-100 text-blue-800',
+  LOST: 'bg-red-100 text-red-800',
   INACTIVE: 'bg-gray-100 text-gray-800',
 }
 
 const priorityColors: Record<string, string> = {
   HIGH: 'bg-red-100 text-red-800',
-  NORMAL: 'bg-gray-100 text-gray-800',
+  MEDIUM: 'bg-gray-100 text-gray-800',
   LOW: 'bg-blue-100 text-blue-800',
 }
 
@@ -106,7 +105,7 @@ export function ContactsTable({
           ) : (
             contacts.map((contact) => (
               <TableRow key={contact.id} className="hover:bg-gray-50">
-                <TableCell className="font-mono text-sm">{contact.publicId}</TableCell>
+                <TableCell className="font-mono text-sm">{contact.code}</TableCell>
                 <TableCell className="font-medium">
                   <Link href={`/broker/crm/contactos/${contact.id}`} className="hover:underline">
                     {contact.name}
@@ -123,8 +122,8 @@ export function ContactsTable({
                   <Badge className={priorityColors[contact.priority]}>
                     {contact.priority === 'HIGH'
                       ? 'Alta'
-                      : contact.priority === 'NORMAL'
-                        ? 'Normal'
+                      : contact.priority === 'MEDIUM'
+                        ? 'Media'
                         : 'Baja'}
                   </Badge>
                 </TableCell>
@@ -133,7 +132,7 @@ export function ContactsTable({
                     {contact.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center">{contact.linkedProperties}</TableCell>
+                <TableCell className="text-center">{contact.deals.length}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

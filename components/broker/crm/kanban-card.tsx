@@ -1,156 +1,144 @@
 'use client'
 
-import { useState } from 'react'
-import { GripVertical, Eye, Trash2, ArrowRight } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { useDraggable } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
+import { Copy } from 'lucide-react'
+import { CrmDealStage } from '@prisma/client'
 
-export interface DealCard {
+export interface DealCardData {
   id: string
-  publicId: string
+  code: string
   title: string
-  contact: {
-    name: string
-    type: 'OWNER' | 'TENANT' | 'BUYER' | 'INVESTOR'
-  }
-  property?: {
-    name: string
-    type: string
-  }
-  value?: number
-  probability?: number
-  score?: number
-  stage: string
-  daysInStage?: number
-  nextFollowUp?: string
+  stage: CrmDealStage
+  operationType: string
+  value: number | null
+  property: { code: string; address: string; type: string } | null
+  contacts: Array<{
+    contact: { id: string; code: string; name: string }
+    role: string
+    isPrimary: boolean
+  }>
+  lastActivityAt: Date | null
+  daysInStage: number
 }
 
 interface KanbanCardProps {
-  deal: DealCard
-  isDragging?: boolean
-  onDelete?: (id: string) => void
-  onMove?: (dealId: string, newStage: string) => void
+  deal: DealCardData
+  stageColor: string
+  onClick: () => void
 }
 
-const contactTypeColors: Record<string, string> = {
-  OWNER: 'bg-blue-100 text-blue-800',
-  TENANT: 'bg-green-100 text-green-800',
-  BUYER: 'bg-purple-100 text-purple-800',
-  INVESTOR: 'bg-orange-100 text-orange-800',
+function getDaysSince(date: Date | null): number {
+  if (!date) return 999
+  return Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000)
 }
 
-export function KanbanCard({ deal, isDragging, onDelete, onMove }: KanbanCardProps) {
-  const [showActions, setShowActions] = useState(false)
+function UrgencyDot({ days }: { days: number }) {
+  const color = days > 5 ? '#ef4444' : days > 2 ? '#f59e0b' : '#22c55e'
+  return (
+    <span
+      className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+      style={{ backgroundColor: color }}
+      title={`${days} días sin actividad`}
+    />
+  )
+}
+
+function copyToClipboard(text: string, e: React.MouseEvent) {
+  e.stopPropagation()
+  navigator.clipboard.writeText(text)
+}
+
+export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: deal.id,
+    data: { deal },
+  })
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    borderLeft: `3px solid ${stageColor}`,
+  }
+
+  const daysSinceActivity = getDaysSince(deal.lastActivityAt)
+  const primaryContact = deal.contacts.find((c) => c.isPrimary) || deal.contacts[0]
+  const secondaryContact = deal.contacts.find((c) => !c.isPrimary && c !== primaryContact)
 
   return (
-    <Card
-      className={`cursor-grab active:cursor-grabbing transition-all mb-3 ${
-        isDragging ? 'opacity-50 shadow-lg' : 'hover:shadow-md'
-      }`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none"
+      onClick={onClick}
     >
-      <CardContent className="p-3 space-y-2">
-        {/* Header with drag handle and ID */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 flex-1">
-            <GripVertical className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="font-mono text-xs text-gray-600">{deal.publicId}</div>
-              <h4 className="font-semibold text-sm line-clamp-2">{deal.title}</h4>
-            </div>
+      {/* Header: código + urgencia */}
+      <div className="flex items-center justify-between mb-1.5">
+        <button
+          className="font-mono text-[10px] text-[#B8965A] hover:text-[#D5C3B6] flex items-center gap-1 group"
+          onClick={(e) => copyToClipboard(deal.code, e)}
+          title="Copiar código"
+        >
+          {deal.code}
+          <Copy className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+        <div className="flex items-center gap-1.5" {...listeners}>
+          <UrgencyDot days={daysSinceActivity} />
+        </div>
+      </div>
+
+      {/* Título */}
+      <p className="text-xs font-semibold text-[#FAF6F2] line-clamp-2 mb-2 leading-snug">
+        {deal.title}
+      </p>
+
+      {/* Propiedad */}
+      {deal.property && (
+        <div className="text-[10px] text-[#9C8578] bg-[#2D3C3C]/60 rounded px-2 py-1 mb-2 line-clamp-1">
+          📍 {deal.property.address}
+        </div>
+      )}
+
+      {/* Contactos */}
+      {primaryContact && (
+        <div className="space-y-0.5 mb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-[#B8965A] font-mono flex-shrink-0">
+              {primaryContact.contact.code}
+            </span>
+            <span className="text-[10px] text-[#D5C3B6] truncate">
+              {primaryContact.contact.name}
+            </span>
           </div>
-          {showActions && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
-                  ⋯
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href={`/broker/crm/oportunidades/${deal.id}`} className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    <span>Ver Detalles</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDelete?.(deal.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Eliminar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {secondaryContact && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-[#B8965A] font-mono flex-shrink-0">
+                {secondaryContact.contact.code}
+              </span>
+              <span className="text-[10px] text-[#D5C3B6] truncate">
+                {secondaryContact.contact.name}
+              </span>
+            </div>
+          )}
+          {deal.contacts.length > 2 && (
+            <span className="text-[9px] text-[#9C8578]">+{deal.contacts.length - 2} más</span>
           )}
         </div>
+      )}
 
-        {/* Contact info */}
-        <div className="flex items-center gap-2">
-          <Badge className={`${contactTypeColors[deal.contact.type]} text-xs`}>
-            {deal.contact.type === 'OWNER'
-              ? 'Propietario'
-              : deal.contact.type === 'TENANT'
-                ? 'Arrendatario'
-                : deal.contact.type === 'BUYER'
-                  ? 'Comprador'
-                  : 'Inversor'}
-          </Badge>
-          <span className="text-xs font-medium truncate">{deal.contact.name}</span>
-        </div>
-
-        {/* Property if exists */}
-        {deal.property && (
-          <div className="text-xs text-gray-600 bg-gray-50 p-1.5 rounded line-clamp-1">
-            📍 {deal.property.name}
-          </div>
-        )}
-
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-1 pt-1 text-xs">
-          {deal.value && (
-            <div>
-              <div className="text-gray-600">Valor</div>
-              <div className="font-semibold">${deal.value.toLocaleString()}</div>
-            </div>
-          )}
-          {deal.probability && (
-            <div>
-              <div className="text-gray-600">Prob.</div>
-              <div className="font-semibold">{deal.probability}%</div>
-            </div>
-          )}
-          {deal.daysInStage && (
-            <div>
-              <div className="text-gray-600">Días</div>
-              <div className="font-semibold">{deal.daysInStage}d</div>
-            </div>
-          )}
-        </div>
-
-        {/* Days in stage warning */}
-        {deal.daysInStage && deal.daysInStage > 30 && (
-          <div className="text-xs text-orange-600 bg-orange-50 p-1.5 rounded">
-            ⚠️ Más de {deal.daysInStage} días en esta etapa
-          </div>
-        )}
-
-        {/* Next follow-up if exists */}
-        {deal.nextFollowUp && (
-          <div className="text-xs text-blue-600 bg-blue-50 p-1.5 rounded">
-            📅 Seguimiento: {deal.nextFollowUp}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Footer: valor + días */}
+      <div className="flex items-center justify-between text-[10px] text-[#9C8578] pt-1 border-t border-[#D5C3B6]/10">
+        <span>
+          {deal.value
+            ? `$${new Intl.NumberFormat('es-CL').format(deal.value)}` 
+            : '—'}
+        </span>
+        <span className={daysSinceActivity > 5 ? 'text-red-400' : ''}>
+          📅 {daysSinceActivity === 999 ? 'Sin actividad' : `${daysSinceActivity}d`}
+        </span>
+      </div>
+    </div>
   )
 }

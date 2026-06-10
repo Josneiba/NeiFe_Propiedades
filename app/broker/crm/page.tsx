@@ -1,160 +1,130 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+// app/broker/crm/page.tsx — Server Component
+import { auth } from '@/lib/auth-session'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Users, Briefcase, TrendingUp, Activity } from 'lucide-react'
+import { ArrowRight, TrendingUp, AlertCircle, Users, Kanban } from 'lucide-react'
 
-interface CrmMetrics {
-  totalContacts: number
-  activeDeals: number
-  thisMonthActivity: number
-  avgScore: number
-}
+export const dynamic = 'force-dynamic'
 
-export default function CrmPage() {
-  const [metrics, setMetrics] = useState<CrmMetrics | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export default async function CrmDashboardPage() {
+  const session = await auth()
+  if (!session?.user) redirect('/login')
 
-  useEffect(() => {
-    const loadMetrics = async () => {
-      try {
-        const res = await fetch('/api/crm/metrics/overview')
-        if (!res.ok) throw new Error('Error loading metrics')
-        const data = await res.json()
-        setMetrics(data)
-      } catch (error) {
-        console.error('Error loading metrics:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  const brokerId = session.user.id
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    loadMetrics()
-  }, [])
+  const [
+    activeDeals,
+    wonThisMonth,
+    contactsAtRisk,
+    topScores,
+    dealsPreVenta,
+    dealsVenta,
+    dealsPostVenta,
+  ] = await Promise.all([
+    prisma.crmDeal.count({ where: { brokerId, status: 'ACTIVE' } }),
+    prisma.crmDeal.count({ where: { brokerId, status: 'WON', wonAt: { gte: monthStart } } }),
+    prisma.crmContactScore.count({
+      where: { contact: { brokerId }, lastActivityDays: { gte: 5 }, contact: { status: 'ACTIVE' } },
+    }),
+    prisma.crmContactScore.findMany({
+      where: { contact: { brokerId, status: 'ACTIVE' } },
+      include: { contact: true },
+      orderBy: { score: 'asc' },
+      take: 5,
+    }),
+    prisma.crmDeal.count({ where: { brokerId, status: 'ACTIVE', phase: 'PRE_VENTA' } }),
+    prisma.crmDeal.count({ where: { brokerId, status: 'ACTIVE', phase: 'VENTA' } }),
+    prisma.crmDeal.count({ where: { brokerId, status: 'ACTIVE', phase: 'POST_VENTA' } }),
+  ])
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Centro CRM</h1>
-        <p className="text-gray-600 mt-1">
-          Gestiona tu cartera de clientes y oportunidades de negocio
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#FAF6F2]">Centro CRM</h1>
+          <p className="text-xs text-[#9C8578] mt-0.5">Tu embudo de ventas en tiempo real</p>
+        </div>
+        <Button asChild size="sm" className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80">
+          <Link href="/broker/crm/workspace">
+            <Kanban className="h-3.5 w-3.5 mr-1.5" />
+            Ir al Workspace
+          </Link>
+        </Button>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
-          Array(4)
-            .fill(0)
-            .map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="h-24" />
-              </Card>
-            ))
-        ) : (
-          <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Contactos Totales</CardTitle>
-                <Users className="h-4 w-4 text-gray-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics?.totalContacts ?? 0}</div>
-                <p className="text-xs text-gray-600 mt-1">Contactos en el sistema</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Oportunidades Activas</CardTitle>
-                <Briefcase className="h-4 w-4 text-gray-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics?.activeDeals ?? 0}</div>
-                <p className="text-xs text-gray-600 mt-1">Negocios en progreso</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Actividad Este Mes</CardTitle>
-                <Activity className="h-4 w-4 text-gray-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics?.thisMonthActivity ?? 0}</div>
-                <p className="text-xs text-gray-600 mt-1">Interacciones registradas</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Puntuación Promedio</CardTitle>
-                <TrendingUp className="h-4 w-4 text-gray-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics?.avgScore?.toFixed(0) ?? 0}</div>
-                <p className="text-xs text-gray-600 mt-1">Escala 0-100</p>
-              </CardContent>
-            </Card>
-          </>
-        )}
+      {/* KPIs del embudo */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Pre-Venta', count: dealsPreVenta, color: '#1a3a5c', href: '/broker/crm/workspace' },
+          { label: 'Venta activa', count: dealsVenta, color: '#0e4d3a', href: '/broker/crm/workspace' },
+          { label: 'Post-Venta', count: dealsPostVenta, color: '#4a1a5c', href: '/broker/crm/workspace' },
+          { label: 'Ganados este mes', count: wonThisMonth, color: '#B8965A', href: '/broker/crm/metricas' },
+        ].map((kpi) => (
+          <Link key={kpi.label} href={kpi.href}
+            className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-xl p-4 hover:border-[#D5C3B6]/25 transition-colors"
+          >
+            <p className="text-xs text-[#9C8578] mb-1">{kpi.label}</p>
+            <p className="text-3xl font-bold" style={{ color: kpi.color === '#1a3a5c' ? '#5E8B8C' : kpi.color }}>
+              {kpi.count}
+            </p>
+          </Link>
+        ))}
       </div>
 
-      {/* Navigation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Contactos
-            </CardTitle>
-            <CardDescription>
-              Gestiona tu base de contactos, propietarios, arrendatarios y compradores
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/broker/crm/contactos">Ir a Contactos</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Contactos en riesgo */}
+      {contactsAtRisk > 0 && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <span className="text-sm font-medium text-red-300">
+              {contactsAtRisk} contacto{contactsAtRisk > 1 ? 's' : ''} sin actividad por más de 5 días
+            </span>
+          </div>
+          <div className="space-y-2">
+            {topScores.filter((s) => s.lastActivityDays >= 5).slice(0, 3).map((s) => (
+              <Link key={s.id} href={`/broker/crm/contactos/${s.contactId}`}
+                className="flex items-center justify-between text-xs bg-red-900/30 rounded-lg px-3 py-2 hover:bg-red-900/40 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[#B8965A]">{s.contact.code}</span>
+                  <span className="text-[#D5C3B6]">{s.contact.name}</span>
+                </div>
+                <span className="text-red-400">{s.lastActivityDays}d sin contacto</span>
+              </Link>
+            ))}
+          </div>
+          <Link href="/broker/crm/metricas" className="text-[10px] text-[#9C8578] hover:text-[#D5C3B6] flex items-center gap-1 mt-2">
+            Ver todos <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5" />
-              Oportunidades (Kanban)
-            </CardTitle>
-            <CardDescription>
-              Visualiza tus oportunidades en un tablero Kanban interactivo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/broker/crm/workspace">Ir al Workspace</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Análisis
-            </CardTitle>
-            <CardDescription>
-              Reportes, métricas y análisis del desempeño de tu cartera
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline" disabled>
-              <span>Próximamente</span>
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Accesos rápidos */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/broker/crm/workspace"
+          className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-xl p-4 flex items-center gap-3 hover:border-[#5E8B8C]/50 transition-colors group"
+        >
+          <Kanban className="h-6 w-6 text-[#5E8B8C]" />
+          <div>
+            <p className="text-sm font-medium text-[#FAF6F2]">Workspace</p>
+            <p className="text-[10px] text-[#9C8578]">{activeDeals} deals activos</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-[#9C8578] ml-auto group-hover:text-[#5E8B8C] transition-colors" />
+        </Link>
+        <Link href="/broker/crm/contactos"
+          className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-xl p-4 flex items-center gap-3 hover:border-[#5E8B8C]/50 transition-colors group"
+        >
+          <Users className="h-6 w-6 text-[#5E8B8C]" />
+          <div>
+            <p className="text-sm font-medium text-[#FAF6F2]">Contactos</p>
+            <p className="text-[10px] text-[#9C8578]">Directorio completo</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-[#9C8578] ml-auto group-hover:text-[#5E8B8C] transition-colors" />
+        </Link>
       </div>
     </div>
   )
