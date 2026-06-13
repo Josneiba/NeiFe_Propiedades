@@ -5,6 +5,7 @@
 **Build Status**: ✓ Compila exitosamente | ✓ Sin errores TypeScript | ✓ Listo producción
 
 ### Final Build Log
+
 ```
 ✔ Generated Prisma Client (v6.19.2)
 ✓ Compiled successfully in 3.1min
