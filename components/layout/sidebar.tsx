@@ -154,18 +154,13 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
       >
         {/* Logo */}
         <div id="sidebar-logo" className={cn(
-          "flex items-center justify-between border-b border-[#D5C3B6]/10 transition-all duration-300",
-          isCollapsed ? "px-2 py-4 justify-center" : "px-6 py-6"
+          "flex items-center justify-center border-b border-[#D5C3B6]/10 transition-all duration-300 gap-3",
+          isCollapsed ? "px-2 py-4" : "px-6 py-6"
         )}>
-          {!isCollapsed && (
-            <>
-              <span className="text-2xl font-serif font-semibold tracking-tight text-[#D5C3B6]">NeiFe</span>
-              <NotificationBell userRole={role} />
-            </>
-          )}
-          {isCollapsed && (
-            <span className="text-lg font-serif font-semibold tracking-tight text-[#D5C3B6]">NF</span>
-          )}
+          <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-lg" : "text-2xl")}>
+            {isCollapsed ? "NF" : "NeiFe"}
+          </span>
+          <NotificationBell userRole={role} />
         </div>
 
         {/* Navigation */}
@@ -317,24 +312,15 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
 
         {/* User section */}
         <div className={cn("border-t border-[#D5C3B6]/10 space-y-3", isCollapsed ? "p-2" : "p-4")}>
-          {/* Collapse button (desktop only) */}
-          {isCollapsed && (
-            <div className="flex justify-center mb-2">
-              <NotificationBell userRole={role} />
-            </div>
-          )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex items-center justify-center w-full py-3 border border-[#D5C3B6]/10 rounded-lg text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
-            title={isCollapsed ? "Expandir" : "Contraer"}
+            className="hidden lg:flex items-center justify-center w-full py-2.5 border border-[#D5C3B6]/10 rounded-lg text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
+            title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4" />
             ) : (
-              <>
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Contraer
-              </>
+              <ChevronLeft className="h-4 w-4" />
             )}
           </button>
 

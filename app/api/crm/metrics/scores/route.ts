@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
 
   const scores = await prisma.crmContactScore.findMany({
     where: {
-      contact: { brokerId },
+      contact: {
+        brokerId,
+        status: 'ACTIVE',
+      },
     },
     include: {
       contact: {

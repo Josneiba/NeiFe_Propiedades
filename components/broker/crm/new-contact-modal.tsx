@@ -1,80 +1,52 @@
 'use client'
-
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 
-const newContactSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-  type: z.enum(['OWNER', 'TENANT', 'BUYER', 'INVESTOR']),
-  status: z.enum(['ACTIVE', 'INTERESTED', 'NEGOTIATING', 'INACTIVE']),
-  priority: z.enum(['HIGH', 'NORMAL', 'LOW']),
-  notes: z.string().optional(),
-})
-
-type NewContactFormData = z.infer<typeof newContactSchema>
-
-interface NewContactModalProps {
-  onCreateContact: (data: NewContactFormData) => Promise<void>
-}
-
-export function NewContactModal({ onCreateContact }: NewContactModalProps) {
+export function NewContactModal({ onCreated }: { onCreated?: () => void }) {
   const [open, setOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const form = useForm<NewContactFormData>({
-    resolver: zodResolver(newContactSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      type: 'OWNER',
-      status: 'ACTIVE',
-      priority: 'NORMAL',
-      notes: '',
-    },
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    name: '', type: 'LEAD', email: '', phone: '', rut: '', source: 'OTRO', priority: 'MEDIUM', notes: '',
   })
 
-  const onSubmit = async (data: NewContactFormData) => {
+  function set(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSubmit() {
+    if (!form.name.trim()) return toast.error('El nombre es requerido')
+    setSaving(true)
     try {
-      setIsLoading(true)
-      await onCreateContact(data)
-      form.reset()
+      const res = await fetch('/api/crm/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          type: form.type,
+          email: form.email || null,
+          phone: form.phone || null,
+          rut: form.rut || null,
+          source: form.source,
+          priority: form.priority,
+          notes: form.notes || null,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      const created = await res.json()
+      toast.success(`Contacto ${created.code} creado exitosamente`)
       setOpen(false)
-    } catch (error) {
-      console.error('Error creating contact:', error)
+      setForm({ name: '', type: 'LEAD', email: '', phone: '', rut: '', source: 'OTRO', priority: 'MEDIUM', notes: '' })
+      onCreated?.()
+    } catch {
+      toast.error('Error al crear el contacto')
     } finally {
-      setIsLoading(false)
+      setSaving(false)
     }
   }
 
@@ -86,165 +58,114 @@ export function NewContactModal({ onCreateContact }: NewContactModalProps) {
           Nuevo Contacto
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-w-md">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Contacto</DialogTitle>
+          <DialogTitle>Nuevo contacto</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Name */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nombre completo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Email and Phone */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="email@ejemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+56 9 1234 5678" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Type, Status, Priority */}
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="OWNER">Propietario</SelectItem>
-                        <SelectItem value="TENANT">Arrendatario</SelectItem>
-                        <SelectItem value="BUYER">Comprador</SelectItem>
-                        <SelectItem value="INVESTOR">Inversor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ACTIVE">Activo</SelectItem>
-                        <SelectItem value="INTERESTED">Interesado</SelectItem>
-                        <SelectItem value="NEGOTIATING">Negociando</SelectItem>
-                        <SelectItem value="INACTIVE">Inactivo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prioridad</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="HIGH">Alta</SelectItem>
-                        <SelectItem value="NORMAL">Normal</SelectItem>
-                        <SelectItem value="LOW">Baja</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Notes */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notas</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Información adicional sobre el contacto..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Submit */}
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={isLoading}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Creando...' : 'Crear Contacto'}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Nombre completo *</Label>
+            <Input
+              id="name"
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="Carlos Mendoza"
+              className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]" />
+          </div>
+          <div>
+            <Label htmlFor="type" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Tipo *</Label>
+            <Select value={form.type} onValueChange={(v) => set('type', v)}>
+              <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/20">
+                <SelectItem value="PROPIETARIO">Propietario</SelectItem>
+                <SelectItem value="ARRENDATARIO">Arrendatario</SelectItem>
+                <SelectItem value="INVERSIONISTA">Inversionista</SelectItem>
+                <SelectItem value="LEAD">Lead</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="source" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Fuente *</Label>
+            <Select value={form.source} onValueChange={(v) => set('source', v)}>
+              <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/20">
+                <SelectItem value="PORTAL">Portal</SelectItem>
+                <SelectItem value="REFERIDO">Referido</SelectItem>
+                <SelectItem value="REDES_SOCIALES">Redes Sociales</SelectItem>
+                <SelectItem value="LLAMADA">Llamada</SelectItem>
+                <SelectItem value="LETRERO">Letrero</SelectItem>
+                <SelectItem value="OTRO">Otro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="phone" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Teléfono</Label>
+            <Input
+              id="phone"
+              value={form.phone}
+              onChange={(e) => set('phone', e.target.value)}
+              placeholder="+56 9 8765 4321"
+              className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]" />
+          </div>
+          <div>
+            <Label htmlFor="email" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Email</Label>
+            <Input
+              id="email"
+              value={form.email}
+              onChange={(e) => set('email', e.target.value)}
+              placeholder="correo@mail.com" type="email"
+              className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]" />
+          </div>
+          <div>
+            <Label htmlFor="rut" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">RUT</Label>
+            <Input
+              id="rut"
+              value={form.rut}
+              onChange={(e) => set('rut', e.target.value)}
+              placeholder="12.345.678-9"
+              className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]" />
+          </div>
+          <div>
+            <Label htmlFor="priority" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Prioridad</Label>
+            <Select value={form.priority} onValueChange={(v) => set('priority', v)}>
+              <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/20">
+                <SelectItem value="HIGH">Alta</SelectItem>
+                <SelectItem value="MEDIUM">Media</SelectItem>
+                <SelectItem value="LOW">Baja</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="notes" className="text-[#9C8578] text-xs font-semibold mb-1.5 block">Notas (opcional)</Label>
+            <Input
+              id="notes"
+              value={form.notes}
+              onChange={(e) => set('notes', e.target.value)}
+              placeholder="Referido por Juan, interesado en Providencia..."
+              className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={() => setOpen(false)}
+              className="border-[#D5C3B6]/20 text-[#9C8578] flex-1"
+              variant="outline">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 flex-1">
+              {saving ? 'Guardando...' : 'Crear contacto'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

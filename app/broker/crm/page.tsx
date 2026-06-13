@@ -75,6 +75,75 @@ export default async function CrmDashboardPage() {
         ))}
       </div>
 
+      {/* Estado vacío — motivador */}
+      {activeDeals === 0 && (
+        <div className="bg-[#1C2828] border border-[#5E8B8C]/30 rounded-xl p-8 text-center space-y-4">
+          <div className="text-4xl">🚀</div>
+          <h3 className="text-lg font-semibold text-[#FAF6F2]">Tu pipeline está listo para crecer</h3>
+          <p className="text-sm text-[#9C8578] max-w-md mx-auto">
+            Empieza agregando tu primera oportunidad. Cada propiedad captada, cada arrendatario interesado,
+            es un deal que puedes mover hacia el cierre.
+          </p>
+          <div className="flex gap-3 justify-center pt-2">
+            <Button asChild size="sm" className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80">
+              <Link href="/broker/crm/workspace">
+                ＋ Crear primera oportunidad
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6]">
+              <Link href="/broker/crm/contactos">
+                Agregar contacto
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Mini-funnel visual */}
+      {activeDeals > 0 && (
+        <div className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-xl p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-[#FAF6F2]">Tu embudo hoy</h3>
+          <div className="flex items-end justify-center gap-6 h-48">
+            {[
+              { label: 'Pre-Venta', count: dealsPreVenta, color: '#1a3a5c', accent: '#5E8B8C' },
+              { label: 'Venta', count: dealsVenta, color: '#0e4d3a', accent: '#22c55e' },
+              { label: 'Post-Venta', count: dealsPostVenta, color: '#4a1a5c', accent: '#a78bfa' },
+            ].map((phase) => {
+              const maxCount = Math.max(dealsPreVenta, dealsVenta, dealsPostVenta, 1)
+              const heightPct = (phase.count / maxCount) * 100
+              return (
+                <div key={phase.label} className="flex flex-col items-center gap-2">
+                  <div className="flex items-end gap-1 h-32">
+                    <div
+                      style={{
+                        height: `${heightPct}%`,
+                        backgroundColor: phase.color,
+                      }}
+                      className="rounded-t transition-all w-16"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold" style={{ color: phase.accent }}>
+                      {phase.count}
+                    </div>
+                    <div className="text-xs text-[#9C8578]">
+                      {phase.label}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {dealsPreVenta > dealsVenta && (
+            <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/30 rounded-lg p-3">
+              <p className="text-xs text-[#5E8B8C]">
+                💡 Tienes {dealsPreVenta - dealsVenta} deals en Pre-Venta que aún no han pasado a Venta — revísalos en el Workspace
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Contactos en riesgo */}
       {contactsAtRisk > 0 && (
         <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">

@@ -132,12 +132,12 @@ export default function ContactosPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Contactos</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
+          <p className="text-[#9C8578] mt-1">
             Gestiona todos tus contactos en un solo lugar
           </p>
         </div>
-        <NewContactModal onCreateContact={handleCreateContact} />
+        <NewContactModal onCreated={loadContacts} />
       </div>
 
       {/* Filters */}

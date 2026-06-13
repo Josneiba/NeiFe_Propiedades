@@ -71,7 +71,7 @@ export async function PUT(
     return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
   }
 
-  const { title, value, commission, dueDate, notes } = body
+  const { title, value, commission, dueDate, notes, propertyId } = body
 
   const updated = await prisma.crmDeal.update({
     where: { id: params.id },
@@ -83,6 +83,7 @@ export async function PUT(
       }),
       ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
       ...(notes !== undefined && { notes }),
+      ...(propertyId !== undefined && { propertyId: propertyId || null }),
     },
     include: {
       property: true,

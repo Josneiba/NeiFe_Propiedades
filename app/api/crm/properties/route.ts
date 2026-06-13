@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     where.OR = [
       { address: { contains: q, mode: 'insensitive' } },
       { code: { contains: q, mode: 'insensitive' } },
+      { commune: { contains: q, mode: 'insensitive' } },
     ]
   }
 

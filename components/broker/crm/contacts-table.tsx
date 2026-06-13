@@ -41,10 +41,10 @@ interface ContactsTableProps {
 }
 
 const typeColors: Record<string, string> = {
-  PROPIETARIO: 'bg-blue-100 text-blue-800',
-  ARRENDATARIO: 'bg-green-100 text-green-800',
-  INVERSIONISTA: 'bg-purple-100 text-purple-800',
-  LEAD: 'bg-orange-100 text-orange-800',
+  PROPIETARIO: 'bg-[#5E8B8C]/20 text-[#5E8B8C]',
+  ARRENDATARIO: 'bg-[#22c55e]/20 text-[#22c55e]',
+  INVERSIONISTA: 'bg-purple-500/20 text-purple-400',
+  LEAD: 'bg-orange-500/20 text-orange-400',
 }
 
 const typeLabels: Record<string, string> = {
@@ -55,16 +55,16 @@ const typeLabels: Record<string, string> = {
 }
 
 const statusColors: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-800',
-  CONVERTED: 'bg-blue-100 text-blue-800',
-  LOST: 'bg-red-100 text-red-800',
-  INACTIVE: 'bg-gray-100 text-gray-800',
+  ACTIVE: 'bg-[#22c55e]/20 text-[#22c55e]',
+  CONVERTED: 'bg-[#5E8B8C]/20 text-[#5E8B8C]',
+  LOST: 'bg-red-500/20 text-red-400',
+  INACTIVE: 'bg-[#9C8578]/20 text-[#9C8578]',
 }
 
 const priorityColors: Record<string, string> = {
-  HIGH: 'bg-red-100 text-red-800',
-  MEDIUM: 'bg-gray-100 text-gray-800',
-  LOW: 'bg-blue-100 text-blue-800',
+  HIGH: 'bg-red-500/20 text-red-400',
+  MEDIUM: 'bg-yellow-500/20 text-yellow-400',
+  LOW: 'bg-blue-500/20 text-blue-400',
 }
 
 export function ContactsTable({
@@ -74,40 +74,40 @@ export function ContactsTable({
   onEdit,
 }: ContactsTableProps) {
   return (
-    <div className="border rounded-lg">
+    <div className="border border-[#D5C3B6]/10 rounded-lg bg-[#1C2828]">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50">
-            <TableHead className="w-[120px]">ID</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead className="text-center">Prioridad</TableHead>
-            <TableHead className="text-center">Estado</TableHead>
-            <TableHead className="text-center">Propiedades</TableHead>
-            <TableHead className="w-[50px] text-right">Acciones</TableHead>
+          <TableRow className="bg-[#2D3C3C]/60 border-b border-[#D5C3B6]/10">
+            <TableHead className="w-[120px] text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">ID</TableHead>
+            <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Nombre</TableHead>
+            <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Tipo</TableHead>
+            <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Email</TableHead>
+            <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Teléfono</TableHead>
+            <TableHead className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Prioridad</TableHead>
+            <TableHead className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Estado</TableHead>
+            <TableHead className="text-center text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Propiedades</TableHead>
+            <TableHead className="w-[50px] text-right text-[10px] font-semibold uppercase tracking-wider text-[#9C8578]">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+            <TableRow className="border-b border-[#D5C3B6]/10 hover:bg-[#2D3C3C]/40 transition-colors">
+              <TableCell colSpan={9} className="text-center py-8 text-[#9C8578]">
                 Cargando contactos...
               </TableCell>
             </TableRow>
           ) : contacts.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+            <TableRow className="border-b border-[#D5C3B6]/10 hover:bg-[#2D3C3C]/40 transition-colors">
+              <TableCell colSpan={9} className="text-center py-8 text-[#9C8578]">
                 No hay contactos
               </TableCell>
             </TableRow>
           ) : (
             contacts.map((contact) => (
-              <TableRow key={contact.id} className="hover:bg-gray-50">
-                <TableCell className="font-mono text-sm">{contact.code}</TableCell>
-                <TableCell className="font-medium">
-                  <Link href={`/broker/crm/contactos/${contact.id}`} className="hover:underline">
+              <TableRow key={contact.id} className="border-b border-[#D5C3B6]/10 hover:bg-[#2D3C3C]/40 transition-colors">
+                <TableCell className="font-mono text-sm text-[#B8965A]">{contact.code}</TableCell>
+                <TableCell className="font-medium text-[#FAF6F2]">
+                  <Link href={`/broker/crm/contactos/${contact.id}`} className="hover:text-[#5E8B8C] transition-colors">
                     {contact.name}
                   </Link>
                 </TableCell>
@@ -116,8 +116,8 @@ export function ContactsTable({
                     {typeLabels[contact.type]}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm">{contact.email || '—'}</TableCell>
-                <TableCell className="text-sm">{contact.phone || '—'}</TableCell>
+                <TableCell className="text-sm text-[#9C8578]">{contact.email || '—'}</TableCell>
+                <TableCell className="text-sm text-[#9C8578]">{contact.phone || '—'}</TableCell>
                 <TableCell className="text-center">
                   <Badge className={priorityColors[contact.priority]}>
                     {contact.priority === 'HIGH'
@@ -129,18 +129,18 @@ export function ContactsTable({
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge className={statusColors[contact.status]}>
-                    {contact.status}
+                    {contact.status === 'ACTIVE' ? 'Activo' : contact.status === 'CONVERTED' ? 'Convertido' : contact.status === 'LOST' ? 'Perdido' : 'Inactivo'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center">{contact.deals.length}</TableCell>
+                <TableCell className="text-center text-[#9C8578]">{contact.deals.length}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[#9C8578] hover:text-[#D5C3B6]">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="bg-[#1C2828] border-[#D5C3B6]/10">
                       <DropdownMenuItem asChild>
                         <Link href={`/broker/crm/contactos/${contact.id}`} className="flex items-center gap-2">
                           <Eye className="h-4 w-4" />
@@ -153,7 +153,7 @@ export function ContactsTable({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete?.(contact.id)}
-                        className="text-red-600"
+                        className="text-red-400 focus:bg-red-500/20 focus:text-red-400"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span>Eliminar</span>
