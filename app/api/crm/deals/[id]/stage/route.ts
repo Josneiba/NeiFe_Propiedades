@@ -71,6 +71,16 @@ export async function PATCH(
     },
   })
 
+  // Registrar cambio de etapa en el historial
+  await prisma.crmDealStageHistory.create({
+    data: {
+      dealId: params.id,
+      fromStage: deal.stage,
+      toStage: newStage as CrmDealStage,
+      changedBy: brokerId,
+    },
+  })
+
   // Recalculate scores after stage change
   await recalculateAllScores(brokerId)
 
@@ -202,6 +212,16 @@ async function transitionToAdministration(deal: any, brokerId: string) {
       await tx.crmContact.updateMany({
         where: { id: { in: contactIds } },
         data: { status: 'CONVERTED' },
+      })
+
+      // Registrar cambio de etapa en el historial
+      await tx.crmDealStageHistory.create({
+        data: {
+          dealId: deal.id,
+          fromStage: deal.stage,
+          toStage: 'ADMINISTRAR',
+          changedBy: brokerId,
+        },
       })
 
       return {

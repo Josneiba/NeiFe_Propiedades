@@ -5,12 +5,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Phone, Mail, Copy, Plus, Building2, Users, Activity } from 'lucide-react'
 import { DealCardData } from './kanban-card'
 import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
 import { ActivityLogModal } from './activity-log-modal'
 import { LinkContactModal } from './link-contact-modal'
+import { AttachmentsSection } from './attachments-section'
 import { toast } from 'sonner'
+import { CrmDealStage } from '@prisma/client'
 
 interface DealDrawerProps {
   deal: DealCardData
@@ -24,6 +27,15 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
   const [showLinkContact, setShowLinkContact] = useState(false)
   const [activities, setActivities] = useState<any[]>([])
   const [loadingActivities, setLoadingActivities] = useState(false)
+  const [movingStage, setMovingStage] = useState(false)
+  const [localStage, setLocalStage] = useState<CrmDealStage>(deal.stage)
+  const [quickNote, setQuickNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [history, setHistory] = useState<any[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [attachments, setAttachments] = useState<any[]>([])
+  const [dueDate, setDueDate] = useState(deal.dueDate ? new Date(deal.dueDate).toISOString().split('T')[0] : '')
+  const [savingDate, setSavingDate] = useState(false)
 
   const stageConfig = STAGE_COLUMNS.find((s) => s.stage === deal.stage)!
   const currentStageIndex = STAGE_COLUMNS.findIndex((s) => s.stage === deal.stage)
@@ -51,13 +63,129 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
     }
   }
 
+  async function handleStageChange(newStage: CrmDealStage) {
+    if (newStage === 'ADMINISTRAR') {
+      toast.error('Para pasar a Administrar, usa el Workspace y confirma el proceso completo')
+      return
+    }
+    setMovingStage(true)
+    try {
+      const res = await fetch(`/api/crm/deals/${deal.id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newStage }),
+      })
+      if (!res.ok) throw new Error()
+      setLocalStage(newStage)
+      toast.success(`Movido a ${STAGE_COLUMNS.find(s => s.stage === newStage)?.label}`)
+      onUpdate()
+    } catch {
+      toast.error('No se pudo cambiar la etapa')
+    } finally {
+      setMovingStage(false)
+    }
+  }
+
+  async function saveQuickNote() {
+    if (!quickNote.trim()) return
+    setSavingNote(true)
+    try {
+      await fetch('/api/crm/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'NOTA',
+          title: quickNote.trim(),
+          dealId: deal.id,
+          isDone: true,
+          completedAt: new Date(),
+        }),
+      })
+      setQuickNote('')
+      toast.success('Nota guardada')
+      loadActivities()
+      onUpdate()
+    } catch {
+      toast.error('Error al guardar nota')
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  async function loadHistory() {
+    if (history.length > 0) {
+      setShowHistory(!showHistory)
+      return
+    }
+    try {
+      const res = await fetch(`/api/crm/deals/${deal.id}/history`)
+      if (res.ok) {
+        setHistory(await res.json())
+        setShowHistory(true)
+      }
+    } catch {
+      toast.error('Error al cargar historial')
+    }
+  }
+
+  async function loadAttachments() {
+    try {
+      const res = await fetch(`/api/crm/deals/${deal.id}/attachments`)
+      if (res.ok) {
+        setAttachments(await res.json())
+      }
+    } catch {
+      // Silenciar error si el endpoint no existe aún
+    }
+  }
+
+  async function handleDueDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newDate = e.target.value
+    setDueDate(newDate)
+    if (!newDate) {
+      setSavingDate(true)
+      try {
+        await fetch(`/api/crm/deals/${deal.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dueDate: null }),
+        })
+        toast.success('Fecha despejada')
+        onUpdate()
+      } catch {
+        toast.error('Error al actualizar fecha')
+      } finally {
+        setSavingDate(false)
+      }
+      return
+    }
+    setSavingDate(true)
+    try {
+      await fetch(`/api/crm/deals/${deal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dueDate: newDate }),
+      })
+      toast.success('Fecha objetivo actualizada')
+      onUpdate()
+    } catch {
+      toast.error('Error al actualizar fecha')
+      setDueDate(deal.dueDate ? new Date(deal.dueDate).toISOString().split('T')[0] : '')
+    } finally {
+      setSavingDate(false)
+    }
+  }
+
   return (
     <>
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
         <SheetContent
           side="right"
           className="w-full sm:w-[420px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto"
-          onOpenAutoFocus={() => loadActivities()}
+          onOpenAutoFocus={() => {
+            loadActivities()
+            loadAttachments()
+          }}
         >
           <SheetHeader className="pb-4">
             <div className="flex items-start justify-between">
@@ -93,6 +221,42 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                 title={s.label}
               />
             ))}
+          </div>
+
+          {/* Selector de etapa rápido */}
+          <div className="mb-4">
+            <Select value={localStage} onValueChange={(v) => handleStageChange(v as CrmDealStage)} disabled={movingStage}>
+              <SelectTrigger className="w-full h-8 bg-[#2D3C3C] border-[#D5C3B6]/15 text-[#FAF6F2] text-xs">
+                <SelectValue placeholder="Cambiar etapa" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
+                {STAGE_COLUMNS.filter(s => s.stage !== 'ADMINISTRAR').map((s) => (
+                  <SelectItem key={s.stage} value={s.stage} className="text-xs">
+                    ● {s.label}
+                  </SelectItem>
+                ))}
+                <Separator className="bg-[#D5C3B6]/10 my-1" />
+                <SelectItem value="ADMINISTRAR" className="text-xs text-yellow-500" disabled>
+                  ⚠ Administrar (requiere confirmación)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator className="bg-[#D5C3B6]/10 mb-4" />
+
+          {/* Fecha objetivo */}
+          <div className="mb-4">
+            <label className="text-xs font-semibold uppercase tracking-wide text-[#9C8578] block mb-2">
+              📅 Fecha objetivo
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={handleDueDateChange}
+              disabled={savingDate}
+              className="w-full h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
+            />
           </div>
 
           <Separator className="bg-[#D5C3B6]/10 mb-4" />
@@ -195,7 +359,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
             ) : activities.length === 0 ? (
               <p className="text-xs text-[#9C8578] italic">Sin actividades registradas</p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 mb-3">
                 {activities.slice(0, 8).map((a) => (
                   <div key={a.id} className="flex gap-2 text-xs">
                     <span className="text-[#B8965A] flex-shrink-0">
@@ -211,7 +375,71 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                 ))}
               </div>
             )}
+
+            {/* Nota rápida — visible directamente */}
+            <div className="flex gap-2">
+              <textarea
+                value={quickNote}
+                onChange={(e) => setQuickNote(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    saveQuickNote()
+                  }
+                }}
+                placeholder="Nota rápida (Enter para guardar)..."
+                className="flex-1 bg-[#2D3C3C]/60 border border-[#D5C3B6]/15 rounded-lg px-3 py-2 text-xs text-[#FAF6F2] placeholder:text-[#9C8578]/60 focus:outline-none focus:border-[#5E8B8C]/50 resize-none h-16"
+                disabled={savingNote}
+              />
+              <Button
+                size="sm"
+                onClick={saveQuickNote}
+                disabled={!quickNote.trim() || savingNote}
+                className="flex-shrink-0 h-16 bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30 disabled:opacity-50 px-2"
+              >
+                {savingNote ? '...' : '↵'}
+              </Button>
+            </div>
           </section>
+
+          <Separator className="bg-[#D5C3B6]/10 my-4" />
+
+          {/* Historial de etapas */}
+          <section>
+            <button
+              onClick={loadHistory}
+              className="flex items-center justify-between w-full mb-2 text-xs font-semibold uppercase tracking-wide text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
+            >
+              <span>Historial de etapas</span>
+              {showHistory ? '▲' : '▼'}
+            </button>
+            {showHistory && history.length > 0 && (
+              <div className="space-y-2">
+                {history.map((h) => {
+                  const from = STAGE_COLUMNS.find(s => s.stage === h.fromStage)
+                  const to = STAGE_COLUMNS.find(s => s.stage === h.toStage)
+                  return (
+                    <div key={h.id} className="flex items-center justify-between gap-2 p-2 bg-[#2D3C3C]/40 rounded-lg text-[10px]">
+                      <div className="flex-1">
+                        <div className="text-[#9C8578]">
+                          {new Date(h.changedAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 text-[#D5C3B6]">
+                          {from && <span>● {from.label}</span>}
+                          <span className="text-[#9C8578]">→</span>
+                          {to && <span>● {to.label}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <Separator className="bg-[#D5C3B6]/10 my-4" />
+
+          <AttachmentsSection dealId={deal.id} attachments={attachments} onUpdate={onUpdate} />
         </SheetContent>
       </Sheet>
 

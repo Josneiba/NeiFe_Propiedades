@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '@/components/ui/badge'
 import { Copy } from 'lucide-react'
 import { CrmDealStage } from '@prisma/client'
+import { cn } from '@/lib/utils'
 
 export interface DealCardData {
   id: string
@@ -21,6 +22,7 @@ export interface DealCardData {
   }>
   lastActivityAt: Date | null
   daysInStage: number
+  dueDate: Date | null
 }
 
 interface KanbanCardProps {
@@ -71,7 +73,7 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none"
+      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none min-h-[110px] flex flex-col"
       onClick={onClick}
     >
       {/* Header: código + urgencia */}
@@ -89,54 +91,65 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
         </div>
       </div>
 
-      {/* Título */}
-      <p className="text-xs font-semibold text-[#FAF6F2] line-clamp-2 mb-2 leading-snug">
-        {deal.title}
-      </p>
+      {/* Contenido central — crece para llenar espacio */}
+      <div className="flex-1">
+        {/* Título */}
+        <p className="text-xs font-semibold text-[#FAF6F2] line-clamp-2 mb-2 leading-snug">
+          {deal.title}
+        </p>
 
-      {/* Propiedad */}
-      {deal.property && (
-        <div className="text-[10px] text-[#9C8578] bg-[#2D3C3C]/60 rounded px-2 py-1 mb-2 line-clamp-1">
-          📍 {deal.property.address}
-        </div>
-      )}
-
-      {/* Contactos */}
-      {primaryContact && (
-        <div className="space-y-0.5 mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-[#B8965A] font-mono flex-shrink-0">
-              {primaryContact.contact.code}
-            </span>
-            <span className="text-[10px] text-[#D5C3B6] truncate">
-              {primaryContact.contact.name}
-            </span>
+        {/* Propiedad */}
+        {deal.property && (
+          <div className="text-[10px] text-[#9C8578] bg-[#2D3C3C]/60 rounded px-2 py-1 mb-2 line-clamp-1">
+            📍 {deal.property.address}
           </div>
-          {secondaryContact && (
+        )}
+
+        {/* Contactos */}
+        {primaryContact && (
+          <div className="space-y-0.5 mb-2">
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] text-[#B8965A] font-mono flex-shrink-0">
-                {secondaryContact.contact.code}
+                {primaryContact.contact.code}
               </span>
               <span className="text-[10px] text-[#D5C3B6] truncate">
-                {secondaryContact.contact.name}
+                {primaryContact.contact.name}
               </span>
             </div>
-          )}
-          {deal.contacts.length > 2 && (
-            <span className="text-[9px] text-[#9C8578]">+{deal.contacts.length - 2} más</span>
-          )}
-        </div>
-      )}
+            {secondaryContact && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] text-[#B8965A] font-mono flex-shrink-0">
+                  {secondaryContact.contact.code}
+                </span>
+                <span className="text-[10px] text-[#D5C3B6] truncate">
+                  {secondaryContact.contact.name}
+                </span>
+              </div>
+            )}
+            {deal.contacts.length > 2 && (
+              <span className="text-[9px] text-[#9C8578]">+{deal.contacts.length - 2} más</span>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Footer: valor + días */}
-      <div className="flex items-center justify-between text-[10px] text-[#9C8578] pt-1 border-t border-[#D5C3B6]/10">
-        <span>
+      {/* Footer: valor + días — más legible */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#D5C3B6]/10">
+        <span className="text-xs text-[#D5C3B6] font-medium">
           {deal.value
-            ? `$${new Intl.NumberFormat('es-CL').format(deal.value)}` 
-            : '—'}
+            ? `$${new Intl.NumberFormat('es-CL').format(deal.value)}`
+            : 'Sin valor'
+          }
         </span>
-        <span className={daysSinceActivity > 5 ? 'text-red-400' : ''}>
-          📅 {daysSinceActivity === 999 ? 'Sin actividad' : `${daysSinceActivity}d`}
+        <span className={cn(
+          "px-2 py-1 rounded text-[10px] font-medium",
+          daysSinceActivity > 5
+            ? 'bg-red-900/40 text-red-400'
+            : daysSinceActivity > 2
+            ? 'bg-yellow-900/30 text-yellow-500'
+            : 'bg-[#2D3C3C] text-[#9C8578]'
+        )}>
+          {daysSinceActivity === 999 ? 'Sin actividad' : `${daysSinceActivity}d`}
         </span>
       </div>
     </div>

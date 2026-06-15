@@ -60,10 +60,12 @@ model User {
   propertyCreationRequestsAsLandlord BrokerPropertyCreationRequest[] @relation("BrokerPropertyCreationLandlord")
 
   // CRM relations (Fase CRM Junio 2026)
-  crmContacts    CrmContact[]   @relation("CrmBrokerContacts")
-  crmProperties  CrmProperty[]  @relation("CrmBrokerProperties")
-  crmDeals       CrmDeal[]      @relation("CrmBrokerDeals")
-  crmActivities  CrmActivity[]  @relation("CrmBrokerActivities")
+  crmContacts       CrmContact[]   @relation("CrmBrokerContacts")
+  crmProperties     CrmProperty[]  @relation("CrmBrokerProperties")
+  crmDeals          CrmDeal[]      @relation("CrmBrokerDeals")
+  crmActivities     CrmActivity[]  @relation("CrmBrokerActivities")
+  stageHistoryEntries CrmDealStageHistory[] @relation("StageHistoryBroker")
+  dealAttachments   CrmDealAttachment[] @relation("DealAttachmentUploader")
 
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
@@ -940,6 +942,8 @@ model CrmDeal {
   property      CrmProperty?    @relation(fields: [propertyId], references: [id])
   contacts      CrmDealContact[]
   activities    CrmActivity[]
+  stageHistory  CrmDealStageHistory[]
+  attachments   CrmDealAttachment[]
   status        CrmDealStatus   @default(ACTIVE)
   lostReason    String?
   wonAt         DateTime?
@@ -998,6 +1002,34 @@ model CrmContactScore {
   recommendation   String?
   calculatedAt     DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+}
+
+model CrmDealStageHistory {
+  id        String       @id @default(cuid())
+  dealId    String
+  deal      CrmDeal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fromStage CrmDealStage?
+  toStage   CrmDealStage
+  changedAt DateTime     @default(now())
+  changedBy String
+  broker    User         @relation("StageHistoryBroker", fields: [changedBy], references: [id])
+
+  @@index([dealId])
+}
+
+model CrmDealAttachment {
+  id        String   @id @default(cuid())
+  dealId    String
+  deal      CrmDeal  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String?
+  uploadedBy String
+  uploader  User     @relation("DealAttachmentUploader", fields: [uploadedBy], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
 }
 
 // ── Enums CRM ────────────────────────────────────────────────

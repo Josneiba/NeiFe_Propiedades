@@ -64,6 +64,7 @@ export default function WorkspacePage() {
         contacts: d.contacts || [],
         lastActivityAt: d.activities?.[0]?.createdAt ?? null,
         daysInStage: 0, // se puede calcular si la API devuelve stageUpdatedAt
+        dueDate: d.dueDate ? new Date(d.dueDate) : null,
       }))
       setDeals(enriched)
     } catch (e) {

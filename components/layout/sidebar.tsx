@@ -87,6 +87,7 @@ const brokerNavGroups = [
       { href: "/broker/crm", label: "Centro CRM", icon: LayoutDashboard, id: undefined },
       { href: "/broker/crm/contactos", label: "Contactos", icon: Users, id: undefined },
       { href: "/broker/crm/workspace", label: "Workspace", icon: Kanban, id: undefined },
+      { href: "/broker/crm/calendario", label: "Calendario", icon: Calendar, id: undefined },
       { href: "/broker/crm/metricas", label: "Métricas", icon: BarChart3, id: undefined },
     ],
   },
@@ -152,15 +153,36 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo */}
-        <div id="sidebar-logo" className={cn(
-          "flex items-center justify-center border-b border-[#D5C3B6]/10 transition-all duration-300 gap-3",
-          isCollapsed ? "px-2 py-4" : "px-6 py-6"
-        )}>
-          <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-lg" : "text-2xl")}>
-            {isCollapsed ? "NF" : "NeiFe"}
-          </span>
-          <NotificationBell userRole={role} />
+        {/* Header: Logo + Campana + Botón colapsar — siempre visibles */}
+        <div className="border-b border-[#D5C3B6]/10">
+          {/* Fila 1: Logo + Campana (en expandido, en misma fila) */}
+          <div id="sidebar-logo" className={cn(
+            "flex items-center justify-center transition-all duration-300 gap-3",
+            isCollapsed ? "px-2 py-4" : "px-6 py-6"
+          )}>
+            <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-lg" : "text-2xl")}>
+              {isCollapsed ? "NF" : "NeiFe"}
+            </span>
+            <NotificationBell userRole={role} />
+          </div>
+
+          {/* Fila 2: Botón colapsar — solo desktop, solo ícono */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={cn(
+              "hidden lg:flex items-center justify-center rounded-lg transition-all duration-200 mx-2 mb-2",
+              "text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/8",
+              isCollapsed
+                ? "w-9 h-9"
+                : "w-full py-2 border border-[#D5C3B6]/10"
+            )}
+            title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+          >
+            {isCollapsed
+              ? <ChevronRight className="h-4 w-4" />
+              : <ChevronLeft className="h-4 w-4" />
+            }
+          </button>
         </div>
 
         {/* Navigation */}
@@ -310,21 +332,9 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
           </nav>
         )}
 
-        {/* User section */}
+        {/* User section — solo usuario y logout */}
         <div className={cn("border-t border-[#D5C3B6]/10 space-y-3", isCollapsed ? "p-2" : "p-4")}>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex items-center justify-center w-full py-2.5 border border-[#D5C3B6]/10 rounded-lg text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
-            title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
-
-          {/* User info */}
+          {/* User info — solo en expandido */}
           {!isCollapsed && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1C1917]/30">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5E8B8C] to-[#5E8B8C]/70 flex items-center justify-center shadow-lg flex-shrink-0">
