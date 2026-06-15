@@ -38,6 +38,11 @@ export default function WorkspacePage() {
     new Set(['PRE_VENTA', 'VENTA', 'POST_VENTA'])
   )
   const [filterOp, setFilterOp] = useState<'ALL' | 'ARRIENDO' | 'VENTA'>('ALL')
+  
+  // Nuevos filtros: búsqueda y rango de valor
+  const [searchQuery, setSearchQuery] = useState('')
+  const [minValue, setMinValue] = useState<number | null>(null)
+  const [maxValue, setMaxValue] = useState<number | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -96,7 +101,27 @@ export default function WorkspacePage() {
   )
 
   function getDealsByStage(stage: CrmDealStage): DealCardData[] {
-    return deals.filter((d) => d.stage === stage)
+    let filtered = deals.filter((d) => d.stage === stage)
+    
+    // Aplicar búsqueda
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      filtered = filtered.filter((d) => 
+        d.code.toLowerCase().includes(q) || 
+        d.title.toLowerCase().includes(q) ||
+        d.property?.address?.toLowerCase().includes(q)
+      )
+    }
+    
+    // Aplicar rango de valor
+    if (minValue !== null && minValue > 0) {
+      filtered = filtered.filter((d) => d.value && d.value >= minValue)
+    }
+    if (maxValue !== null && maxValue > 0) {
+      filtered = filtered.filter((d) => d.value && d.value <= maxValue)
+    }
+    
+    return filtered
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -242,7 +267,49 @@ export default function WorkspacePage() {
         ))}
       </div>
 
-      {/* Kanban Board - Desktop */}
+      {/* Búsqueda y filtros adicionales */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3 border-b border-[#D5C3B6]/10 bg-[#1C2828]/50">
+        <div className="flex-1 max-w-xs">
+          <input
+            type="text"
+            placeholder="Buscar código, título o dirección..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] placeholder-[#9C8578] focus:outline-none focus:border-[#5E8B8C]"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-[#9C8578]">Valor min:</label>
+          <input
+            type="number"
+            placeholder="UF"
+            value={minValue ?? ''}
+            onChange={(e) => setMinValue(e.target.value ? parseInt(e.target.value) : null)}
+            className="w-20 px-2 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-[#9C8578]">Valor máx:</label>
+          <input
+            type="number"
+            placeholder="UF"
+            value={maxValue ?? ''}
+            onChange={(e) => setMaxValue(e.target.value ? parseInt(e.target.value) : null)}
+            className="w-20 px-2 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+          />
+        </div>
+
+        {(searchQuery || minValue || maxValue) && (
+          <button
+            onClick={() => { setSearchQuery(''); setMinValue(null); setMaxValue(null) }}
+            className="text-xs px-2 py-1 text-[#9C8578] hover:text-[#FAF6F2] transition-colors"
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-[#9C8578] text-sm animate-pulse">Cargando oportunidades...</p>

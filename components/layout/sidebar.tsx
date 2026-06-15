@@ -122,7 +122,7 @@ const brokerNavGroups = [
 export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true) // Mobile: collapsed by default
 
   return (
     <>
@@ -155,28 +155,30 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
       >
         {/* Header: Logo + Campana + Botón colapsar — siempre visibles */}
         <div className="border-b border-[#D5C3B6]/10">
-          {/* Fila 1: Logo + Campana (en expandido, en misma fila) */}
+          {/* Fila 1: Logo (arriba) + Campana (lado derecho) */}
           <div id="sidebar-logo" className={cn(
-            "flex items-center justify-center transition-all duration-300 gap-3",
-            isCollapsed ? "px-2 py-4" : "px-6 py-6"
+            "flex items-start justify-between transition-all duration-300",
+            isCollapsed ? "px-2 py-3" : "px-6 py-4"
           )}>
-            <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-lg" : "text-2xl")}>
+            <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-sm" : "text-xl")}>
               {isCollapsed ? "NF" : "NeiFe"}
             </span>
-            <NotificationBell userRole={role} />
+            <div className="flex-shrink-0">
+              <NotificationBell userRole={role} />
+            </div>
           </div>
 
-          {/* Fila 2: Botón colapsar — solo desktop, solo ícono */}
+          {/* Fila 2: Botón colapsar — solo desktop, sin burbuja */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={cn(
-              "hidden lg:flex items-center justify-center rounded-lg transition-all duration-200 mx-2 mb-2",
-              "text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/8",
+              "hidden lg:flex items-center justify-center transition-all duration-200",
+              "text-[#9C8578] hover:text-[#D5C3B6]",
               isCollapsed
-                ? "w-9 h-9"
-                : "w-full py-2 border border-[#D5C3B6]/10"
+                ? "w-full py-2 px-2"
+                : "w-full py-2 mx-0"
             )}
-            title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+            title={isCollapsed ? "Expandir" : "Colapsar"}
           >
             {isCollapsed
               ? <ChevronRight className="h-4 w-4" />

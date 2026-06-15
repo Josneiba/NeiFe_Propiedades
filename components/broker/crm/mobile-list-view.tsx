@@ -56,7 +56,7 @@ export function MobileListView({ deals, onCardClick }: Props) {
               </div>
 
               {deal.property && (
-                <p className="text-[10px] text-[#9C8578] line-clamp-1 mb-2">📍 {deal.property.address}</p>
+                <p className="text-[10px] text-[#9C8578] line-clamp-1 mb-2">{deal.property.address}</p>
               )}
 
               {primaryContact && (
@@ -71,7 +71,7 @@ export function MobileListView({ deals, onCardClick }: Props) {
                   {deal.value ? `$${new Intl.NumberFormat('es-CL').format(deal.value)}` : '—'}
                 </span>
                 <span className={daysSinceActivity > 5 ? 'text-red-400' : ''}>
-                  📅 {daysSinceActivity === 999 ? 'Sin actividad' : `${daysSinceActivity}d`}
+                  {daysSinceActivity === 999 ? 'Sin actividad' : `${daysSinceActivity}d`}
                 </span>
               </div>
             </button>

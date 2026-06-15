@@ -94,3 +94,45 @@ export async function PUT(
 
   return NextResponse.json(updated)
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
+) {
+  const params = await paramsPromise
+  const session = await auth()
+  if (!session?.user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  const brokerId = session.user.id
+
+  const existing = await prisma.crmDeal.findUnique({
+    where: { id: params.id },
+    select: { brokerId: true },
+  })
+
+  if (!existing) {
+    return NextResponse.json(
+      { error: 'Operación no encontrada' },
+      { status: 404 }
+    )
+  }
+
+  if (existing.brokerId !== brokerId) {
+    return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
+  }
+
+  // Delete related records first
+  await prisma.crmDealStageHistory.deleteMany({ where: { dealId: params.id } })
+  await prisma.crmDealAttachment.deleteMany({ where: { dealId: params.id } })
+  await prisma.crmDealContact.deleteMany({ where: { dealId: params.id } })
+  await prisma.crmActivity.deleteMany({ where: { dealId: params.id } })
+
+  // Delete the deal
+  const deleted = await prisma.crmDeal.delete({
+    where: { id: params.id },
+  })
+
+  return NextResponse.json({ message: 'Operación eliminada', deal: deleted })
+}

@@ -73,7 +73,7 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none min-h-[110px] flex flex-col"
+      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none min-h-[110px] flex flex-col duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#5E8B8C]/20 animate-fade-in-up"
       onClick={onClick}
     >
       {/* Header: código + urgencia */}
@@ -101,7 +101,7 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
         {/* Propiedad */}
         {deal.property && (
           <div className="text-[10px] text-[#9C8578] bg-[#2D3C3C]/60 rounded px-2 py-1 mb-2 line-clamp-1">
-            📍 {deal.property.address}
+            {deal.property.address}
           </div>
         )}
 

@@ -55,7 +55,7 @@ export function LinkContactModal({ dealId, open, onClose, onLinked }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2]">
+      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Vincular contacto</DialogTitle>
         </DialogHeader>

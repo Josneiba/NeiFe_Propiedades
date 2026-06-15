@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Phone, Mail, Copy, Plus, Building2, Users, Activity } from 'lucide-react'
+import { Phone, Mail, Copy, Plus, Building2, Users, Activity, Trash2 } from 'lucide-react'
 import { DealCardData } from './kanban-card'
 import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
 import { ActivityLogModal } from './activity-log-modal'
@@ -36,6 +36,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
   const [attachments, setAttachments] = useState<any[]>([])
   const [dueDate, setDueDate] = useState(deal.dueDate ? new Date(deal.dueDate).toISOString().split('T')[0] : '')
   const [savingDate, setSavingDate] = useState(false)
+  const [deletingDeal, setDeletingDeal] = useState(false)
 
   const stageConfig = STAGE_COLUMNS.find((s) => s.stage === deal.stage)!
   const currentStageIndex = STAGE_COLUMNS.findIndex((s) => s.stage === deal.stage)
@@ -128,6 +129,24 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
     }
   }
 
+  async function deleteDeal() {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta operación? Esta acción no se puede deshacer.')) {
+      return
+    }
+    setDeletingDeal(true)
+    try {
+      const res = await fetch(`/api/crm/deals/${deal.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Error al eliminar')
+      toast.success('Operación eliminada')
+      onClose()
+      onUpdate()
+    } catch {
+      toast.error('Error al eliminar operación')
+    } finally {
+      setDeletingDeal(false)
+    }
+  }
+
   async function loadAttachments() {
     try {
       const res = await fetch(`/api/crm/deals/${deal.id}/attachments`)
@@ -181,7 +200,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
         <SheetContent
           side="right"
-          className="w-full sm:w-[420px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto"
+          className="w-full sm:w-[420px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto animate-slide-in-right"
           onOpenAutoFocus={() => {
             loadActivities()
             loadAttachments()
@@ -200,12 +219,24 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                   {deal.title}
                 </SheetTitle>
               </div>
-              <Badge
-                className="text-[10px] ml-2 flex-shrink-0"
-                style={{ backgroundColor: stageConfig.color + '33', color: stageConfig.color }}
-              >
-                {stageConfig.label}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  className="text-[10px] flex-shrink-0"
+                  style={{ backgroundColor: stageConfig.color + '33', color: stageConfig.color }}
+                >
+                  {stageConfig.label}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={deleteDeal}
+                  disabled={deletingDeal}
+                  className="h-8 w-8 p-0 text-[#9C8578] hover:text-red-400 hover:bg-red-400/10"
+                  title="Eliminar operación"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </SheetHeader>
 
@@ -232,12 +263,12 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
               <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
                 {STAGE_COLUMNS.filter(s => s.stage !== 'ADMINISTRAR').map((s) => (
                   <SelectItem key={s.stage} value={s.stage} className="text-xs">
-                    ● {s.label}
+                    • {s.label}
                   </SelectItem>
                 ))}
                 <Separator className="bg-[#D5C3B6]/10 my-1" />
                 <SelectItem value="ADMINISTRAR" className="text-xs text-yellow-500" disabled>
-                  ⚠ Administrar (requiere confirmación)
+                  Administrar (requiere confirmación)
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -248,7 +279,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
           {/* Fecha objetivo */}
           <div className="mb-4">
             <label className="text-xs font-semibold uppercase tracking-wide text-[#9C8578] block mb-2">
-              📅 Fecha objetivo
+              Fecha objetivo
             </label>
             <input
               type="date"
@@ -363,7 +394,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                 {activities.slice(0, 8).map((a) => (
                   <div key={a.id} className="flex gap-2 text-xs">
                     <span className="text-[#B8965A] flex-shrink-0">
-                      {a.type === 'LLAMADA' ? '📞' : a.type === 'VISITA' ? '🏠' : a.type === 'EMAIL' ? '✉️' : '📝'}
+                      {a.type === 'LLAMADA' ? 'L' : a.type === 'VISITA' ? 'V' : a.type === 'EMAIL' ? 'E' : 'N'}
                     </span>
                     <div className="flex-1 min-w-0">
                       <span className="text-[#D5C3B6]">{a.title}</span>
@@ -397,7 +428,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                 disabled={!quickNote.trim() || savingNote}
                 className="flex-shrink-0 h-16 bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30 disabled:opacity-50 px-2"
               >
-                {savingNote ? '...' : '↵'}
+                {savingNote ? 'Guardando...' : 'Guardar'}
               </Button>
             </div>
           </section>

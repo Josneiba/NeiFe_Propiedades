@@ -202,6 +202,7 @@ export function NewDealModal({ open, onClose, onCreated }: Props) {
   const [operationType, setOperationType] = useState('ARRIENDO')
   const [value, setValue] = useState('')
   const [savingDeal, setSavingDeal] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [linkedContacts, setLinkedContacts] = useState<LinkedContact[]>([])
   const [showQuickCreate, setShowQuickCreate] = useState(false)
@@ -305,7 +306,7 @@ export function NewDealModal({ open, onClose, onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { resetAll(); onClose() } }}>
-      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-w-2xl">
+      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-scale">
         <DialogHeader>
           <DialogTitle>
             Nueva oportunidad
@@ -335,8 +336,9 @@ export function NewDealModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateDeal()}
                 placeholder="Ej: Arriendo Depto Providencia — C. Mendoza"
-                className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]"
+                className={`bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2] ${errors.title ? 'border-red-600' : ''}`}
               />
+              {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -369,7 +371,7 @@ export function NewDealModal({ open, onClose, onCreated }: Props) {
                 onClick={handleCreateDeal}
                 disabled={savingDeal}
                 className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80">
-                {savingDeal ? 'Creando...' : 'Crear y continuar →'}
+                {savingDeal ? 'Creando...' : 'Crear y continuar'}
               </Button>
             </div>
           </div>
@@ -457,9 +459,16 @@ export function NewDealModal({ open, onClose, onCreated }: Props) {
                   Saltar
                 </Button>
                 <Button
-                  onClick={() => setStep(3)}
-                  className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-xs">
-                  Siguiente →
+                  onClick={() => {
+                    if (linkedContacts.length === 0) {
+                      toast.error('Agrega al menos un contacto para continuar')
+                      return
+                    }
+                    setStep(3)
+                  }}
+                  disabled={linkedContacts.length === 0}
+                  className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-xs disabled:opacity-50">
+                  Siguiente
                 </Button>
               </div>
             </div>

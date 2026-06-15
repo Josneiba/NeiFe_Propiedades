@@ -29,7 +29,7 @@ export function AdminConfirmModal({ deal, open, onConfirm, onCancel }: Props) {
           {arrendatario && <p><span className="text-[#9C8578]">Arrendatario:</span> <span className="text-[#FAF6F2]">[{arrendatario.contact.code}] {arrendatario.contact.name}</span></p>}
           {deal.value && <p><span className="text-[#9C8578]">Valor:</span> <span className="text-[#FAF6F2]">${new Intl.NumberFormat('es-CL').format(deal.value)}/mes</span></p>}
           <div className="mt-3 p-3 bg-[#B8965A]/10 rounded-lg border border-[#B8965A]/20 text-[10px] text-[#B8965A]">
-            ⚠️ Asegúrate de tener el contrato firmado antes de continuar.
+            Asegúrate de tener el contrato firmado antes de continuar.
           </div>
         </div>
         <AlertDialogFooter>
@@ -37,7 +37,7 @@ export function AdminConfirmModal({ deal, open, onConfirm, onCancel }: Props) {
             Cancelar
           </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-[#B8965A] hover:bg-[#B8965A]/80 text-[#FAF6F2]">
-            Confirmar y crear →
+            Confirmar y crear
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

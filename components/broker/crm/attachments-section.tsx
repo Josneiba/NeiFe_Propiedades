@@ -96,7 +96,7 @@ export function AttachmentsSection({ dealId, attachments, onUpdate }: Attachment
         onClick={() => setShowForm(!showForm)}
         className="flex items-center justify-between w-full mb-2 text-xs font-semibold uppercase tracking-wide text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
       >
-        <span>📎 Adjuntos ({attachments.length})</span>
+        <span>Adjuntos ({attachments.length})</span>
         {showForm ? '▲' : '▼'}
       </button>
 

@@ -16,151 +16,182 @@ interface ScheduledDeal {
   property?: { address: string }
 }
 
-interface GroupedDeals {
-  month: string
-  deals: ScheduledDeal[]
-}
-
 export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDeal[] }) {
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
-  const [groupedDeals, setGroupedDeals] = useState<GroupedDeals[]>([])
-  const [selectedDeal, setSelectedDeal] = useState<ScheduledDeal | null>(null)
+  const [currentDate, setCurrentDate] = useState<Date>(new Date())
+  const [deals, setDeals] = useState<ScheduledDeal[]>([])
 
   useEffect(() => {
-    // Agrupar deals por mes/año
-    const grouped: Record<string, ScheduledDeal[]> = {}
-    
-    initialDeals.forEach((deal) => {
-      const dueDate = new Date(deal.dueDate)
-      const monthKey = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`
-      
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = []
-      }
-      grouped[monthKey].push(deal)
-    })
-
-    // Convertir a array ordenado
-    const sorted = Object.entries(grouped)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([monthKey, deals]) => ({
-        month: monthKey,
-        deals: deals.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()),
-      }))
-
-    setGroupedDeals(sorted)
+    setDeals(initialDeals)
   }, [initialDeals])
 
-  function formatMonth(monthKey: string): string {
-    const [year, month] = monthKey.split('-')
-    const date = new Date(parseInt(year), parseInt(month) - 1)
-    return date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+  function getDaysInMonth(date: Date): number {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   }
 
-  function isOverdue(dueDate: Date): boolean {
-    return new Date(dueDate) < new Date()
+  function getFirstDayOfMonth(date: Date): number {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
   }
 
-  function daysUntilDue(dueDate: Date): number {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const due = new Date(dueDate)
-    due.setHours(0, 0, 0, 0)
-    return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  function getDealsForDate(date: Date): ScheduledDeal[] {
+    return deals.filter((deal) => {
+      const dueDate = new Date(deal.dueDate)
+      return (
+        dueDate.getDate() === date.getDate() &&
+        dueDate.getMonth() === date.getMonth() &&
+        dueDate.getFullYear() === date.getFullYear()
+      )
+    })
   }
 
   function getUrgencyColor(dueDate: Date): string {
-    const days = daysUntilDue(dueDate)
-    if (days < 0) return 'bg-red-900/40 text-red-400'
-    if (days <= 3) return 'bg-red-900/30 text-red-300'
-    if (days <= 7) return 'bg-yellow-900/30 text-yellow-500'
-    return 'bg-[#2D3C3C] text-[#9C8578]'
+    const days = Math.ceil((new Date(dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    if (days < 0) return 'bg-red-900/50 border-red-600'
+    if (days <= 3) return 'bg-red-900/30 border-red-500'
+    if (days <= 7) return 'bg-yellow-900/30 border-yellow-500'
+    return 'bg-[#2D3C3C] border-[#5E8B8C]'
   }
 
-  const getStageColor = (stage: string) => {
-    return STAGE_COLUMNS.find(s => s.stage === stage)?.color || '#5E8B8C'
+  const monthName = currentDate.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+  const daysInMonth = getDaysInMonth(currentDate)
+  const firstDay = getFirstDayOfMonth(currentDate)
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))
   }
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-0 z-10 bg-[#1C2828] border-b border-[#D5C3B6]/10 pb-4">
-        <h2 className="text-lg font-semibold text-[#FAF6F2] flex items-center gap-2 mb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-[#FAF6F2] flex items-center gap-2">
           <Calendar className="h-5 w-5 text-[#5E8B8C]" />
-          Calendario de Objetivos
+          Calendario
         </h2>
-        {groupedDeals.length === 0 && (
-          <p className="text-sm text-[#9C8578]">No hay deals con fecha objetivo</p>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={prevMonth}
+            className="p-1.5 hover:bg-[#D5C3B6]/10 rounded-lg text-[#9C8578] transition-colors"
+            title="Mes anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium text-[#FAF6F2] min-w-[200px] text-center capitalize">
+            {monthName}
+          </span>
+          <button
+            onClick={nextMonth}
+            className="p-1.5 hover:bg-[#D5C3B6]/10 rounded-lg text-[#9C8578] transition-colors"
+            title="Próximo mes"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {groupedDeals.map(({ month, deals }) => (
-        <div key={month}>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#9C8578] mb-3">
-            {formatMonth(month)}
-          </h3>
-          <div className="space-y-2">
-            {deals.map((deal) => {
-              const stageConfig = STAGE_COLUMNS.find(s => s.stage === deal.stage)
-              const overdue = isOverdue(deal.dueDate)
-              const daysLeft = daysUntilDue(deal.dueDate)
+      {/* Calendar Grid */}
+      <div className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-4">
+        {/* Days of week header */}
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'].map((day) => (
+            <div key={day} className="text-xs font-semibold text-[#9C8578] text-center py-2">
+              {day}
+            </div>
+          ))}
+        </div>
 
-              return (
-                <Card
-                  key={deal.id}
-                  className="p-3 bg-[#2D3C3C]/60 border border-[#D5C3B6]/10 hover:border-[#5E8B8C]/30 cursor-pointer transition-all group"
-                >
+        {/* Days grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {/* Empty cells for days before month starts */}
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div key={`empty-${i}`} className="aspect-square" />
+          ))}
+
+          {/* Days */}
+          {days.map((day) => {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+            const dayDeals = getDealsForDate(date)
+            const isToday = new Date().toDateString() === date.toDateString()
+
+            return (
+              <div
+                key={day}
+                className={`aspect-square p-2 rounded-lg border transition-colors ${
+                  isToday
+                    ? 'bg-[#5E8B8C]/20 border-[#5E8B8C]'
+                    : 'bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#D5C3B6]/30'
+                }`}
+              >
+                <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-[#5E8B8C]' : 'text-[#9C8578]'}`}>
+                  {day}
+                </div>
+                <div className="space-y-0.5 overflow-y-auto max-h-16">
+                  {dayDeals.slice(0, 2).map((deal) => (
+                    <div
+                      key={deal.id}
+                      className={`text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition-opacity ${getUrgencyColor(
+                        deal.dueDate
+                      )}`}
+                      title={`${deal.code}: ${deal.title}`}
+                    >
+                      {deal.code}
+                    </div>
+                  ))}
+                  {dayDeals.length > 2 && (
+                    <div className="text-[10px] text-[#9C8578] px-1.5 font-medium">
+                      +{dayDeals.length - 2} más
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Deals List */}
+      {deals.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-[#FAF6F2] mb-3">Próximas fechas objetivo</h3>
+          <div className="space-y-2">
+            {deals
+              .filter((d) => new Date(d.dueDate) >= new Date())
+              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+              .slice(0, 5)
+              .map((deal) => (
+                <Card key={deal.id} className="bg-[#1C2828] border-[#D5C3B6]/10 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs text-[#B8965A] flex-shrink-0">
-                          {deal.code}
-                        </span>
-                        <span className="text-xs font-medium text-[#D5C3B6] truncate group-hover:text-[#FAF6F2]">
-                          {deal.title}
-                        </span>
-                      </div>
-                      {deal.property?.address && (
-                        <p className="text-[10px] text-[#9C8578] truncate mb-2">
-                          📍 {deal.property.address}
-                        </p>
+                      <p className="text-xs font-mono text-[#B8965A]">{deal.code}</p>
+                      <p className="text-sm text-[#FAF6F2] truncate font-medium">{deal.title}</p>
+                      {deal.property && (
+                        <p className="text-xs text-[#9C8578] truncate mt-1">{deal.property.address}</p>
                       )}
-                      <div className="flex items-center gap-2 text-[10px]">
-                        <Badge
-                          className="text-[9px]"
-                          style={{
-                            backgroundColor: stageConfig?.color + '22',
-                            color: stageConfig?.color,
-                            border: `1px solid ${stageConfig?.color}33`,
-                          }}
-                        >
-                          ● {stageConfig?.label}
-                        </Badge>
-                        {deal.value && (
-                          <span className="text-[#9C8578]">
-                            ${Number(deal.value).toLocaleString('es-CL')}
-                          </span>
-                        )}
-                      </div>
                     </div>
-
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <Badge className={`text-[9px] px-2 py-1 ${getUrgencyColor(deal.dueDate)}`}>
-                        {overdue ? '⚠ Vencida' : daysLeft === 0 ? '📌 Hoy' : `${daysLeft}d`}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge
+                        className="text-[10px]"
+                        style={{
+                          backgroundColor: STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.color + '33',
+                          color: STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.color,
+                        }}
+                      >
+                        {STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.label}
                       </Badge>
-                      <span className="text-[10px] text-[#9C8578]">
-                        {new Date(deal.dueDate).toLocaleDateString('es-CL', {
-                          day: '2-digit',
-                          month: 'short',
-                        })}
+                      <span className="text-xs font-medium text-[#9C8578]">
+                        {new Date(deal.dueDate).toLocaleDateString('es-CL')}
                       </span>
                     </div>
                   </div>
                 </Card>
-              )
-            })}
+              ))}
           </div>
         </div>
-      ))}
+      )}
     </div>
   )
 }

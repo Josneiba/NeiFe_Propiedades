@@ -13,7 +13,7 @@ const ACTIVITY_TYPES = [
   { value: 'EMAIL', label: '✉️ Email' },
   { value: 'WHATSAPP', label: '💬 WhatsApp' },
   { value: 'REUNION', label: '🤝 Reunión' },
-  { value: 'NOTA', label: '📝 Nota' },
+  { value: 'NOTA', label: 'Nota' },
   { value: 'TAREA', label: '✅ Tarea' },
 ]
 
@@ -52,7 +52,7 @@ export function ActivityLogModal({ dealId, open, onClose, onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2]">
+      <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar actividad</DialogTitle>
         </DialogHeader>
