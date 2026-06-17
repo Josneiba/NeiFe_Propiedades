@@ -38,7 +38,7 @@ export default function WorkspacePage() {
     new Set(['PRE_VENTA', 'VENTA', 'POST_VENTA'])
   )
   const [filterOp, setFilterOp] = useState<'ALL' | 'ARRIENDO' | 'VENTA'>('ALL')
-  
+
   // Nuevos filtros: búsqueda y rango de valor
   const [searchQuery, setSearchQuery] = useState('')
   const [minValue, setMinValue] = useState<number | null>(null)
@@ -102,17 +102,17 @@ export default function WorkspacePage() {
 
   function getDealsByStage(stage: CrmDealStage): DealCardData[] {
     let filtered = deals.filter((d) => d.stage === stage)
-    
+
     // Aplicar búsqueda
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      filtered = filtered.filter((d) => 
-        d.code.toLowerCase().includes(q) || 
+      filtered = filtered.filter((d) =>
+        d.code.toLowerCase().includes(q) ||
         d.title.toLowerCase().includes(q) ||
         d.property?.address?.toLowerCase().includes(q)
       )
     }
-    
+
     // Aplicar rango de valor
     if (minValue !== null && minValue > 0) {
       filtered = filtered.filter((d) => d.value && d.value >= minValue)
@@ -120,7 +120,7 @@ export default function WorkspacePage() {
     if (maxValue !== null && maxValue > 0) {
       filtered = filtered.filter((d) => d.value && d.value <= maxValue)
     }
-    
+
     return filtered
   }
 
@@ -197,19 +197,20 @@ export default function WorkspacePage() {
             {totalDeals} oportunidades activas
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadDeals}
-            className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#FAF6F2]"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadDeals}
+          className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#FAF6F2]"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+        <div className="fixed top-4 right-4 z-50 mr-6">
           <Button
             size="sm"
             onClick={() => setShowNewDeal(true)}
-            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2]"
+            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2] shadow-lg"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Nueva oportunidad
@@ -218,7 +219,7 @@ export default function WorkspacePage() {
       </div>
 
       {/* Filtros de columnas visibles */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10">
+      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10 mr-24">
         {/* Todas */}
         <button
           onClick={() => setActivePhases(new Set(['PRE_VENTA', 'VENTA', 'POST_VENTA']))}
@@ -268,48 +269,36 @@ export default function WorkspacePage() {
       </div>
 
       {/* Búsqueda y filtros adicionales */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3 border-b border-[#D5C3B6]/10 bg-[#1C2828]/50">
-        <div className="flex-1 max-w-xs">
-          <input
-            type="text"
-            placeholder="Buscar código, título o dirección..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] placeholder-[#9C8578] focus:outline-none focus:border-[#5E8B8C]"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-[#9C8578]">Valor min:</label>
-          <input
-            type="number"
-            placeholder="UF"
-            value={minValue ?? ''}
-            onChange={(e) => setMinValue(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-20 px-2 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-[#9C8578]">Valor máx:</label>
-          <input
-            type="number"
-            placeholder="UF"
-            value={maxValue ?? ''}
-            onChange={(e) => setMaxValue(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-20 px-2 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
-          />
-        </div>
+        <div className="flex items-center gap-3 px-6 py-3 border-b border-[#D5C3B6]/10 bg-[#1C2828]/50">
+          <div className="flex-1 max-w-xs">
+            <input
+              type="text"
+              placeholder="Buscar código, título o dirección..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] placeholder-[#9C8578] focus:outline-none focus:border-[#5E8B8C]"
+            />
+          </div>
 
-        {(searchQuery || minValue || maxValue) && (
-          <button
-            onClick={() => { setSearchQuery(''); setMinValue(null); setMaxValue(null) }}
-            className="text-xs px-2 py-1 text-[#9C8578] hover:text-[#FAF6F2] transition-colors"
-          >
-            Limpiar filtros
-          </button>
-        )}
-      </div>
+          {/* Placeholder for Due Date Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[#9C8578]">Fecha Venc.:</label>
+            <input
+              type="date"
+              placeholder="Fecha"
+              className="w-32 px-2 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+            />
+          </div>
+
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-xs px-2 py-1 text-[#9C8578] hover:text-[#FAF6F2] transition-colors"
+            >
+              Limpiar búsqueda
+            </button>
+          )}
+        </div>
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-[#9C8578] text-sm animate-pulse">Cargando oportunidades...</p>

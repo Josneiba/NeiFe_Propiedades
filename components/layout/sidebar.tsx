@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   Home,
   Building2,
@@ -24,16 +24,20 @@ import {
   Kanban,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { NotificationBell } from "@/components/layout/notification-bell"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+} from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/layout/notification-bell";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
-  role: "landlord" | "tenant" | "broker"
-  userName?: string
-  userId?: string
+  role: "landlord" | "tenant" | "broker";
+  userName?: string;
+  userId?: string;
 }
 
 const landlordNavGroups = [
@@ -42,87 +46,236 @@ const landlordNavGroups = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: Home, id: undefined },
       { href: "/dashboard/mapa", label: "Mapa", icon: MapPin, id: undefined },
-      { href: "/dashboard/calendario", label: "Calendario", icon: Calendar, id: undefined },
+      {
+        href: "/dashboard/calendario",
+        label: "Calendario",
+        icon: Calendar,
+        id: undefined,
+      },
     ],
   },
   {
     label: "Gestion",
     items: [
-      { href: "/dashboard/propiedades", label: "Propiedades", icon: Building2, id: undefined },
-      { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard, id: "sidebar-pagos" },
-      { href: "/dashboard/contratos", label: "Contratos", icon: FileText, id: undefined },
-      { href: "/dashboard/postulaciones", label: "Postulaciones", icon: Users, id: undefined },
-      { href: "/dashboard/mantenciones", label: "Mantenciones", icon: Wrench, id: "sidebar-mantenciones" },
-      { href: "/dashboard/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
-      { href: "/dashboard/proveedores", label: "Proveedores", icon: Users, id: "sidebar-servicios" },
+      {
+        href: "/dashboard/propiedades",
+        label: "Propiedades",
+        icon: Building2,
+        id: undefined,
+      },
+      {
+        href: "/dashboard/pagos",
+        label: "Pagos",
+        icon: CreditCard,
+        id: "sidebar-pagos",
+      },
+      {
+        href: "/dashboard/contratos",
+        label: "Contratos",
+        icon: FileText,
+        id: undefined,
+      },
+      {
+        href: "/dashboard/postulaciones",
+        label: "Postulaciones",
+        icon: Users,
+        id: undefined,
+      },
+      {
+        href: "/dashboard/mantenciones",
+        label: "Mantenciones",
+        icon: Wrench,
+        id: "sidebar-mantenciones",
+      },
+      {
+        href: "/dashboard/servicios",
+        label: "Servicios",
+        icon: FileBarChart,
+        id: undefined,
+      },
+      {
+        href: "/dashboard/proveedores",
+        label: "Proveedores",
+        icon: Users,
+        id: "sidebar-servicios",
+      },
     ],
   },
   {
     label: "Coordinacion",
     items: [
-      { href: "/dashboard/solicitudes-corredores", label: "Corredores", icon: User, id: undefined },
+      {
+        href: "/dashboard/solicitudes-corredores",
+        label: "Corredores",
+        icon: User,
+        id: undefined,
+      },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, id: undefined },
+      {
+        href: "/dashboard/configuracion",
+        label: "Configuración",
+        icon: Settings,
+        id: undefined,
+      },
     ],
   },
-] as const
+] as const;
 
 const tenantNavItems = [
   { href: "/mi-arriendo", label: "Resumen", icon: Home, id: undefined },
-  { href: "/mi-arriendo/pagos", label: "Pagos", icon: CreditCard, id: undefined },
-  { href: "/mi-arriendo/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
-  { href: "/mi-arriendo/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
-  { href: "/mi-arriendo/contrato", label: "Contrato", icon: FileText, id: undefined },
-  { href: "/mi-arriendo/contactos", label: "Contactos", icon: Phone, id: undefined },
-]
+  {
+    href: "/mi-arriendo/pagos",
+    label: "Pagos",
+    icon: CreditCard,
+    id: undefined,
+  },
+  {
+    href: "/mi-arriendo/servicios",
+    label: "Servicios",
+    icon: FileBarChart,
+    id: undefined,
+  },
+  {
+    href: "/mi-arriendo/mantenciones",
+    label: "Mantenciones",
+    icon: Wrench,
+    id: undefined,
+  },
+  {
+    href: "/mi-arriendo/contrato",
+    label: "Contrato",
+    icon: FileText,
+    id: undefined,
+  },
+  {
+    href: "/mi-arriendo/contactos",
+    label: "Contactos",
+    icon: Phone,
+    id: undefined,
+  },
+];
 
 const brokerNavGroups = [
   {
     label: "CRM",
     items: [
-      { href: "/broker/crm", label: "Centro CRM", icon: LayoutDashboard, id: undefined },
-      { href: "/broker/crm/contactos", label: "Contactos", icon: Users, id: undefined },
-      { href: "/broker/crm/workspace", label: "Workspace", icon: Kanban, id: undefined },
-      { href: "/broker/crm/calendario", label: "Calendario", icon: Calendar, id: undefined },
-      { href: "/broker/crm/metricas", label: "Métricas", icon: BarChart3, id: undefined },
+      {
+        href: "/broker/crm",
+        label: "Centro CRM",
+        icon: LayoutDashboard,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/contactos",
+        label: "Contactos",
+        icon: Users,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/workspace",
+        label: "Workspace",
+        icon: Kanban,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/calendario",
+        label: "Calendario",
+        icon: Calendar,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/metricas",
+        label: "Métricas",
+        icon: BarChart3,
+        id: undefined,
+      },
     ],
   },
   {
     label: "General",
     items: [
       { href: "/broker", label: "Panel", icon: Home, id: undefined },
-      { href: "/broker/propiedades", label: "Propiedades", icon: Building2, id: undefined },
-      { href: "/broker/mandatos", label: "Mandatos", icon: FileText, id: undefined },
-      { href: "/broker/calendario", label: "Calendario", icon: Calendar, id: undefined },
+      {
+        href: "/broker/propiedades",
+        label: "Propiedades",
+        icon: Building2,
+        id: undefined,
+      },
+      {
+        href: "/broker/mandatos",
+        label: "Mandatos",
+        icon: FileText,
+        id: undefined,
+      },
+      {
+        href: "/broker/calendario",
+        label: "Calendario",
+        icon: Calendar,
+        id: undefined,
+      },
     ],
   },
   {
     label: "Operaciones",
     items: [
-      { href: "/broker/pagos", label: "Pagos", icon: CreditCard, id: undefined },
-      { href: "/broker/servicios", label: "Servicios", icon: FileBarChart, id: undefined },
-      { href: "/broker/contratos", label: "Contratos", icon: FileText, id: undefined },
-      { href: "/broker/mantenciones", label: "Mantenciones", icon: Wrench, id: undefined },
-      { href: "/broker/rendiciones", label: "Rendiciones", icon: FileBarChart, id: undefined },
+      {
+        href: "/broker/pagos",
+        label: "Pagos",
+        icon: CreditCard,
+        id: undefined,
+      },
+      {
+        href: "/broker/servicios",
+        label: "Servicios",
+        icon: FileBarChart,
+        id: undefined,
+      },
+      {
+        href: "/broker/contratos",
+        label: "Contratos",
+        icon: FileText,
+        id: undefined,
+      },
+      {
+        href: "/broker/mantenciones",
+        label: "Mantenciones",
+        icon: Wrench,
+        id: undefined,
+      },
+      {
+        href: "/broker/rendiciones",
+        label: "Rendiciones",
+        icon: FileBarChart,
+        id: undefined,
+      },
       { href: "/broker/avisos", label: "Avisos", icon: Phone, id: undefined },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { href: "/broker/configuracion", label: "Configuración", icon: Settings, id: undefined },
+      {
+        href: "/broker/configuracion",
+        label: "Configuración",
+        icon: Settings,
+        id: undefined,
+      },
     ],
   },
-] as const
+] as const;
 
-export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProps) {
-  const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(true) // Mobile: collapsed by default
+export function Sidebar({
+  role,
+  userName = "Usuario Demo",
+  userId,
+}: SidebarProps) {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Mobile: collapsed by default
 
   return (
     <>
@@ -150,21 +303,36 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
           "fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:transform-none border-r border-[#D5C3B6]/10 bg-[#2D3C3C]",
           isCollapsed ? "lg:w-16" : "lg:w-72",
           "w-72",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         {/* Header: Logo + Campana + Botón colapsar — siempre visibles */}
         <div className="border-b border-[#D5C3B6]/10">
           {/* Fila 1: Logo (arriba) + Campana (lado derecho) */}
-          <div id="sidebar-logo" className={cn(
-            "flex items-start justify-between transition-all duration-300",
-            isCollapsed ? "px-2 py-3" : "px-6 py-4"
-          )}>
-            <span className={cn("font-serif font-semibold tracking-tight text-[#D5C3B6]", isCollapsed ? "text-sm" : "text-xl")}>
-              {isCollapsed ? "NF" : "NeiFe"}
-            </span>
-            <div className="flex-shrink-0">
-              <NotificationBell userRole={role} />
+          <div
+            id="sidebar-logo"
+            className={cn(
+              "flex items-start justify-between transition-all duration-300",
+              isCollapsed ? "px-2 py-3" : "px-6 py-4",
+            )}
+          >
+            <div
+              className={cn(
+                "flex flex-col transition-all duration-300",
+                isCollapsed ? "items-center" : "items-start",
+              )}
+            >
+              <span
+                className={cn(
+                  "font-serif font-semibold tracking-tight text-[#D5C3B6]",
+                  isCollapsed ? "text-sm" : "text-xl",
+                )}
+              >
+                {isCollapsed ? "NF" : "NeiFe"}
+              </span>
+              <div className={cn("mt-2", isCollapsed ? "" : "self-end")}>
+                <NotificationBell userRole={role} />
+              </div>
             </div>
           </div>
 
@@ -174,22 +342,26 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
             className={cn(
               "hidden lg:flex items-center justify-center transition-all duration-200",
               "text-[#9C8578] hover:text-[#D5C3B6]",
-              isCollapsed
-                ? "w-full py-2 px-2"
-                : "w-full py-2 mx-0"
+              isCollapsed ? "w-full py-2 px-2" : "w-full py-2 mx-0",
             )}
             title={isCollapsed ? "Expandir" : "Colapsar"}
           >
-            {isCollapsed
-              ? <ChevronRight className="h-4 w-4" />
-              : <ChevronLeft className="h-4 w-4" />
-            }
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </button>
         </div>
 
         {/* Navigation */}
         {role === "landlord" ? (
-          <nav className={cn("flex-1 overflow-y-auto space-y-6 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
+          <nav
+            className={cn(
+              "flex-1 overflow-y-auto space-y-6 transition-all duration-300",
+              isCollapsed ? "px-1 py-4" : "py-6 px-4",
+            )}
+          >
             {landlordNavGroups.map((group) => (
               <div key={group.label}>
                 {!isCollapsed && (
@@ -201,7 +373,8 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                   {group.items.map((item) => {
                     const isActive =
                       pathname === item.href ||
-                      (item.href !== "/dashboard" && pathname.startsWith(item.href))
+                      (item.href !== "/dashboard" &&
+                        pathname.startsWith(item.href));
                     return (
                       <Tooltip key={item.href} delayDuration={0}>
                         <TooltipTrigger asChild>
@@ -211,14 +384,19 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                             onClick={() => setIsOpen(false)}
                             className={cn(
                               "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
-                              isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
+                              isCollapsed
+                                ? "justify-center px-2 py-2.5"
+                                : "px-4 py-2.5",
                               isActive
                                 ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]",
                             )}
                           >
                             <item.icon
-                              className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                              className={cn(
+                                "h-4 w-4 shrink-0",
+                                isActive ? "text-[#5E8B8C]" : "",
+                              )}
                             />
                             {!isCollapsed && item.label}
                             {!isCollapsed && isActive && (
@@ -232,14 +410,19 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                           </TooltipContent>
                         )}
                       </Tooltip>
-                    )
+                    );
                   })}
                 </div>
               </div>
             ))}
           </nav>
         ) : role === "broker" ? (
-          <nav className={cn("flex-1 overflow-y-auto space-y-6 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
+          <nav
+            className={cn(
+              "flex-1 overflow-y-auto space-y-6 transition-all duration-300",
+              isCollapsed ? "px-1 py-4" : "py-6 px-4",
+            )}
+          >
             {brokerNavGroups.map((group) => (
               <div key={group.label}>
                 {!isCollapsed && (
@@ -251,7 +434,8 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                   {group.items.map((item) => {
                     const isActive =
                       pathname === item.href ||
-                      (item.href !== "/broker" && pathname.startsWith(item.href))
+                      (item.href !== "/broker" &&
+                        pathname.startsWith(item.href));
                     return (
                       <Tooltip key={item.href} delayDuration={0}>
                         <TooltipTrigger asChild>
@@ -261,14 +445,19 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                             onClick={() => setIsOpen(false)}
                             className={cn(
                               "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
-                              isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
+                              isCollapsed
+                                ? "justify-center px-2 py-2.5"
+                                : "px-4 py-2.5",
                               isActive
                                 ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                                : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]",
                             )}
                           >
                             <item.icon
-                              className={cn("h-4 w-4 shrink-0", isActive ? "text-[#5E8B8C]" : "")}
+                              className={cn(
+                                "h-4 w-4 shrink-0",
+                                isActive ? "text-[#5E8B8C]" : "",
+                              )}
                             />
                             {!isCollapsed && item.label}
                             {!isCollapsed && isActive && (
@@ -282,22 +471,30 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                           </TooltipContent>
                         )}
                       </Tooltip>
-                    )
+                    );
                   })}
                 </div>
               </div>
             ))}
           </nav>
         ) : (
-          <nav className={cn("flex-1 overflow-y-auto space-y-1 transition-all duration-300", isCollapsed ? "px-1 py-4" : "py-6 px-4")}>
+          <nav
+            className={cn(
+              "flex-1 overflow-y-auto space-y-1 transition-all duration-300",
+              isCollapsed ? "px-1 py-4" : "py-6 px-4",
+            )}
+          >
             {!isCollapsed && (
               <p className="px-3 mb-3 text-xs font-medium uppercase tracking-widest text-[#B8965A]/60">
                 Mi Arriendo
               </p>
             )}
             {tenantNavItems.map((item) => {
-              const isActive = pathname === item.href || 
-                (item.href !== "/dashboard" && item.href !== "/mi-arriendo" && pathname.startsWith(item.href))
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" &&
+                  item.href !== "/mi-arriendo" &&
+                  pathname.startsWith(item.href));
               return (
                 <Tooltip key={item.href} delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -307,16 +504,20 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                       onClick={() => setIsOpen(false)}
                       className={cn(
                         "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300",
-                        isCollapsed ? "justify-center px-2 py-2.5" : "px-4 py-3",
+                        isCollapsed
+                          ? "justify-center px-2 py-2.5"
+                          : "px-4 py-3",
                         isActive
                           ? "bg-[#D5C3B6]/10 text-[#FAF6F2]"
-                          : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]"
+                          : "text-[#9C8578] hover:bg-[#D5C3B6]/5 hover:text-[#D5C3B6]",
                       )}
                     >
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-colors duration-300",
-                        isActive ? "text-[#5E8B8C]" : ""
-                      )} />
+                      <item.icon
+                        className={cn(
+                          "h-5 w-5 transition-colors duration-300",
+                          isActive ? "text-[#5E8B8C]" : "",
+                        )}
+                      />
                       {!isCollapsed && item.label}
                       {!isCollapsed && isActive && (
                         <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
@@ -329,13 +530,18 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                     </TooltipContent>
                   )}
                 </Tooltip>
-              )
+              );
             })}
           </nav>
         )}
 
         {/* User section — solo usuario y logout */}
-        <div className={cn("border-t border-[#D5C3B6]/10 space-y-3", isCollapsed ? "p-2" : "p-4")}>
+        <div
+          className={cn(
+            "border-t border-[#D5C3B6]/10 space-y-3",
+            isCollapsed ? "p-2" : "p-4",
+          )}
+        >
           {/* User info — solo en expandido */}
           {!isCollapsed && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1C1917]/30">
@@ -346,15 +552,21 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
                 <p className="text-sm font-medium text-[#FAF6F2] truncate">
                   {userName}
                 </p>
-                <span className={cn(
-                  "inline-block px-2 py-0.5 text-xs rounded-full font-medium uppercase tracking-wider",
-                  role === "landlord" 
-                    ? "bg-[#75524C]/30 text-[#D5C3B6]" 
+                <span
+                  className={cn(
+                    "inline-block px-2 py-0.5 text-xs rounded-full font-medium uppercase tracking-wider",
+                    role === "landlord"
+                      ? "bg-[#75524C]/30 text-[#D5C3B6]"
+                      : role === "broker"
+                        ? "bg-[#5E8B8C]/30 text-[#5E8B8C]"
+                        : "bg-[#5E8B8C]/30 text-[#5E8B8C]",
+                  )}
+                >
+                  {role === "landlord"
+                    ? "Propietario"
                     : role === "broker"
-                    ? "bg-[#5E8B8C]/30 text-[#5E8B8C]"
-                    : "bg-[#5E8B8C]/30 text-[#5E8B8C]"
-                )}>
-                  {role === "landlord" ? "Propietario" : role === "broker" ? "Corredor" : "Arrendatario"}
+                      ? "Corredor"
+                      : "Arrendatario"}
                 </span>
               </div>
             </div>
@@ -365,7 +577,7 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
             href="/"
             className={cn(
               "flex items-center gap-2 px-4 py-3 text-sm text-[#9C8578] hover:text-[#C27F79] transition-colors duration-300 rounded-xl hover:bg-[#C27F79]/10",
-              isCollapsed && "justify-center"
+              isCollapsed && "justify-center",
             )}
             title={isCollapsed ? "Cerrar sesión" : undefined}
           >
@@ -375,5 +587,5 @@ export function Sidebar({ role, userName = "Usuario Demo", userId }: SidebarProp
         </div>
       </aside>
     </>
-  )
+  );
 }
