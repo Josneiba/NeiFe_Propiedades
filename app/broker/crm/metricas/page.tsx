@@ -2,6 +2,7 @@
 import { auth } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { Zap, Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -189,7 +190,7 @@ export default async function MetricasPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="text-lg">
-                    <Lightning className="h-5 w-5 text-[#B8965A]" />
+                    <Zap className="h-5 w-5 text-[#B8965A]" />
                   </div>
                   <div>
                     <div className="text-[#FAF6F2] font-medium">
