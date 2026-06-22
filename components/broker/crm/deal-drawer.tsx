@@ -207,34 +207,37 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
           }}
         >
           <SheetHeader className="pb-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <button
-                  className="font-mono text-xs text-[#B8965A] hover:text-[#D5C3B6] flex items-center gap-1 mb-1"
-                  onClick={() => copyCode(deal.code)}
-                >
-                  {deal.code} <Copy className="h-3 w-3" />
-                </button>
-                <SheetTitle className="text-[#FAF6F2] text-base leading-snug">
-                  {deal.title}
-                </SheetTitle>
-              </div>
-              <div className="flex items-center gap-2">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <button
+                    className="font-mono text-xs text-[#B8965A] hover:text-[#D5C3B6] flex items-center gap-1 mb-1"
+                    onClick={() => copyCode(deal.code)}
+                  >
+                    {deal.code} <Copy className="h-3 w-3" />
+                  </button>
+                  <SheetTitle className="text-[#FAF6F2] text-base leading-snug break-words">
+                    {deal.title}
+                  </SheetTitle>
+                </div>
                 <Badge
                   className="text-[10px] flex-shrink-0"
                   style={{ backgroundColor: stageConfig.color + '33', color: stageConfig.color }}
                 >
                   {stageConfig.label}
                 </Badge>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-[#D5C3B6]/10">
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={deleteDeal}
                   disabled={deletingDeal}
-                  className="h-8 w-8 p-0 text-[#9C8578] hover:text-red-400 hover:bg-red-400/10"
+                  className="h-8 px-3 text-[10px] text-red-400/70 hover:text-red-400 hover:bg-red-400/10"
                   title="Eliminar operación"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  Eliminar
                 </Button>
               </div>
             </div>

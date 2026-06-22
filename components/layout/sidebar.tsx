@@ -308,18 +308,18 @@ export function Sidebar({
       >
         {/* Header: Logo + Campana + Botón colapsar — siempre visibles */}
         <div className="border-b border-[#D5C3B6]/10">
-          {/* Fila 1: Logo (arriba) + Campana (lado derecho) */}
+          {/* Fila 1: Logo (arriba) + Campana (lado derecho) — centrado */}
           <div
             id="sidebar-logo"
             className={cn(
-              "flex items-start justify-between transition-all duration-300",
+              "flex items-center justify-center transition-all duration-300",
               isCollapsed ? "px-2 py-3" : "px-6 py-4",
             )}
           >
             <div
               className={cn(
-                "flex flex-col transition-all duration-300",
-                isCollapsed ? "items-center" : "items-start",
+                "flex items-center gap-3 transition-all duration-300 w-full",
+                isCollapsed ? "justify-center" : "justify-between",
               )}
             >
               <span
@@ -330,7 +330,7 @@ export function Sidebar({
               >
                 {isCollapsed ? "NF" : "NeiFe"}
               </span>
-              <div className={cn("mt-2", isCollapsed ? "" : "self-end")}>
+              <div>
                 <NotificationBell userRole={role} />
               </div>
             </div>

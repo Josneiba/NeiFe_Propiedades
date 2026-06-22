@@ -78,11 +78,11 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none min-h-[110px] flex flex-col duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#5E8B8C]/20 animate-fade-in-up"
+      className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-[#D5C3B6]/25 transition-all select-none min-h-[140px] flex flex-col duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#5E8B8C]/20 animate-fade-in-up"
       onClick={onClick}
     >
       {/* Header: código + urgencia */}
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-2">
         <button
           className="font-mono text-[10px] text-[#B8965A] hover:text-[#D5C3B6] flex items-center gap-1 group"
           onClick={(e) => copyToClipboard(deal.code, e)}
@@ -95,6 +95,42 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
           <UrgencyDot days={daysSinceActivity} />
         </div>
       </div>
+
+      {/* Título */}
+      <div className="mb-2.5">
+        <p className="text-xs font-medium text-[#FAF6F2] line-clamp-2 leading-tight">
+          {deal.title}
+        </p>
+      </div>
+
+      {/* Contacto principal + Propiedad */}
+      <div className="space-y-1.5 flex-1 mb-2">
+        {primaryContact && (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[9px] text-[#9C8578] flex-shrink-0">👤</span>
+            <span className="text-[9px] text-[#D5C3B6] truncate">
+              {primaryContact.contact.name}
+            </span>
+          </div>
+        )}
+        {deal.property && (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[9px] text-[#9C8578] flex-shrink-0">🏠</span>
+            <span className="text-[9px] text-[#D5C3B6] truncate">
+              {deal.property.code} • {deal.property.address.split(",")[0]}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Valor */}
+      {deal.value && (
+        <div className="pt-1.5 border-t border-[#D5C3B6]/10">
+          <span className="text-[10px] text-[#B8965A] font-semibold">
+            ${deal.value.toLocaleString("es-CL")}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

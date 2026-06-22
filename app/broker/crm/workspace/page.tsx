@@ -170,13 +170,20 @@ export default function WorkspacePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newStage }),
       });
-      if (!res.ok) throw new Error("Error");
+      const responseData = await res.json();
+      if (!res.ok) {
+        throw new Error(responseData.error || "Error al mover la oportunidad");
+      }
       toast.success(
         `Movido a ${STAGE_COLUMNS.find((s) => s.stage === newStage)?.label}`,
       );
-    } catch {
+    } catch (error) {
       setDeals(prevDeals);
-      toast.error("No se pudo mover la oportunidad");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No se pudo mover la oportunidad",
+      );
     }
   }
 
