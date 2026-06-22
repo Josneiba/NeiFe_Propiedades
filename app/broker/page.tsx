@@ -10,6 +10,7 @@ import { paymentStatus } from '@/lib/broker-design'
 import { LocalizedDateGreeting } from '@/components/layout/localized-date-greeting'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { RecommendationsPanel } from '@/components/broker/crm/recommendations-panel'
 
 export const dynamic = 'force-dynamic'
 
@@ -575,6 +576,16 @@ export default async function BrokerDashboardPage() {
         }>
           <BrokerPropertyList brokerId={session.user.id} />
         </Suspense>
+
+        <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+          <CardHeader>
+            <CardTitle className="text-[#FAF6F2] text-lg">💡 Recomendaciones inteligentes</CardTitle>
+            <p className="text-sm text-[#9C8578] mt-1">Basadas en análisis de tus deals y actividades recientes</p>
+          </CardHeader>
+          <CardContent>
+            <RecommendationsPanel maxItems={5} />
+          </CardContent>
+        </Card>
       </div>
     )
   } catch (error) {

@@ -6,14 +6,16 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Phone, Mail, Copy, Plus, Building2, Users, Activity, Trash2 } from 'lucide-react'
+import { Phone, Mail, Copy, Plus, Building2, Users, Activity, Trash2, Calendar } from 'lucide-react'
 import { DealCardData } from './kanban-card'
 import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
 import { ActivityLogModal } from './activity-log-modal'
 import { LinkContactModal } from './link-contact-modal'
 import { AttachmentsSection } from './attachments-section'
+import { GoogleCalendarButton } from './google-calendar-button'
 import { toast } from 'sonner'
 import { CrmDealStage } from '@prisma/client'
+import { safeFetch } from '@/lib/safe-fetch'
 
 interface DealDrawerProps {
   deal: DealCardData
@@ -44,8 +46,12 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
   async function loadActivities() {
     setLoadingActivities(true)
     try {
-      const res = await fetch(`/api/crm/activities?dealId=${deal.id}`)
-      if (res.ok) setActivities(await res.json())
+      const { data, error } = await safeFetch<any[]>(`/api/crm/activities?dealId=${deal.id}`)
+      if (error) {
+        console.error('Error loading activities:', error)
+        return
+      }
+      if (data) setActivities(data)
     } finally {
       setLoadingActivities(false)
     }
@@ -119,9 +125,13 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
       return
     }
     try {
-      const res = await fetch(`/api/crm/deals/${deal.id}/history`)
-      if (res.ok) {
-        setHistory(await res.json())
+      const { data, error } = await safeFetch<any[]>(`/api/crm/deals/${deal.id}/history`)
+      if (error) {
+        toast.error('Error al cargar historial')
+        return
+      }
+      if (data) {
+        setHistory(data)
         setShowHistory(true)
       }
     } catch {
@@ -149,9 +159,9 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
 
   async function loadAttachments() {
     try {
-      const res = await fetch(`/api/crm/deals/${deal.id}/attachments`)
-      if (res.ok) {
-        setAttachments(await res.json())
+      const { data, error } = await safeFetch<any[]>(`/api/crm/deals/${deal.id}/attachments`)
+      if (!error && data) {
+        setAttachments(data)
       }
     } catch {
       // Silenciar error si el endpoint no existe aún
@@ -284,13 +294,21 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
             <label className="text-xs font-semibold uppercase tracking-wide text-[#9C8578] block mb-2">
               Fecha objetivo
             </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={handleDueDateChange}
-              disabled={savingDate}
-              className="w-full h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={handleDueDateChange}
+                disabled={savingDate}
+                className="flex-1 h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
+              />
+              <GoogleCalendarButton
+                dealId={deal.id}
+                dealTitle={deal.title}
+                dueDate={dueDate}
+                propertyAddress={deal.property?.address}
+              />
+            </div>
           </div>
 
           <Separator className="bg-[#D5C3B6]/10 mb-4" />

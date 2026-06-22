@@ -67,6 +67,13 @@ model User {
   stageHistoryEntries CrmDealStageHistory[] @relation("StageHistoryBroker")
   dealAttachments   CrmDealAttachment[] @relation("DealAttachmentUploader")
 
+  // PARTE 6 relations
+  sequenceTemplates CrmDealSequenceTemplate[] @relation("SequenceTemplates")
+  sequencesCreated  CrmDealSequence[] @relation("SequencesCreated")
+  brokerIntegrations BrokerIntegration[] @relation("BrokerIntegrations")
+  whatsappMessages  WhatsAppMessage[] @relation("WhatsAppMessages")
+  whatsappTemplates WhatsAppTemplate[] @relation("WhatsAppTemplates")
+
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
 
@@ -891,6 +898,7 @@ model CrmContact {
   activities CrmActivity[]
   score      CrmContactScore?
   ownedProperties CrmProperty[] @relation("CrmPropertyOwner")
+  whatsappMessages WhatsAppMessage[] @relation("WhatsAppMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -953,6 +961,11 @@ model CrmDeal {
   // Vinculación a NeiFe cuando se gana
   neifeContractId String?
 
+  // PARTE 6 relations
+  sequences     CrmDealSequence[] @relation("DealSequences")
+  whatsappMessages WhatsAppMessage[] @relation("WhatsAppMessages")
+  estimatedValue Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -990,6 +1003,111 @@ model CrmActivity {
 
   @@index([brokerId, isDone])
   @@index([dealId])
+}
+
+// ====== PARTE 6: Deal Sequences ======
+model CrmDealSequenceTemplate {
+  id               String                 @id @default(cuid())
+  brokerId         String
+  broker           User                   @relation("SequenceTemplates", fields: [brokerId], references: [id])
+  name             String
+  description      String?
+  actions          Json                   // Array of SequenceAction
+  triggerType      String                 @default("MANUAL")
+  triggerStage     String?
+  triggerCondition Json?
+  isActive         Boolean                @default(true)
+  sequences        CrmDealSequence[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([brokerId])
+}
+
+model CrmDealSequence {
+  id          String                      @id @default(cuid())
+  dealId      String
+  deal        CrmDeal                     @relation("DealSequences", fields: [dealId], references: [id], onDelete: Cascade)
+  templateId  String
+  template    CrmDealSequenceTemplate     @relation(fields: [templateId], references: [id])
+  createdBy   String
+  creator     User                        @relation("SequencesCreated", fields: [createdBy], references: [id])
+  status      String                      @default("ACTIVE")
+  actions     Json                        // Array of executed actions
+  startedAt   DateTime?
+  pausedAt    DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime                    @default(now())
+
+  executions CrmDealSequenceExecution[]
+
+  @@index([dealId, status])
+}
+
+model CrmDealSequenceExecution {
+  id         String             @id @default(cuid())
+  sequenceId String
+  sequence   CrmDealSequence    @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  action     Json               // SequenceAction
+  status     String             @default("PENDING")
+  scheduledFor DateTime
+  executedAt DateTime?
+  result     String?
+  createdAt  DateTime           @default(now())
+
+  @@index([sequenceId, status, scheduledFor])
+}
+
+// ====== PARTE 6: Integrations ======
+model BrokerIntegration {
+  id             String  @id @default(cuid())
+  brokerId       String
+  broker         User    @relation("BrokerIntegrations", fields: [brokerId], references: [id])
+  integationType String
+  provider       String
+  credentials    Json
+  isActive       Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([brokerId, integationType])
+  @@index([brokerId, integationType])
+}
+
+// ====== PARTE 6: WhatsApp Integration ======
+model WhatsAppMessage {
+  id          String   @id @default(cuid())
+  dealId      String?
+  deal        CrmDeal? @relation("WhatsAppMessages", fields: [dealId], references: [id])
+  contactId   String?
+  contact     CrmContact? @relation("WhatsAppMessages", fields: [contactId], references: [id])
+  brokerId    String
+  broker      User     @relation("WhatsAppMessages", fields: [brokerId], references: [id])
+  phoneNumber String
+  message     String
+  messageId   String?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+
+  @@index([dealId, contactId])
+  @@index([brokerId, createdAt])
+}
+
+model WhatsAppTemplate {
+  id       String  @id @default(cuid())
+  brokerId String
+  broker   User    @relation("WhatsAppTemplates", fields: [brokerId], references: [id])
+  name     String
+  content  String
+  variables String[] // JSON array of variable names
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId, isActive])
+  @@unique([brokerId, name])
 }
 
 model CrmContactScore {

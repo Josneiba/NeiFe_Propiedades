@@ -227,28 +227,29 @@ export default function WorkspacePage() {
             {totalDeals} oportunidades activas
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadDeals}
-          className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#FAF6F2]"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <div className="fixed top-4 right-4 z-50 mr-6">
-        <Button
-          size="sm"
-          onClick={() => setShowNewDeal(true)}
-          className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2] shadow-lg"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Nueva oportunidad
-        </Button>
+        {/* Botones agrupados a la derecha */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadDeals}
+            className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#FAF6F2]"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowNewDeal(true)}
+            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2]"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nueva oportunidad
+          </Button>
+        </div>
       </div>
 
       {/* Filtros de columnas visibles */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10 mr-24">
+      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10 flex-wrap">
         {/* Todas */}
         <button
           onClick={() =>

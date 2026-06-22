@@ -308,32 +308,25 @@ export function Sidebar({
       >
         {/* Header: Logo + Campana + Botón colapsar — siempre visibles */}
         <div className="border-b border-[#D5C3B6]/10">
-          {/* Fila 1: Logo (arriba) + Campana (lado derecho) — centrado */}
+          {/* Fila 1: Logo + Campana — responsive layout */}
           <div
             id="sidebar-logo"
             className={cn(
-              "flex items-center justify-center transition-all duration-300",
-              isCollapsed ? "px-2 py-3" : "px-6 py-4",
+              "flex transition-all duration-300",
+              isCollapsed
+                ? "flex-col items-center gap-2 px-2 py-3"
+                : "flex-row items-center justify-between px-6 py-4"
             )}
           >
-            <div
+            <span
               className={cn(
-                "flex items-center gap-3 transition-all duration-300 w-full",
-                isCollapsed ? "justify-center" : "justify-between",
+                "font-serif font-semibold tracking-tight text-[#D5C3B6]",
+                isCollapsed ? "text-sm" : "text-xl"
               )}
             >
-              <span
-                className={cn(
-                  "font-serif font-semibold tracking-tight text-[#D5C3B6]",
-                  isCollapsed ? "text-sm" : "text-xl",
-                )}
-              >
-                {isCollapsed ? "NF" : "NeiFe"}
-              </span>
-              <div>
-                <NotificationBell userRole={role} />
-              </div>
-            </div>
+              {isCollapsed ? "NF" : "NeiFe"}
+            </span>
+            <NotificationBell userRole={role} />
           </div>
 
           {/* Fila 2: Botón colapsar — solo desktop, sin burbuja */}
