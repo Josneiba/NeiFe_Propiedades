@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         select: { id: true, code: true, address: true, type: true },
       },
       contacts: {
-        include: { contact: { select: { id: true, code: true, name: true } } },
+        include: { contact: { select: { id: true, code: true, name: true, phone: true, email: true } } },
         orderBy: { isPrimary: 'desc' },
       },
       activities: {

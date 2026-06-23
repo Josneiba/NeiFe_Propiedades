@@ -213,7 +213,7 @@ const brokerNavGroups = [
       },
       {
         href: "/broker/calendario",
-        label: "Calendario",
+        label: "Crear eventos",
         icon: Calendar,
         id: undefined,
       },
@@ -300,9 +300,8 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:transform-none border-r border-[#D5C3B6]/10 bg-[#2D3C3C]",
-          isCollapsed ? "lg:w-16" : "lg:w-72",
-          "w-72",
+          "fixed lg:sticky inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out border-r border-[#D5C3B6]/10 bg-gradient-to-b from-[#2D3C3C] to-[#1C2828]",
+          isCollapsed ? "w-20 lg:w-20" : "w-52 lg:w-52",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >

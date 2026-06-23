@@ -78,7 +78,6 @@ export default async function CrmDashboardPage() {
       {/* Estado vacío — motivador */}
       {activeDeals === 0 && (
         <div className="bg-[#1C2828] border border-[#5E8B8C]/30 rounded-xl p-8 text-center space-y-4">
-          <div className="text-4xl">🚀</div>
           <h3 className="text-lg font-semibold text-[#FAF6F2]">Tu pipeline está listo para crecer</h3>
           <p className="text-sm text-[#9C8578] max-w-md mx-auto">
             Empieza agregando tu primera oportunidad. Cada propiedad captada, cada arrendatario interesado,

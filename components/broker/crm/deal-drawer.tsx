@@ -210,7 +210,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
         <SheetContent
           side="right"
-          className="w-full sm:w-[420px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto animate-slide-in-right"
+          className="w-full sm:w-[600px] md:w-[800px] lg:w-[950px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto animate-slide-in-right"
           onOpenAutoFocus={() => {
             loadActivities()
             loadAttachments()
@@ -362,27 +362,65 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                 <p className="text-xs text-[#9C8578] italic">Sin contactos vinculados</p>
               )}
               {deal.contacts.map((dc) => (
-                <div key={dc.contact.id} className="bg-[#2D3C3C]/60 rounded-lg p-2.5 flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <button
-                        className="font-mono text-[9px] text-[#B8965A] hover:text-[#D5C3B6]"
-                        onClick={() => copyCode(dc.contact.code)}
-                      >
-                        {dc.contact.code}
-                      </button>
-                      <Badge variant="outline" className="text-[9px] border-[#D5C3B6]/20 text-[#9C8578] py-0">
-                        {dc.role === 'PROPIETARIO' ? 'Propietario' : dc.role === 'ARRENDATARIO' ? 'Arrendatario' : dc.role}
-                      </Badge>
+                <div key={dc.contact.id} className="bg-[#2D3C3C]/60 rounded-lg p-2.5 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <button
+                          className="font-mono text-[9px] text-[#B8965A] hover:text-[#D5C3B6]"
+                          onClick={() => copyCode(dc.contact.code)}
+                        >
+                          {dc.contact.code}
+                        </button>
+                        <Badge variant="outline" className="text-[9px] border-[#D5C3B6]/20 text-[#9C8578] py-0">
+                          {dc.role === 'PROPIETARIO' ? 'Propietario' : dc.role === 'ARRENDATARIO' ? 'Arrendatario' : dc.role}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-[#D5C3B6] truncate">{dc.contact.name}</p>
                     </div>
-                    <p className="text-xs text-[#D5C3B6] truncate">{dc.contact.name}</p>
+                    <button
+                      onClick={() => unlinkContact(dc.contact.id)}
+                      className="text-[9px] text-[#9C8578] hover:text-red-400 transition-colors ml-2 flex-shrink-0"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <button
-                    onClick={() => unlinkContact(dc.contact.id)}
-                    className="text-[9px] text-[#9C8578] hover:text-red-400 transition-colors ml-2 flex-shrink-0"
-                  >
-                    ✕
-                  </button>
+                  {((dc.contact as any)?.phone || (dc.contact as any)?.email) && (
+                    <div className="flex gap-1.5 pt-1.5 border-t border-[#D5C3B6]/10">
+                      {(dc.contact as any)?.phone && (
+                        <>
+                          <a
+                            href={`https://wa.me/${((dc.contact as any).phone as string).replace(/\D/g, '')}?text=Hola%20${encodeURIComponent(dc.contact.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#5E8B8C] hover:bg-[#5E8B8C]/10 transition-colors"
+                            title="Enviar WhatsApp"
+                          >
+                            <Phone className="h-3 w-3" />
+                            WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${(dc.contact as any).phone}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#B8965A] hover:bg-[#B8965A]/10 transition-colors"
+                            title="Llamar"
+                          >
+                            <Phone className="h-3 w-3" />
+                            Llamar
+                          </a>
+                        </>
+                      )}
+                      {(dc.contact as any)?.email && (
+                        <a
+                          href={`mailto:${(dc.contact as any).email}`}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#5E8B8C] hover:bg-[#5E8B8C]/10 transition-colors"
+                          title="Enviar email"
+                        >
+                          <Mail className="h-3 w-3" />
+                          Email
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -218,16 +218,16 @@ export default function WorkspacePage() {
   }));
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#D5C3B6]/10">
+    <div className="flex flex-col h-full w-full">
+      {/* Header con botones fixed */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#D5C3B6]/10 sticky top-0 z-40 bg-[#1C2828]">
         <div>
           <h1 className="text-xl font-semibold text-[#FAF6F2]">Workspace</h1>
           <p className="text-xs text-[#9C8578] mt-0.5">
             {totalDeals} oportunidades activas
           </p>
         </div>
-        {/* Botones agrupados a la derecha */}
+        {/* Botones agrupados a la derecha - ahora sticky */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -240,8 +240,7 @@ export default function WorkspacePage() {
           <Button
             size="sm"
             onClick={() => setShowNewDeal(true)}
-            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2]"
-          >
+            className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80 text-[#FAF6F2]">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Nueva oportunidad
           </Button>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Trash2, Edit, Eye } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, Eye, Phone, MessageCircle, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 interface Contact {
@@ -65,6 +66,58 @@ const priorityColors: Record<string, string> = {
   HIGH: 'bg-red-500/20 text-red-400',
   MEDIUM: 'bg-yellow-500/20 text-yellow-400',
   LOW: 'bg-blue-500/20 text-blue-400',
+}
+
+function PhoneActions({ phone, contactName }: { phone: string | null; contactName: string }) {
+  if (!phone) return <span className="text-[#9C8578]">—</span>
+
+  const handleCall = () => {
+    window.location.href = `tel:${phone}`
+  }
+
+  const handleSMS = () => {
+    window.location.href = `sms:${phone}`
+  }
+
+  const handleWhatsApp = () => {
+    // Remove all non-numeric characters except +
+    const cleanPhone = phone.replace(/[^\d+]/g, '')
+    // Ensure it starts with country code for WhatsApp
+    const whatsappPhone = cleanPhone.startsWith('+') ? cleanPhone : `+56${cleanPhone.slice(-9)}`
+    window.open(`https://wa.me/${whatsappPhone}?text=Hola%20${encodeURIComponent(contactName)}`,'_blank')
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 text-[#9C8578] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
+        onClick={handleCall}
+        title="Llamar"
+      >
+        <Phone className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 text-[#9C8578] hover:text-[#5E8B8C] hover:bg-[#5E8B8C]/10"
+        onClick={handleSMS}
+        title="SMS"
+      >
+        <MessageSquare className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 text-[#9C8578] hover:text-[#25D366] hover:bg-[#25D366]/10"
+        onClick={handleWhatsApp}
+        title="WhatsApp"
+      >
+        <MessageCircle className="h-4 w-4" />
+      </Button>
+    </div>
+  )
 }
 
 export function ContactsTable({
@@ -117,7 +170,9 @@ export function ContactsTable({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-[#9C8578]">{contact.email || '—'}</TableCell>
-                <TableCell className="text-sm text-[#9C8578]">{contact.phone || '—'}</TableCell>
+                <TableCell className="text-sm text-[#9C8578]">
+                  <PhoneActions phone={contact.phone} contactName={contact.name} />
+                </TableCell>
                 <TableCell className="text-center">
                   <Badge className={priorityColors[contact.priority]}>
                     {contact.priority === 'HIGH'

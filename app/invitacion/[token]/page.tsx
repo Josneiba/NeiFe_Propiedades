@@ -78,7 +78,6 @@ export default async function InvitacionPage({
         {!result.ok ? (
           <div className="bg-[#2D3C3C] rounded-2xl p-8 text-center">
             <div className="w-16 h-16 bg-[#C27F79]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">⚠️</span>
             </div>
             <h2 className="text-xl font-serif text-[#FAF6F2] mb-2">Invitación no válida</h2>
             <p className="text-[#9C8578] text-sm mb-6">{result.error}</p>

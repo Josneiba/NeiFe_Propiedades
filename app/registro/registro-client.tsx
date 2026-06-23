@@ -141,7 +141,7 @@ export default function RegistroClient() {
       }
     : selectedRole === "landlord"
       ? {
-          title: "Perfil arrendador",
+          title: "Perfil propietario",
           body: "Con tus datos personales y documento basta para crear la cuenta. Luego podrás completar datos bancarios y propiedades dentro del panel.",
         }
       : selectedRole === "tenant"
@@ -295,7 +295,7 @@ export default function RegistroClient() {
   const roleCards = [
     {
       key: "landlord" as const,
-      title: "Arrendador",
+      title: "Propietario",
       description: "Gestiona propiedades",
       icon: Building2,
       selectedColor: "border-[#75524C]",
@@ -323,7 +323,7 @@ export default function RegistroClient() {
 
   return (
     <div className="min-h-screen bg-[#1C1917] flex">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#2D3C3C] to-[#1C1917]" />
         <svg
           className="absolute inset-0 h-full w-full text-[#D5C3B6]/[0.06]"
@@ -337,58 +337,58 @@ export default function RegistroClient() {
           </defs>
           <rect width="100%" height="100%" fill="url(#registro-grid)" />
         </svg>
-        <div className="relative z-10 flex flex-col justify-between p-12 text-left w-full max-w-lg mx-auto">
+        <div className="relative z-10 flex flex-col justify-between p-8 text-left w-full max-w-sm mx-auto">
           <div>
-            <p className="text-4xl md:text-5xl font-serif font-semibold text-[#FAF6F2] tracking-tight">
+            <p className="text-3xl md:text-4xl font-serif font-semibold text-[#FAF6F2] tracking-tight">
               NeiFe<span className="text-[#B8965A]">.</span>
             </p>
-            <ul className="mt-10 space-y-5">
+            <ul className="mt-8 space-y-4">
               {[
                 { icon: Shield, text: "Registro seguro y trazable para cada parte del arriendo." },
                 { icon: FileText, text: "Contratos y documentos en línea desde el primer día." },
                 { icon: CreditCard, text: "Pagos y recordatorios sin perder el hilo contable." },
                 { icon: Building2, text: "Un solo lugar para propietarios, inquilinos y corredores." },
               ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-[#D5C3B6] text-sm leading-relaxed">
+                <li key={i} className="flex gap-3 text-[#D5C3B6] text-xs leading-relaxed">
                   <item.icon className="h-4 w-4 text-[#B8965A] shrink-0 mt-0.5" strokeWidth={2} />
                   <span>{item.text}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <p className="text-sm italic text-[#9C8578] border-t border-[#D5C3B6]/10 pt-8">
+          <p className="text-xs italic text-[#9C8578] border-t border-[#D5C3B6]/10 pt-6">
             3 minutos para digitalizar tus arriendos.
           </p>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center p-5 sm:p-8 lg:p-12 py-8 lg:py-12 overflow-y-auto">
-        <div className="w-full max-w-3xl py-4">
+      <div className="w-full lg:w-3/5 flex items-start lg:items-center justify-center p-4 sm:p-6 lg:p-8 py-6 lg:py-8 overflow-y-auto">
+        <div className="w-full max-w-lg py-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-5 transition-colors duration-300"
+            className="inline-flex items-center gap-2 text-sm text-[#9C8578] hover:text-[#D5C3B6] mb-3 transition-colors duration-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al inicio
           </Link>
 
           <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10 shadow-2xl shadow-black/20">
-            <CardHeader className="text-center pb-2 pt-6 px-6">
-              <div className="flex items-center justify-center gap-2 mb-3 lg:hidden">
+            <CardHeader className="text-center pb-2 pt-4 px-5">
+              <div className="flex items-center justify-center gap-2 mb-2 lg:hidden">
                 <div className="rounded-lg bg-[#75524C]/90 px-3 py-2 shadow-md">
                   <span className="text-lg font-serif font-semibold text-[#FAF6F2]">NeiFe<span className="text-[#B8965A]">.</span></span>
                 </div>
               </div>
               <CardTitle className="text-2xl font-serif text-[#FAF6F2]">Crear cuenta</CardTitle>
-              <CardDescription className="text-[#9C8578]">
+              <CardDescription className="text-[#9C8578] text-sm">
                 {inviteToken
                   ? "Completa tu registro para aceptar la invitación pendiente"
                   : "Selecciona tu rol y completa tus datos"}
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-6 pb-6">
+            <CardContent className="px-5 pb-4 pt-3">
               {showVerify ? (
-                <div className="border border-[#5E8B8C]/20 rounded-2xl p-8 space-y-6 text-center">
+                <div className="border border-[#5E8B8C]/20 rounded-2xl p-6 space-y-4 text-center">
                   <div className="w-16 h-16 bg-[#5E8B8C]/15 rounded-full flex items-center justify-center mx-auto">
                     <Mail className="h-8 w-8 text-[#5E8B8C]" />
                   </div>
@@ -424,7 +424,7 @@ export default function RegistroClient() {
               ) : (
                 <>
                   {inviteToken ? (
-                    <div className="mb-6 rounded-2xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/10 p-4">
+                    <div className="mb-4 rounded-2xl border border-[#5E8B8C]/20 bg-[#5E8B8C]/10 p-4">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#5E8B8C]">
                         Invitación pendiente
                       </p>
@@ -434,7 +434,7 @@ export default function RegistroClient() {
                     </div>
                   ) : null}
 
-                  <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-3">
                     {roleCards.map((option) => {
                       const Icon = option.icon
                       const isSelected = selectedRole === option.key
@@ -476,7 +476,7 @@ export default function RegistroClient() {
                     })}
                   </div>
 
-                  <div className="relative mb-6 flex items-center gap-3">
+                  <div className="relative mb-4 flex items-center gap-3">
                     <div className="h-px flex-1 bg-[#D5C3B6]/15" />
                     <span className="text-[10px] uppercase tracking-[0.2em] text-[#9C8578] whitespace-nowrap">
                       Completa tus datos
@@ -485,7 +485,7 @@ export default function RegistroClient() {
                   </div>
 
                   {roleCopy && (
-                    <div className="mb-6 rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/45 p-4">
+                    <div className="mb-4 rounded-2xl border border-[#D5C3B6]/10 bg-[#1C1917]/45 p-4">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#B8965A]">
                         {roleCopy.title}
                       </p>
@@ -495,7 +495,7 @@ export default function RegistroClient() {
                     </div>
                   )}
 
-                  <form className="space-y-4" onSubmit={handleSubmit}>
+                  <form className="space-y-3" onSubmit={handleSubmit}>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name" className="text-[#D5C3B6] text-sm">Nombre completo</Label>
@@ -612,29 +612,21 @@ export default function RegistroClient() {
                           {documentValid && (
                             <p className="text-xs text-[#5E8B8C]">{documentLabel} valido</p>
                           )}
-                          <p className="text-xs text-[#9C8578]">
-                            Se valida localmente y no se puede repetir en otra cuenta.
-                          </p>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-[#D5C3B6] text-sm">Teléfono</Label>
+                        <Label htmlFor="phone" className="text-[#D5C3B6] text-sm">Teléfono (opcional)</Label>
                         <Input
                           id="phone"
                           value={formData.phone}
                           onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                          placeholder={selectedRole === "broker" ? "+56 9 1234 5678" : "Opcional"}
+                          placeholder="+56 9 1234 5678"
                           autoComplete="tel"
                           className={inputClass}
                         />
-                        <p className="text-xs text-[#9C8578]">
-                          {selectedRole === "broker"
-                            ? "Muy recomendado para que te contacten desde propiedades, pagos y mantenciones."
-                            : "Puedes completarlo ahora o después desde configuración."}
-                        </p>
                       </div>
                     </div>
 

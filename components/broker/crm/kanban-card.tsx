@@ -16,7 +16,7 @@ export interface DealCardData {
   value: number | null;
   property: { code: string; address: string; type: string } | null;
   contacts: Array<{
-    contact: { id: string; code: string; name: string };
+    contact: { id: string; code: string; name: string; phone?: string | null; email?: string | null };
     role: string;
     isPrimary: boolean;
   }>;

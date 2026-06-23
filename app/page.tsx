@@ -71,8 +71,8 @@ const trustBadges = [
 const roles = [
   {
     icon: Building2,
-    title: "Arrendadores",
-    accessAs: "arrendador",
+    title: "Propietarios",
+    accessAs: "propietario",
     description: "Gestiona múltiples propiedades, cobra arriendos, administra mantenciones y genera contratos digitales.",
     benefits: [
       "Dashboard con KPIs en tiempo real",
@@ -180,7 +180,7 @@ export default async function LandingPage() {
               <span className="text-[#5E8B8C]">monitorear y gestionar tus arriendos.</span>
             </h1>
             <p className="text-base md:text-lg text-[#9C8578] mb-8 max-w-2xl mx-auto leading-relaxed text-pretty">
-              Plataforma digital que conecta arrendadores y arrendatarios:
+              Plataforma digital que conecta propietarios y arrendatarios:
               pagos, mantenciones, contratos y cumplimiento legal — todo en un solo lugar.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
