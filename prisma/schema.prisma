@@ -74,6 +74,11 @@ model User {
   whatsappMessages  WhatsAppMessage[] @relation("WhatsAppMessages")
   whatsappTemplates WhatsAppTemplate[] @relation("WhatsAppTemplates")
 
+  // FASE VIXIEES — Task Engine + Playbook + Templates
+  brokerTasks        CrmTask[]            @relation("BrokerTasks")
+  brokerPlaybook     CrmPlaybookStep[]    @relation("BrokerPlaybook")
+  messageTemplates   CrmMessageTemplate[] @relation("BrokerMessageTemplates")
+
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
 
@@ -890,6 +895,7 @@ model CrmContact {
   status    CrmContactStatus @default(ACTIVE)
   brokerId  String
   broker    User             @relation("CrmBrokerContacts", fields: [brokerId], references: [id])
+  preferredChannel CrmChannel?
 
   // Vinculación al sistema NeiFe cuando el arrendatario ya tiene cuenta
   neifeUserId String?
@@ -897,6 +903,7 @@ model CrmContact {
   deals      CrmDealContact[]
   activities CrmActivity[]
   score      CrmContactScore?
+  tasks      CrmTask[]            @relation("ContactTasks")
   ownedProperties CrmProperty[] @relation("CrmPropertyOwner")
   whatsappMessages WhatsAppMessage[] @relation("WhatsAppMessages")
 
@@ -965,6 +972,10 @@ model CrmDeal {
   sequences     CrmDealSequence[] @relation("DealSequences")
   whatsappMessages WhatsAppMessage[] @relation("WhatsAppMessages")
   estimatedValue Float?
+
+  // FASE VIXIEES — Task Engine + Playbook
+  tasks              CrmTask[]            @relation("DealTasks")
+  playbookSteps      CrmPlaybookCompletion[] @relation("DealPlaybook")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1150,6 +1161,93 @@ model CrmDealAttachment {
   @@index([dealId])
 }
 
+// ─────────────────────────────────────────────────────────────
+// FASE VIXIEES — Task Engine + Playbook + Templates
+// Agregado: Junio 2026
+// ─────────────────────────────────────────────────────────────
+
+model CrmTask {
+  id          String       @id @default(cuid())
+  brokerId    String
+  broker      User         @relation("BrokerTasks", fields: [brokerId], references: [id])
+  dealId      String?
+  deal        CrmDeal?     @relation("DealTasks", fields: [dealId], references: [id])
+  contactId   String?
+  contact     CrmContact?  @relation("ContactTasks", fields: [contactId], references: [id])
+
+  type        CrmTaskType
+  title       String
+  description String?
+  channel     CrmChannel?
+  dueDate     DateTime
+  completedAt DateTime?
+  isCompleted Boolean      @default(false)
+  isAutomatic Boolean      @default(false) // true = generada por el motor
+  priority    Int          @default(0)     // 0=baja, 1=media, 2=alta, 3=crítica
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([brokerId, isCompleted, dueDate])
+  @@index([dealId])
+}
+
+model CrmPlaybookStep {
+  id          String       @id @default(cuid())
+  brokerId    String?      // null = step global del sistema
+  broker      User?        @relation("BrokerPlaybook", fields: [brokerId], references: [id])
+
+  stage       CrmDealStage
+  order       Int
+  title       String
+  description String?
+  taskType    CrmTaskType
+  channel     CrmChannel?
+  daysDue     Int          @default(1) // días desde inicio de etapa para completar
+  isRequired  Boolean      @default(true)
+  isActive    Boolean      @default(true)
+
+  completions CrmPlaybookCompletion[]
+
+  createdAt   DateTime     @default(now())
+
+  @@index([stage, order])
+  @@unique([stage, order, brokerId])
+}
+
+model CrmPlaybookCompletion {
+  id         String           @id @default(cuid())
+  stepId     String
+  step       CrmPlaybookStep  @relation(fields: [stepId], references: [id])
+  dealId     String
+  deal       CrmDeal          @relation("DealPlaybook", fields: [dealId], references: [id])
+  brokerId   String
+  completedAt DateTime        @default(now())
+  notes      String?
+
+  @@unique([stepId, dealId])
+  @@index([dealId])
+}
+
+model CrmMessageTemplate {
+  id        String   @id @default(cuid())
+  brokerId  String
+  broker    User     @relation("BrokerMessageTemplates", fields: [brokerId], references: [id])
+
+  name      String
+  channel   CrmChannel
+  subject   String?  // para email
+  body      String   // con {{variables}} interpolables
+  variables String[] // lista de variables usadas: ["nombre", "propiedad", "monto"]
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId, channel])
+  @@unique([brokerId, name])
+}
+
 // ── Enums CRM ────────────────────────────────────────────────
 
 enum CrmContactType {
@@ -1254,4 +1352,23 @@ enum CrmActivityType {
   NOTA
   TAREA
   DOCUMENTO
+}
+
+enum CrmTaskType {
+  LLAMADA
+  WHATSAPP
+  EMAIL
+  VISITA
+  REUNION
+  DOCUMENTO
+  SEGUIMIENTO
+  OTRO
+}
+
+enum CrmChannel {
+  TELEFONO
+  WHATSAPP
+  EMAIL
+  PRESENCIAL
+  VIDEO
 }

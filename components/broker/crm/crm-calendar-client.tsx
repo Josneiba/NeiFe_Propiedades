@@ -135,6 +135,7 @@ export function CrmCalendarClient({
     contactId?: string;
   }) => {
     try {
+      // Crear evento en NeiFe
       const response = await fetch("/api/crm/activities", {
         method: "POST",
         headers: {
@@ -155,8 +156,30 @@ export function CrmCalendarClient({
       }
 
       const result = await response.json();
+      
+      // Si hay un deal, sincronizar con Google Calendar automáticamente
+      if (eventData.dealId) {
+        const deal = dealsList.find(d => d.id === eventData.dealId);
+        if (deal) {
+          try {
+            await fetch("/api/calendar/google-sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                dealId: eventData.dealId,
+                title: `NeiFe: ${deal.title}`,
+                description: eventData.description || `Evento: ${eventData.title}`,
+                startDate: eventData.scheduledAt.toISOString(),
+              }),
+            });
+          } catch (error) {
+            console.error("Error sincronizando con Google Calendar:", error);
+            // No fallas, el evento se creó en NeiFe
+          }
+        }
+      }
+
       console.log("Evento creado:", result);
-      // Optionally: refetch activities or update local state
     } catch (error) {
       console.error("Error submitting event:", error);
       throw error;

@@ -24,10 +24,12 @@ import {
   Kanban,
   ChevronLeft,
   ChevronRight,
+  Target,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { useCrmAlerts } from "@/hooks/useCrmAlerts";
 import {
   Tooltip,
   TooltipContent,
@@ -164,6 +166,12 @@ const brokerNavGroups = [
     label: "CRM",
     items: [
       {
+        href: "/broker/crm/mi-dia",
+        label: "Mi Día",
+        icon: Target,
+        id: undefined,
+      },
+      {
         href: "/broker/crm",
         label: "Centro CRM",
         icon: LayoutDashboard,
@@ -202,6 +210,12 @@ const brokerNavGroups = [
       {
         href: "/broker/propiedades",
         label: "Propiedades",
+        icon: Building2,
+        id: undefined,
+      },
+      {
+        href: "/broker/clientes",
+        label: "Clientes",
         icon: Building2,
         id: undefined,
       },
@@ -276,6 +290,7 @@ export function Sidebar({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true); // Mobile: collapsed by default
+  const { totalAlerts } = useCrmAlerts();
 
   return (
     <>
@@ -428,6 +443,7 @@ export function Sidebar({
                       pathname === item.href ||
                       (item.href !== "/broker" &&
                         pathname.startsWith(item.href));
+                    const isMiDia = item.href === "/broker/crm/mi-dia";
                     return (
                       <Tooltip key={item.href} delayDuration={0}>
                         <TooltipTrigger asChild>
@@ -451,15 +467,31 @@ export function Sidebar({
                                 isActive ? "text-[#5E8B8C]" : "",
                               )}
                             />
-                            {!isCollapsed && item.label}
-                            {!isCollapsed && isActive && (
+                            {!isCollapsed && (
+                              <div className="flex items-center gap-2 flex-1">
+                                {item.label}
+                                {isMiDia && totalAlerts > 0 && (
+                                  <div className="ml-auto flex items-center justify-center bg-red-500 text-[#FAF6F2] rounded-full h-5 w-5 text-[10px] font-semibold">
+                                    {totalAlerts > 9 ? "9+" : totalAlerts}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {!isCollapsed && isActive && !isMiDia && (
                               <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#5E8B8C]" />
                             )}
                           </Link>
                         </TooltipTrigger>
                         {isCollapsed && (
                           <TooltipContent side="right">
-                            <p>{item.label}</p>
+                            <div className="flex items-center gap-1">
+                              <p>{item.label}</p>
+                              {isMiDia && totalAlerts > 0 && (
+                                <div className="ml-1 flex items-center justify-center bg-red-500 text-[#FAF6F2] rounded-full h-4 w-4 text-[8px] font-semibold">
+                                  {totalAlerts}
+                                </div>
+                              )}
+                            </div>
                           </TooltipContent>
                         )}
                       </Tooltip>

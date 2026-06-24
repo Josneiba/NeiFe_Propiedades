@@ -23,6 +23,7 @@ export interface DealCardData {
   lastActivityAt: Date | null;
   daysInStage: number;
   dueDate: Date | null;
+  playbookProgress?: { completed: number; required: number };
 }
 
 interface KanbanCardProps {
@@ -129,6 +130,26 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
           <span className="text-[10px] text-[#B8965A] font-semibold">
             ${deal.value.toLocaleString("es-CL")}
           </span>
+        </div>
+      )}
+
+      {/* Playbook Progress Bar */}
+      {deal.playbookProgress && deal.playbookProgress.required > 0 && (
+        <div className="mt-2 pt-2 border-t border-[#D5C3B6]/10">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[8px] text-[#9C8578] uppercase font-semibold">Checklist</span>
+            <span className="text-[8px] text-[#B8965A]">
+              {deal.playbookProgress.completed}/{deal.playbookProgress.required}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-[#2D3C3C] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#5E8B8C] to-[#7BA89D] transition-all duration-300"
+              style={{
+                width: `${(deal.playbookProgress.completed / deal.playbookProgress.required) * 100}%`,
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

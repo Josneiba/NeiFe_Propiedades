@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Phone, Mail, Copy, Plus, Building2, Users, Activity, Trash2, Calendar } from 'lucide-react'
+import { Activity, Trash2, Copy, Plus, Building2, Users, Phone, Mail } from 'lucide-react'
 import { DealCardData } from './kanban-card'
 import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
 import { ActivityLogModal } from './activity-log-modal'
 import { LinkContactModal } from './link-contact-modal'
 import { AttachmentsSection } from './attachments-section'
-import { GoogleCalendarButton } from './google-calendar-button'
+import { StageChecklist } from './stage-checklist'
 import { toast } from 'sonner'
 import { CrmDealStage } from '@prisma/client'
 import { safeFetch } from '@/lib/safe-fetch'
@@ -39,6 +39,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
   const [dueDate, setDueDate] = useState(deal.dueDate ? new Date(deal.dueDate).toISOString().split('T')[0] : '')
   const [savingDate, setSavingDate] = useState(false)
   const [deletingDeal, setDeletingDeal] = useState(false)
+  const [canAdvance, setCanAdvance] = useState(false)
 
   const stageConfig = STAGE_COLUMNS.find((s) => s.stage === deal.stage)!
   const currentStageIndex = STAGE_COLUMNS.findIndex((s) => s.stage === deal.stage)
@@ -210,13 +211,13 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
         <SheetContent
           side="right"
-          className="w-full sm:w-[600px] md:w-[800px] lg:w-[950px] bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto animate-slide-in-right"
+          className="w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl bg-[#1C2828] border-l border-[#D5C3B6]/10 overflow-y-auto animate-slide-in-right"
           onOpenAutoFocus={() => {
             loadActivities()
             loadAttachments()
           }}
         >
-          <SheetHeader className="pb-4">
+          <SheetHeader className="pb-4 px-6 pt-6 sticky top-0 bg-[#1C2828]/95 z-10 border-b border-[#D5C3B6]/10">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -253,6 +254,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
             </div>
           </SheetHeader>
 
+          <div className="px-6 space-y-4">
           {/* Tracker de etapas */}
           <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
             {STAGE_COLUMNS.map((s, i) => (
@@ -294,21 +296,20 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
             <label className="text-xs font-semibold uppercase tracking-wide text-[#9C8578] block mb-2">
               Fecha objetivo
             </label>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={dueDate}
-                onChange={handleDueDateChange}
-                disabled={savingDate}
-                className="flex-1 h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
-              />
-              <GoogleCalendarButton
-                dealId={deal.id}
-                dealTitle={deal.title}
-                dueDate={dueDate}
-                propertyAddress={deal.property?.address}
-              />
-            </div>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={handleDueDateChange}
+              disabled={savingDate}
+              className="w-full h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
+            />
+          </div>
+
+          <Separator className="bg-[#D5C3B6]/10 mb-4" />
+
+          {/* Playbook Checklist */}
+          <div className="mb-4">
+            <StageChecklist dealId={deal.id} onCanAdvanceChange={setCanAdvance} />
           </div>
 
           <Separator className="bg-[#D5C3B6]/10 mb-4" />
@@ -530,6 +531,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
           <Separator className="bg-[#D5C3B6]/10 my-4" />
 
           <AttachmentsSection dealId={deal.id} attachments={attachments} onUpdate={onUpdate} />
+          </div>
         </SheetContent>
       </Sheet>
 

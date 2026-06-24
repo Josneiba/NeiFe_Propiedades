@@ -156,6 +156,28 @@ export default function WorkspacePage() {
       return;
     }
 
+    // Stage gate: verificar playbook completado para transiciones críticas
+    const GATED_TRANSITIONS: Partial<Record<CrmDealStage, CrmDealStage[]>> = {
+      VISITA_AGENDADA: ['NUEVO_LEAD', 'CONTACTO_INICIADO'],
+      OFERTA_RECIBIDA: ['VISITA_AGENDADA', 'PROPIEDAD_CAPTADA'],
+      FIRMA_CONTRATO: ['NEGOCIANDO', 'DOCS_REVISION'],
+      ADMINISTRAR: ['FIRMA_CONTRATO', 'ENTREGA_LLAVES'],
+    }
+
+    const requires = GATED_TRANSITIONS[newStage as CrmDealStage]
+    if (requires?.includes(draggedDeal.stage as CrmDealStage)) {
+      try {
+        const res = await fetch(`/api/crm/deals/${draggedDeal.id}/playbook`)
+        const { canAdvance } = await res.json()
+        if (!canAdvance) {
+          toast.error('Completa el checklist de la etapa antes de avanzar')
+          return
+        }
+      } catch (e) {
+        console.error('Error checking playbook:', e)
+      }
+    }
+
     // Optimistic update
     const prevDeals = [...deals];
     setDeals((prev) =>

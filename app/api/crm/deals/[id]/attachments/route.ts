@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
+import { uploadFile } from '@/lib/cloudinary'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
@@ -43,37 +44,58 @@ export async function POST(
 
   const { id } = await paramsPromise
   const brokerId = session.user.id
-  const body = await request.json()
-
-  const { fileName, fileUrl, fileSize, mimeType } = body
-
-  if (!fileName || !fileUrl) {
-    return NextResponse.json(
-      { error: 'fileName y fileUrl requeridos' },
-      { status: 400 }
-    )
-  }
 
   // Verificar que el deal pertenece al broker
   const deal = await prisma.crmDeal.findUnique({
     where: { id },
-    select: { brokerId: true },
+    select: { brokerId: true, code: true },
   })
 
   if (!deal || deal.brokerId !== brokerId) {
     return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
   }
 
-  const attachment = await prisma.crmDealAttachment.create({
-    data: {
-      dealId: id,
-      fileName,
-      fileUrl,
-      fileSize: fileSize || 0,
-      mimeType,
-      uploadedBy: brokerId,
-    },
-  })
+  try {
+    const formData = await request.formData()
+    const file = formData.get('file') as File
 
-  return NextResponse.json(attachment)
+    if (!file) {
+      return NextResponse.json(
+        { error: 'Archivo requerido' },
+        { status: 400 }
+      )
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const mimeType = file.type
+    const fileName = file.name
+
+    // Subir a Cloudinary
+    const fileUrl = await uploadFile(
+      buffer,
+      `deals/${deal.code}`,
+      fileName,
+      mimeType
+    )
+
+    // Guardar en base de datos
+    const attachment = await prisma.crmDealAttachment.create({
+      data: {
+        dealId: id,
+        fileName,
+        fileUrl,
+        fileSize: file.size,
+        mimeType,
+        uploadedBy: brokerId,
+      },
+    })
+
+    return NextResponse.json(attachment)
+  } catch (error: any) {
+    console.error('Error uploading attachment:', error)
+    return NextResponse.json(
+      { error: error.message || 'Error al subir archivo' },
+      { status: 500 }
+    )
+  }
 }
