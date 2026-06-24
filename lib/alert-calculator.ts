@@ -27,7 +27,7 @@ export async function calcBrokerAlerts(brokerId: string) {
       where: {
         property: { mandates: { some: { brokerId, status: 'ACTIVE' } } },
         endDate: { gte: now, lte: new Date(now.getTime() + 30 * 86_400_000) },
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'EXPIRING_SOON'] },
       },
     }),
   ])

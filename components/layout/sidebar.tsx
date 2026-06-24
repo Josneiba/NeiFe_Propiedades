@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
+  MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -199,6 +200,18 @@ const brokerNavGroups = [
         href: "/broker/crm/metricas",
         label: "Métricas",
         icon: BarChart3,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/analytics",
+        label: "Análisis",
+        icon: BarChart3,
+        id: undefined,
+      },
+      {
+        href: "/broker/crm/plantillas",
+        label: "Plantillas",
+        icon: MessageSquare,
         id: undefined,
       },
     ],

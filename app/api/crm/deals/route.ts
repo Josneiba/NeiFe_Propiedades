@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
         take: 1,
         select: { createdAt: true, type: true },
       },
+      playbookSteps: {
+        select: { stepId: true },
+      },
     },
     orderBy: { createdAt: 'asc' },
   })

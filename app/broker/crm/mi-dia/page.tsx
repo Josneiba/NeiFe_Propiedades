@@ -3,11 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { TaskQueue } from '@/components/broker/crm/task-queue'
 import { DailyProgress } from '@/components/broker/crm/daily-progress'
+import { DealDrawer } from '@/components/broker/crm/deal-drawer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertTriangle, Calendar, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import type { TaskSuggestion } from '@/lib/task-engine'
+import type { DealCardData } from '@/components/broker/crm/kanban-card'
 
 interface DayData {
   manualTasks: any[]
@@ -19,7 +21,7 @@ interface DayData {
 export default function MiDiaPage() {
   const [data, setData] = useState<DayData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedDealId, setSelectedDealId] = useState<string | null>(null)
+  const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -39,12 +41,33 @@ export default function MiDiaPage() {
   }, [load])
 
   async function handleComplete(dealId: string, taskType: string) {
-    await fetch(`/api/crm/tasks/auto/complete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dealId, taskType }),
-    })
-    await load()
+    try {
+      await fetch('/api/crm/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: taskType === 'SEGUIMIENTO' ? 'NOTA' : taskType,
+          title: 'Tarea completada desde Mi Dia',
+          dealId,
+          isDone: true,
+        }),
+      })
+      toast.success('Tarea completada')
+      await load()
+    } catch {
+      toast.error('Error al completar tarea')
+    }
+  }
+
+  async function handleOpenDeal(dealId: string) {
+    try {
+      const res = await fetch(`/api/crm/deals/${dealId}`)
+      if (res.ok) {
+        setSelectedDeal(await res.json())
+      }
+    } catch {
+      toast.error('Error al cargar deal')
+    }
   }
 
   const urgent = data?.suggestions.filter((s) => s.urgencyScore >= 70) ?? []
@@ -103,7 +126,7 @@ export default function MiDiaPage() {
             <TaskQueue
               suggestions={urgent}
               onComplete={handleComplete}
-              onOpenDeal={setSelectedDealId}
+              onOpenDeal={handleOpenDeal}
             />
           </section>
         )}
@@ -120,7 +143,7 @@ export default function MiDiaPage() {
             <TaskQueue
               suggestions={normal}
               onComplete={handleComplete}
-              onOpenDeal={setSelectedDealId}
+              onOpenDeal={handleOpenDeal}
             />
           </section>
         )}
@@ -128,10 +151,19 @@ export default function MiDiaPage() {
         {!loading && data?.suggestions.length === 0 && (
           <div className="text-center py-20 text-[#D5C3B6]/40">
             <TrendingUp className="w-12 h-12 mx-auto mb-3" />
-            <p>No hay tareas pendientes. ¡Excelente trabajo!</p>
+            <p>No hay tareas pendientes. Excelente trabajo!</p>
           </div>
         )}
       </div>
+
+      {selectedDeal && (
+        <DealDrawer
+          deal={selectedDeal}
+          open={!!selectedDeal}
+          onClose={() => setSelectedDeal(null)}
+          onUpdate={load}
+        />
+      )}
     </div>
   )
 }

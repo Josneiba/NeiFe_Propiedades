@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, RefreshCw } from "lucide-react";
 import { STAGE_COLUMNS, PHASE_LABELS } from "@/lib/crm-stage-utils";
+import { DEFAULT_PLAYBOOK } from "@/lib/playbook-defaults";
 import { CrmDealStage, CrmPhase } from "@prisma/client";
 import { toast } from "sonner";
 
@@ -72,19 +73,27 @@ export default function WorkspacePage() {
       const data = await res.json();
 
       // Calcular daysInStage en el cliente (o el API lo puede devolver)
-      const enriched: DealCardData[] = data.map((d: any) => ({
-        id: d.id,
-        code: d.code,
-        title: d.title,
-        stage: d.stage,
-        operationType: d.operationType,
-        value: d.value,
-        property: d.property,
-        contacts: d.contacts || [],
-        lastActivityAt: d.activities?.[0]?.createdAt ?? null,
-        daysInStage: 0, // se puede calcular si la API devuelve stageUpdatedAt
-        dueDate: d.dueDate ? new Date(d.dueDate) : null,
-      }));
+      const enriched: DealCardData[] = data.map((d: any) => {
+        const stageSteps = DEFAULT_PLAYBOOK.filter(s => s.stage === d.stage)
+        const required = stageSteps.filter(s => s.isRequired).length
+        const completedIds = new Set((d.playbookSteps ?? []).map((p: any) => p.stepId))
+        const completed = stageSteps.filter(s => s.isRequired && completedIds.has(`${s.stage}-${s.order}`)).length
+
+        return {
+          id: d.id,
+          code: d.code,
+          title: d.title,
+          stage: d.stage,
+          operationType: d.operationType,
+          value: d.value,
+          property: d.property,
+          contacts: d.contacts || [],
+          lastActivityAt: d.activities?.[0]?.createdAt ?? null,
+          daysInStage: 0,
+          dueDate: d.dueDate ? new Date(d.dueDate) : null,
+          playbookProgress: { completed, required },
+        }
+      });
       setDeals(enriched);
     } catch (e) {
       toast.error("No se pudieron cargar las oportunidades");
