@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
   const phase = searchParams.get('phase')
   const status = searchParams.get('status') || 'ACTIVE'
   const q = searchParams.get('q')
+  const landlordId = searchParams.get('landlordId')
+  const operationType = searchParams.get('operationType')
 
   const where: any = { brokerId, status }
 
@@ -30,6 +32,14 @@ export async function GET(request: NextRequest) {
 
   if (phase) {
     where.phase = phase
+  }
+
+  if (landlordId) {
+    where.landlordId = landlordId
+  }
+
+  if (operationType && operationType !== 'ALL') {
+    where.operationType = operationType
   }
 
   if (q) {

@@ -22,6 +22,7 @@ export default function MiDiaPage() {
   const [data, setData] = useState<DayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
+  const [dailyGoal, setDailyGoal] = useState(10)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -39,6 +40,22 @@ export default function MiDiaPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  // Fetch broker daily contact goal
+  useEffect(() => {
+    const fetchGoal = async () => {
+      try {
+        const res = await fetch('/api/broker/settings')
+        if (res.ok) {
+          const settings = await res.json()
+          setDailyGoal(settings.dailyContactGoal || 10)
+        }
+      } catch (e) {
+        console.error('Error fetching broker settings:', e)
+      }
+    }
+    fetchGoal()
+  }, [])
 
   async function handleComplete(dealId: string, taskType: string) {
     try {
@@ -102,7 +119,7 @@ export default function MiDiaPage() {
         {/* KPIs */}
         {data && (
           <div className="grid grid-cols-3 gap-3">
-            <DailyProgress completed={data.todayActivities} goal={10} />
+            <DailyProgress completed={data.todayActivities} goal={dailyGoal} />
             <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4 flex flex-col justify-center">
               <span className="text-xs text-[#D5C3B6]/60">Deals activos</span>
               <span className="text-2xl font-bold text-[#FAF6F2]">{data.totalDeals}</span>

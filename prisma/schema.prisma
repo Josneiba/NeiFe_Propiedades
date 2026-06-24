@@ -31,6 +31,10 @@ model User {
   bankAccountType   String?
   bankAccountNumber String?
   bankEmail         String?
+  
+  // Broker settings
+  dailyContactGoal  Int       @default(10)
+  
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -63,6 +67,7 @@ model User {
   crmContacts       CrmContact[]   @relation("CrmBrokerContacts")
   crmProperties     CrmProperty[]  @relation("CrmBrokerProperties")
   crmDeals          CrmDeal[]      @relation("CrmBrokerDeals")
+  crmDealsAsLandlord CrmDeal[]     @relation("CrmDealLandlord")
   crmActivities     CrmActivity[]  @relation("CrmBrokerActivities")
   stageHistoryEntries CrmDealStageHistory[] @relation("StageHistoryBroker")
   dealAttachments   CrmDealAttachment[] @relation("DealAttachmentUploader")
@@ -953,6 +958,8 @@ model CrmDeal {
   commission    Float?
   brokerId      String
   broker        User            @relation("CrmBrokerDeals", fields: [brokerId], references: [id])
+  landlordId    String?
+  landlord      User?           @relation("CrmDealLandlord", fields: [landlordId], references: [id])
   propertyId    String?
   property      CrmProperty?    @relation(fields: [propertyId], references: [id])
   contacts      CrmDealContact[]
@@ -981,6 +988,7 @@ model CrmDeal {
   updatedAt DateTime @updatedAt
 
   @@index([brokerId, status, stage])
+  @@index([landlordId])
 }
 
 model CrmDealContact {

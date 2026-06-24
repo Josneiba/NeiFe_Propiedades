@@ -53,6 +53,8 @@ export default function WorkspacePage() {
     new Set(["PRE_VENTA", "VENTA", "POST_VENTA"]),
   );
   const [filterOp, setFilterOp] = useState<"ALL" | "ARRIENDO" | "VENTA">("ALL");
+  const [filterLandlord, setFilterLandlord] = useState<string>("ALL");
+  const [landlords, setLandlords] = useState<Array<{ id: string; name: string }>>([]);
 
   // Nuevos filtros: búsqueda y rango de valor
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +70,7 @@ export default function WorkspacePage() {
       setIsLoading(true);
       const params = new URLSearchParams({ status: "ACTIVE" });
       if (filterOp !== "ALL") params.set("operationType", filterOp);
+      if (filterLandlord !== "ALL") params.set("landlordId", filterLandlord);
       const res = await fetch(`/api/crm/deals?${params}`);
       if (!res.ok) throw new Error("Error al cargar deals");
       const data = await res.json();
@@ -100,11 +103,31 @@ export default function WorkspacePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filterOp]);
+  }, [filterOp, filterLandlord]);
 
   useEffect(() => {
     loadDeals();
   }, [loadDeals]);
+
+  // Fetch landlords para el filtro
+  useEffect(() => {
+    const fetchLandlords = async () => {
+      try {
+        const res = await fetch('/api/broker/clientes');
+        if (res.ok) {
+          const data = await res.json();
+          const landlordList = data.map((c: any) => ({
+            id: c.landlord?.id || c.owner?.id,
+            name: c.landlord?.name || c.owner?.name || 'Sin nombre'
+          }));
+          setLandlords(landlordList);
+        }
+      } catch (e) {
+        console.error('Error fetching landlords:', e);
+      }
+    };
+    fetchLandlords();
+  }, []);
 
   // Toggle de fase (click activa/desactiva, doble click activa solo esa)
   function togglePhase(phase: CrmPhase) {
@@ -341,8 +364,8 @@ export default function WorkspacePage() {
       </div>
 
       {/* Búsqueda y filtros adicionales */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-[#D5C3B6]/10 bg-[#1C2828]/50">
-        <div className="flex-1 max-w-xs">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-[#D5C3B6]/10 bg-[#1C2828]/50 flex-wrap">
+        <div className="flex-1 min-w-[200px] max-w-xs">
           <input
             type="text"
             placeholder="Buscar código, título o dirección..."
@@ -351,6 +374,18 @@ export default function WorkspacePage() {
             className="w-full px-3 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] placeholder-[#9C8578] focus:outline-none focus:border-[#5E8B8C]"
           />
         </div>
+
+        {/* Landlord Filter */}
+        <select
+          value={filterLandlord}
+          onChange={(e) => setFilterLandlord(e.target.value)}
+          className="px-3 py-1.5 text-xs bg-[#2D3C3C] border border-[#D5C3B6]/20 rounded-lg text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]"
+        >
+          <option value="ALL">Todos los arrendadores</option>
+          {landlords.map((l) => (
+            <option key={l.id} value={l.id}>{l.name}</option>
+          ))}
+        </select>
 
         {/* Placeholder for Due Date Filter */}
         <div className="flex items-center gap-2">

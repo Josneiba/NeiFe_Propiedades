@@ -26,6 +26,8 @@ import {
   ChevronRight,
   Target,
   MessageSquare,
+  TrendingUp,
+  PieChart,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -199,13 +201,13 @@ const brokerNavGroups = [
       {
         href: "/broker/crm/metricas",
         label: "Métricas",
-        icon: BarChart3,
+        icon: TrendingUp,
         id: undefined,
       },
       {
         href: "/broker/crm/analytics",
         label: "Análisis",
-        icon: BarChart3,
+        icon: PieChart,
         id: undefined,
       },
       {
@@ -286,7 +288,7 @@ const brokerNavGroups = [
     label: "Sistema",
     items: [
       {
-        href: "/broker/configuracion",
+        href: "/broker/settings",
         label: "Configuración",
         icon: Settings,
         id: undefined,
