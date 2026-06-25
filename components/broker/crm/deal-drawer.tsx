@@ -13,6 +13,7 @@ import { ActivityLogModal } from './activity-log-modal'
 import { LinkContactModal } from './link-contact-modal'
 import { AttachmentsSection } from './attachments-section'
 import { StageChecklist } from './stage-checklist'
+import { AdminRequirements } from './admin-requirements'
 import { toast } from 'sonner'
 import { CrmDealStage } from '@prisma/client'
 import { safeFetch } from '@/lib/safe-fetch'
@@ -288,6 +289,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
               </SelectContent>
             </Select>
           </div>
+          {['FIRMA_CONTRATO', 'ENTREGA_LLAVES'].includes(deal.stage) && <AdminRequirements deal={deal} />}
 
           <Separator className="bg-[#D5C3B6]/10 mb-4" />
 

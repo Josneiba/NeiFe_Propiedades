@@ -3,9 +3,13 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { recalculateAllScores } from '@/lib/crm-scoring'
 import { getPhaseFromStage } from '@/lib/crm-stage-utils'
+import { getPublicOrigin } from '@/lib/public-origin'
+import { getResendFrom } from '@/lib/resend-from'
+import { buildBrandedEmailHtml } from '@/lib/email-composer'
 import { NextRequest, NextResponse } from 'next/server'
 import { CrmDealStage } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import { Resend } from 'resend'
 
 export async function PATCH(
   request: NextRequest,
@@ -52,7 +56,7 @@ export async function PATCH(
 
   // Handle ADMINISTRAR transition (special logic)
   if (newStage === 'ADMINISTRAR') {
-    return await transitionToAdministration(deal, brokerId)
+    return await transitionToAdministration(deal, brokerId, request)
   }
 
   // Normal stage transition
@@ -87,7 +91,7 @@ export async function PATCH(
   return NextResponse.json(updated)
 }
 
-async function transitionToAdministration(deal: any, brokerId: string) {
+async function transitionToAdministration(deal: any, brokerId: string, request: NextRequest) {
   if (!deal.property) {
     return NextResponse.json(
       { error: 'El deal no tiene propiedad vinculada' },
@@ -105,6 +109,10 @@ async function transitionToAdministration(deal: any, brokerId: string) {
     )
   }
 
+  let tempPasswordForEmail: string | null = null
+  const publicOrigin = getPublicOrigin(request)
+  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
   try {
     const result = await prisma.$transaction(async (tx) => {
       // Check if landlord already exists in NeiFe
@@ -115,6 +123,7 @@ async function transitionToAdministration(deal: any, brokerId: string) {
       } else {
         // Create landlord user in NeiFe
         const tempPassword = Math.random().toString(36).slice(2, 12)
+        tempPasswordForEmail = tempPassword
         const hashedPw = await hash(tempPassword, 10)
 
         const newLandlord = await tx.user.create({
@@ -168,6 +177,23 @@ async function transitionToAdministration(deal: any, brokerId: string) {
         },
       })
 
+      // Create Mandate automatically so the property appears in broker listings
+      await tx.mandate.create({
+        data: {
+          propertyId: neifeProperty.id,
+          ownerId: landlordId,
+          brokerId,
+          status: 'ACTIVE',
+          signedByBroker: true,
+          brokerSignedAt: new Date(),
+          signedByOwner: false,
+          startsAt: new Date(),
+          commissionRate: deal.commission ?? null,
+          commissionType: 'MONTHLY',
+          notes: `Creado automáticamente desde deal ${deal.code}`,
+        },
+      })
+
       // Create Invitation for tenant if exists with email
       if (arrendatario?.contact.email) {
         await tx.invitation.create({
@@ -182,6 +208,17 @@ async function transitionToAdministration(deal: any, brokerId: string) {
         })
       }
 
+      // Create an initial contract record for the managed property
+      const contract = await tx.contract.create({
+        data: {
+          propertyId: neifeProperty.id,
+          status: 'DRAFT',
+          startDate: neifeProperty.contractStart ?? undefined,
+          endDate: neifeProperty.contractEnd ?? undefined,
+          rentUF: neifeProperty.monthlyRentUF ?? undefined,
+        },
+      })
+
       // Update CRM deal
       const updatedDeal = await tx.crmDeal.update({
         where: { id: deal.id },
@@ -190,7 +227,7 @@ async function transitionToAdministration(deal: any, brokerId: string) {
           phase: 'POST_VENTA',
           status: 'WON',
           wonAt: new Date(),
-          neifeContractId: neifeProperty.id,
+          neifeContractId: contract.id,
         },
         include: {
           property: true,
@@ -232,6 +269,43 @@ async function transitionToAdministration(deal: any, brokerId: string) {
 
     // Recalculate scores after conversion
     await recalculateAllScores(brokerId)
+
+    if (tempPasswordForEmail && propietario.contact.email && resend) {
+      try {
+        const emailHtml = buildBrandedEmailHtml({
+          preview: 'Tu propiedad ya está activa en NeiFe',
+          title: 'Bienvenida a NeiFe',
+          greeting: `Hola ${propietario.contact.name || 'propietario'}`,
+          intro: [
+            'Tu corredor ha registrado tu propiedad en NeiFe y creó tu acceso al panel.',
+          ],
+          infoRows: [
+            { label: 'Usuario', value: propietario.contact.email },
+            { label: 'Contraseña temporal', value: tempPasswordForEmail },
+          ],
+          bulletList: [
+            'Guarda esta contraseña y cámbiala al iniciar sesión.',
+            'Si no solicitaste este correo, contacta a tu corredor.',
+          ],
+          cta: {
+            label: 'Ir a NeiFe',
+            url: `${publicOrigin}/login`,
+          },
+          closing: [
+            'Bienvenido a NeiFe. Estamos aquí para ayudarte a administrar tu propiedad.',
+          ],
+        })
+
+        await resend.emails.send({
+          from: getResendFrom(),
+          to: propietario.contact.email,
+          subject: 'Tu propiedad ya está en NeiFe — accede con tu contraseña temporal',
+          html: emailHtml,
+        })
+      } catch (sendError) {
+        console.error('Error sending landlord welcome email:', sendError)
+      }
+    }
 
     return NextResponse.json({
       ok: true,
