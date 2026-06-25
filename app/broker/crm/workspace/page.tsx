@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { KanbanColumn } from "@/components/broker/crm/kanban-column";
 import {
   KanbanCard,
@@ -47,6 +48,8 @@ export default function WorkspacePage() {
     null,
   );
   const [showNewDeal, setShowNewDeal] = useState(false);
+  const [hasCheckedSelectedDealId, setHasCheckedSelectedDealId] = useState(false);
+  const [selectedDealNotice, setSelectedDealNotice] = useState<string | null>(null);
 
   // Filtros de columnas visibles
   const [activePhases, setActivePhases] = useState<Set<CrmPhase>>(
@@ -55,6 +58,9 @@ export default function WorkspacePage() {
   const [filterOp, setFilterOp] = useState<"ALL" | "ARRIENDO" | "VENTA">("ALL");
   const [filterLandlord, setFilterLandlord] = useState<string>("ALL");
   const [landlords, setLandlords] = useState<Array<{ id: string; name: string }>>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Nuevos filtros: búsqueda y rango de valor
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,6 +114,32 @@ export default function WorkspacePage() {
   useEffect(() => {
     loadDeals();
   }, [loadDeals]);
+
+  useEffect(() => {
+    const selectedDealId = searchParams.get('selectedDealId');
+    if (!selectedDealId || isLoading) return;
+
+    const deal = deals.find((d) => d.id === selectedDealId);
+    if (deal) {
+      setSelectedDeal(deal);
+      setSelectedDealNotice(null);
+    } else if (!hasCheckedSelectedDealId) {
+      setSelectedDealNotice('No se encontró la oportunidad solicitada.');
+    }
+
+    setHasCheckedSelectedDealId(true);
+
+    const params = new URLSearchParams(searchParams as any);
+    params.delete('selectedDealId');
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [deals, isLoading, searchParams, pathname, router, hasCheckedSelectedDealId]);
+
+  useEffect(() => {
+    if (!selectedDealNotice) return;
+
+    const timer = window.setTimeout(() => setSelectedDealNotice(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [selectedDealNotice]);
 
   // Fetch landlords para el filtro
   useEffect(() => {
@@ -300,6 +332,18 @@ export default function WorkspacePage() {
           </Button>
         </div>
       </div>
+      {selectedDealNotice ? (
+        <div className="border-b border-red-400/20 bg-red-950/80 text-red-200 px-6 py-3 text-sm flex items-start justify-between gap-4">
+          <span>{selectedDealNotice}</span>
+          <button
+            type="button"
+            onClick={() => setSelectedDealNotice(null)}
+            className="text-xs text-red-300 hover:text-red-100 transition-colors"
+          >
+            Cerrar
+          </button>
+        </div>
+      ) : null}
 
       {/* Filtros de columnas visibles */}
       <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#D5C3B6]/10 flex-wrap">
@@ -472,7 +516,7 @@ export default function WorkspacePage() {
                         (s) => s.stage === activeDragDeal.stage,
                       )?.color ?? "#999"
                     }
-                    onClick={() => {}}
+                    onClick={() => activeDragDeal && setSelectedDeal(activeDragDeal)}
                   />
                 </div>
               )}

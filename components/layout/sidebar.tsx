@@ -33,6 +33,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { useCrmAlerts } from "@/hooks/useCrmAlerts";
+import { SidebarSearch } from '@/components/layout/sidebar-search'
 import {
   Tooltip,
   TooltipContent,
@@ -375,6 +376,8 @@ export function Sidebar({
             )}
           </button>
         </div>
+
+        {role === 'broker' && <SidebarSearch isCollapsed={isCollapsed} />}
 
         {/* Navigation */}
         {role === "landlord" ? (

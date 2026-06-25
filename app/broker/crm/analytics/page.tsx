@@ -24,14 +24,14 @@ interface PipelineMetrics {
 }
 
 const STAGE_COLORS = [
-  '#9333ea', // Prospecting - purple
-  '#0ea5e9', // Initial Contact - blue
-  '#06b6d4', // Qualified - cyan
-  '#14b8a6', // Proposal - teal
-  '#f59e0b', // Negotiation - amber
-  '#10b981', // Closing - emerald
-  '#22c55e', // Won - green
-  '#ef4444', // Lost - red
+  '#9333ea', // purple
+  '#0ea5e9', // blue
+  '#06b6d4', // cyan
+  '#14b8a6', // teal
+  '#f59e0b', // amber
+  '#10b981', // emerald
+  '#22c55e', // green
+  '#ef4444', // red
 ]
 
 export default function PipelineAnalyticsPage() {
@@ -45,51 +45,14 @@ export default function PipelineAnalyticsPage() {
         if (!res.ok) throw new Error('Error loading metrics')
         const data = await res.json()
 
-        // Mock comprehensive metrics
-        const mockMetrics: PipelineMetrics = {
-          stageBreakdown: [
-            { stage: 'Prospeccion', count: 15, value: 1800000 },
-            { stage: 'Contacto', count: 12, value: 2400000 },
-            { stage: 'Calificado', count: 8, value: 2100000 },
-            { stage: 'Propuesta', count: 5, value: 1750000 },
-            { stage: 'Negociacion', count: 3, value: 1500000 },
-            { stage: 'Cierre', count: 2, value: 600000 },
-            { stage: 'Ganado', count: 1, value: 350000 },
-            { stage: 'Perdido', count: 4, value: 500000 },
-          ],
-          conversionRate: 42.5,
-          avgDealValue: 187500,
-          avgDaysToClose: 45,
-          winRate: 35,
-          recentActivities: [
-            {
-              id: '1',
-              type: 'DEAL_MOVED',
-              title: 'Oportunidad "Venta Depto Providencia" movida a Negociación',
-              timestamp: 'Hace 2 horas',
-            },
-            {
-              id: '2',
-              type: 'CONTACT_CREATED',
-              title: 'Nuevo contacto: María García Rodríguez (Arrendatario)',
-              timestamp: 'Hace 4 horas',
-            },
-            {
-              id: '3',
-              type: 'DEAL_WON',
-              title: 'Oportunidad ganada: "Arriendo Casa Ñuñoa"',
-              timestamp: 'Hace 1 día',
-            },
-            {
-              id: '4',
-              type: 'ACTIVITY_LOGGED',
-              title: 'Llamada registrada a Juan Pérez López',
-              timestamp: 'Hace 1 día',
-            },
-          ],
-        }
-
-        setMetrics(mockMetrics)
+        setMetrics({
+          stageBreakdown: data.stageBreakdown ?? [],
+          conversionRate: data.conversionRate ?? 0,
+          avgDealValue: data.avgDealValue ?? 0,
+          avgDaysToClose: data.avgDaysToClose ?? 0,
+          winRate: data.winRate ?? 0,
+          recentActivities: data.recentActivities ?? [],
+        })
       } catch (error) {
         console.error('Error loading metrics:', error)
       } finally {
