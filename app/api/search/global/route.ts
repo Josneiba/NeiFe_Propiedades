@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
             mandates: { some: { brokerId, status: 'ACTIVE' } },
           },
           OR: [{ description: contains }],
-          status: { notIn: ['RESOLVED'] },
+          status: { notIn: ['COMPLETED'] },
         },
         select: {
           id: true,
@@ -183,20 +183,25 @@ export async function GET(req: NextRequest) {
         where: {
           property: {
             mandates: { some: { brokerId, status: 'ACTIVE' } },
+            OR: [
+              { address: contains },
+              { commune: contains },
+              { tenant: { name: contains } },
+            ],
           },
-          OR: [
-            { property: { address: contains } },
-            { property: { commune: contains } },
-            { tenant: { name: contains } },
-          ],
         },
         select: {
           id: true,
           status: true,
           startDate: true,
           endDate: true,
-          property: { select: { address: true, commune: true } },
-          tenant: { select: { name: true } },
+          property: {
+            select: {
+              address: true,
+              commune: true,
+              tenant: { select: { name: true } },
+            },
+          },
         },
         take: 4,
       }),
@@ -348,7 +353,7 @@ export async function GET(req: NextRequest) {
       id: contractItem.id,
       type: 'contract',
       title: `Contrato — ${contractItem.property.address}, ${contractItem.property.commune}`,
-      subtitle: [contractItem.tenant?.name, dateRange]
+      subtitle: [contractItem.property.tenant?.name, dateRange]
         .filter(Boolean)
         .join(' · '),
       badge: contractItem.status,
