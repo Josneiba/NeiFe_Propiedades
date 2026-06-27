@@ -47,7 +47,7 @@ export async function sendWhatsAppMessage(
     }
 
     // Send message via provider
-    const messageId = await sendViaProvider(config, contact.phone, message)
+    const messageId = await sendWhatsAppViaProvider(config, contact.phone, message)
 
     // Log activity
     await prisma.crmActivity.create({
@@ -177,6 +177,45 @@ export async function sendWhatsAppTemplate(
   }
 }
 
+export async function processPendingWhatsAppMessages(maxMessages = 50) {
+  const pending = await prisma.whatsAppMessage.findMany({
+    where: { status: 'PENDING' },
+    take: maxMessages,
+  })
+
+  const results: Array<{ id: string; status: string; error?: string }> = []
+
+  for (const msg of pending) {
+    try {
+      const config = await getWhatsAppConfig(msg.brokerId)
+      if (!config) {
+        await prisma.whatsAppMessage.update({
+          where: { id: msg.id },
+          data: { status: 'FAILED' },
+        })
+        results.push({ id: msg.id, status: 'FAILED', error: 'WhatsApp not configured' })
+        continue
+      }
+
+      const messageId = await sendWhatsAppViaProvider(config, msg.phoneNumber, msg.message)
+      await prisma.whatsAppMessage.update({
+        where: { id: msg.id },
+        data: { status: 'SENT', messageId },
+      })
+      results.push({ id: msg.id, status: 'SENT' })
+    } catch (error) {
+      console.error('Error processing WhatsApp message', msg.id, error)
+      await prisma.whatsAppMessage.update({
+        where: { id: msg.id },
+        data: { status: 'FAILED' },
+      })
+      results.push({ id: msg.id, status: 'FAILED', error: (error as Error).message })
+    }
+  }
+
+  return results
+}
+
 /**
  * Get WhatsApp conversation history
  */
@@ -217,7 +256,7 @@ export async function getWhatsAppStats(brokerId: string) {
 /**
  * Get WhatsApp configuration for broker
  */
-async function getWhatsAppConfig(brokerId: string): Promise<WhatsAppProvider | null> {
+export async function getWhatsAppConfig(brokerId: string): Promise<WhatsAppProvider | null> {
   const config = await prisma.brokerIntegration.findFirst({
     where: {
       brokerId,
@@ -267,10 +306,10 @@ export async function configureWhatsApp(
 /**
  * Send message via provider (Twilio)
  */
-async function sendViaProvider(
+export async function sendWhatsAppViaProvider(
   config: WhatsAppProvider,
   phoneNumber: string,
-  message: string
+  message: string,
 ): Promise<string> {
   // Integration with Twilio or WhatsApp Business API
   // This is a placeholder implementation

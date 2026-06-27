@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { buildWhatsAppUrl } from '@/lib/template-engine'
+import { processPendingWhatsAppMessages } from '@/lib/whatsapp-integration'
 
 // Simple cron-protected endpoint. Set CRON_SECRET env var to secure.
 export async function GET(request: Request) {
@@ -95,7 +96,9 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, sent, skipped, created: createdMessages.length })
+    const processed = await processPendingWhatsAppMessages(100)
+
+    return NextResponse.json({ ok: true, sent, skipped, created: createdMessages.length, processed: processed.length })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'internal_error' }, { status: 500 })
