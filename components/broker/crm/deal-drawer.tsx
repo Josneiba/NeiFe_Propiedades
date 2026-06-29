@@ -526,6 +526,7 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
             <Separator className="bg-[#D5C3B6]/10 my-4" />
             <AttachmentsSection dealId={deal.id} attachments={attachments} onUpdate={onUpdate} />
           </div>
+        </SheetContent>
       </Sheet>
 
       {/* Sub-modales */}
