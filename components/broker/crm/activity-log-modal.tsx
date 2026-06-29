@@ -18,13 +18,20 @@ const ACTIVITY_TYPES = [
 ]
 
 interface Props {
-  dealId: string
+  dealId?: string
+  contactId?: string
   open: boolean
   onClose: () => void
   onCreated: () => void
 }
 
-export function ActivityLogModal({ dealId, open, onClose, onCreated }: Props) {
+export function ActivityLogModal({
+  dealId,
+  contactId,
+  open,
+  onClose,
+  onCreated,
+}: Props) {
   const [type, setType] = useState('LLAMADA')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -37,7 +44,15 @@ export function ActivityLogModal({ dealId, open, onClose, onCreated }: Props) {
       const res = await fetch('/api/crm/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, title, description, dealId, isDone: true, completedAt: new Date() }),
+        body: JSON.stringify({
+          type,
+          title,
+          description,
+          dealId,
+          contactId,
+          isDone: true,
+          completedAt: new Date(),
+        }),
       })
       if (!res.ok) throw new Error()
       toast.success('Actividad registrada')

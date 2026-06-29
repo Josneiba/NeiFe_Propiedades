@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Activity, Trash2, Copy, Plus, Building2, Users, Phone, Mail } from 'lucide-react'
 import { DealCardData } from './kanban-card'
 import { STAGE_COLUMNS } from '@/lib/crm-stage-utils'
@@ -14,6 +15,7 @@ import { LinkContactModal } from './link-contact-modal'
 import { AttachmentsSection } from './attachments-section'
 import { StageChecklist } from './stage-checklist'
 import { AdminRequirements } from './admin-requirements'
+import { RecommendationsPanel } from './recommendations-panel'
 import { toast } from 'sonner'
 import { CrmDealStage } from '@prisma/client'
 import { safeFetch } from '@/lib/safe-fetch'
@@ -256,285 +258,274 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
           </SheetHeader>
 
           <div className="px-6 space-y-4">
-          {/* Tracker de etapas */}
-          <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
-            {STAGE_COLUMNS.map((s, i) => (
-              <div
-                key={s.stage}
-                className="flex-shrink-0 w-5 h-1.5 rounded-full transition-all"
-                style={{
-                  backgroundColor: i <= currentStageIndex ? s.color : '#D5C3B6' + '22',
-                }}
-                title={s.label}
-              />
-            ))}
-          </div>
+            <Tabs defaultValue="overview" className="space-y-4">
+              <TabsList className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-full p-1">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-sm text-[#9C8578]">
+                  Resumen
+                </TabsTrigger>
+                <TabsTrigger value="progress" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-sm text-[#9C8578]">
+                  Progreso
+                </TabsTrigger>
+                <TabsTrigger value="timeline" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-sm text-[#9C8578]">
+                  Línea de tiempo
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Selector de etapa rápido */}
-          <div className="mb-4">
-            <Select value={localStage} onValueChange={(v) => handleStageChange(v as CrmDealStage)} disabled={movingStage}>
-              <SelectTrigger className="w-full h-8 bg-[#2D3C3C] border-[#D5C3B6]/15 text-[#FAF6F2] text-xs">
-                <SelectValue placeholder="Cambiar etapa" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
-                {STAGE_COLUMNS.filter(s => s.stage !== 'ADMINISTRAR').map((s) => (
-                  <SelectItem key={s.stage} value={s.stage} className="text-xs">
-                    • {s.label}
-                  </SelectItem>
-                ))}
-                <Separator className="bg-[#D5C3B6]/10 my-1" />
-                <SelectItem value="ADMINISTRAR" className="text-xs text-yellow-500" disabled>
-                  Administrar (requiere confirmación)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {['FIRMA_CONTRATO', 'ENTREGA_LLAVES'].includes(deal.stage) && <AdminRequirements deal={deal} />}
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
+                  <div className="space-y-4">
+                    <section className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#9C8578] mb-3">
+                        <Building2 className="h-4 w-4 text-[#5E8B8C]" />
+                        <span>Propiedad</span>
+                      </div>
+                      {deal.property ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-xs text-[#B8965A]">{deal.property.code}</p>
+                              <p className="text-base font-semibold text-[#FAF6F2] truncate">{deal.property.address}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] border-[#D5C3B6]/20 text-[#9C8578]">
+                              {deal.property.type}
+                            </Badge>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#9C8578] italic">Sin propiedad vinculada</p>
+                      )}
+                    </section>
 
-          <Separator className="bg-[#D5C3B6]/10 mb-4" />
+                    <section className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#9C8578] mb-3">
+                        <Users className="h-4 w-4 text-[#5E8B8C]" />
+                        <span>Contactos</span>
+                      </div>
+                      <div className="space-y-3">
+                        {deal.contacts.length === 0 ? (
+                          <p className="text-xs text-[#9C8578] italic">Sin contactos vinculados</p>
+                        ) : (
+                          deal.contacts.map((dc) => (
+                            <div key={dc.contact.id} className="rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-xs text-[#B8965A]">{dc.contact.code}</p>
+                                  <p className="text-sm font-semibold text-[#FAF6F2] truncate">{dc.contact.name}</p>
+                                </div>
+                                <Badge variant="outline" className="text-[10px] border-[#D5C3B6]/20 text-[#9C8578]">
+                                  {dc.role === 'PROPIETARIO' ? 'Propietario' : dc.role === 'ARRENDATARIO' ? 'Arrendatario' : dc.role}
+                                </Badge>
+                              </div>
+                              {(dc.contact as any)?.phone || (dc.contact as any)?.email ? (
+                                <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-[#9C8578]">
+                                  {(dc.contact as any).phone && <span>📱 { (dc.contact as any).phone }</span>}
+                                  {(dc.contact as any).email && <span>✉️ { (dc.contact as any).email }</span>}
+                                </div>
+                              ) : null}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  </div>
 
-          {/* Fecha objetivo */}
-          <div className="mb-4">
-            <label className="text-xs font-semibold uppercase tracking-wide text-[#9C8578] block mb-2">
-              Fecha objetivo
-            </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={handleDueDateChange}
-              disabled={savingDate}
-              className="w-full h-9 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
-            />
-          </div>
-
-          <Separator className="bg-[#D5C3B6]/10 mb-4" />
-
-          {/* Playbook Checklist */}
-          <div className="mb-4">
-            <StageChecklist dealId={deal.id} onCanAdvanceChange={setCanAdvance} />
-          </div>
-
-          <Separator className="bg-[#D5C3B6]/10 mb-4" />
-
-          {/* PROPIEDAD */}
-          <section className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="h-3.5 w-3.5 text-[#5E8B8C]" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#9C8578]">Propiedad</span>
-            </div>
-            {deal.property ? (
-              <div className="bg-[#2D3C3C]/60 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <button
-                    className="font-mono text-[10px] text-[#B8965A] hover:text-[#D5C3B6]"
-                    onClick={() => copyCode(deal.property!.code)}
-                  >
-                    {deal.property.code}
-                  </button>
-                  <Badge variant="outline" className="text-[9px] border-[#D5C3B6]/20 text-[#9C8578]">
-                    {deal.property.type}
-                  </Badge>
-                </div>
-                <p className="text-xs text-[#D5C3B6]">{deal.property.address}</p>
-              </div>
-            ) : (
-              <p className="text-xs text-[#9C8578] italic">Sin propiedad vinculada</p>
-            )}
-          </section>
-
-          <Separator className="bg-[#D5C3B6]/10 mb-4" />
-
-          {/* CONTACTOS */}
-          <section className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-3.5 w-3.5 text-[#5E8B8C]" />
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#9C8578]">Contactos</span>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-[10px] text-[#5E8B8C] hover:text-[#5E8B8C]/80 px-2"
-                onClick={() => setShowLinkContact(true)}
-              >
-                <Plus className="h-3 w-3 mr-1" /> Vincular
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {deal.contacts.length === 0 && (
-                <p className="text-xs text-[#9C8578] italic">Sin contactos vinculados</p>
-              )}
-              {deal.contacts.map((dc) => (
-                <div key={dc.contact.id} className="bg-[#2D3C3C]/60 rounded-lg p-2.5 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <button
-                          className="font-mono text-[9px] text-[#B8965A] hover:text-[#D5C3B6]"
-                          onClick={() => copyCode(dc.contact.code)}
-                        >
-                          {dc.contact.code}
-                        </button>
-                        <Badge variant="outline" className="text-[9px] border-[#D5C3B6]/20 text-[#9C8578] py-0">
-                          {dc.role === 'PROPIETARIO' ? 'Propietario' : dc.role === 'ARRENDATARIO' ? 'Arrendatario' : dc.role}
+                  <aside className="space-y-4">
+                    <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Datos rápidos</p>
+                          <p className="mt-2 text-sm font-semibold text-[#FAF6F2]">{deal.code}</p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] border-[#D5C3B6]/20 text-[#9C8578]">
+                          {STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.label || deal.stage}
                         </Badge>
                       </div>
-                      <p className="text-xs text-[#D5C3B6] truncate">{dc.contact.name}</p>
-                    </div>
-                    <button
-                      onClick={() => unlinkContact(dc.contact.id)}
-                      className="text-[9px] text-[#9C8578] hover:text-red-400 transition-colors ml-2 flex-shrink-0"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  {((dc.contact as any)?.phone || (dc.contact as any)?.email) && (
-                    <div className="flex gap-1.5 pt-1.5 border-t border-[#D5C3B6]/10">
-                      {(dc.contact as any)?.phone && (
-                        <>
-                          <a
-                            href={`https://wa.me/${((dc.contact as any).phone as string).replace(/\D/g, '')}?text=Hola%20${encodeURIComponent(dc.contact.name)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#5E8B8C] hover:bg-[#5E8B8C]/10 transition-colors"
-                            title="Enviar WhatsApp"
-                          >
-                            <Phone className="h-3 w-3" />
-                            WhatsApp
-                          </a>
-                          <a
-                            href={`tel:${(dc.contact as any).phone}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#B8965A] hover:bg-[#B8965A]/10 transition-colors"
-                            title="Llamar"
-                          >
-                            <Phone className="h-3 w-3" />
-                            Llamar
-                          </a>
-                        </>
-                      )}
-                      {(dc.contact as any)?.email && (
-                        <a
-                          href={`mailto:${(dc.contact as any).email}`}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1C2828] rounded text-[9px] text-[#5E8B8C] hover:bg-[#5E8B8C]/10 transition-colors"
-                          title="Enviar email"
-                        >
-                          <Mail className="h-3 w-3" />
-                          Email
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <Separator className="bg-[#D5C3B6]/10 mb-4" />
-
-          {/* ACTIVIDADES */}
-          <section>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Activity className="h-3.5 w-3.5 text-[#5E8B8C]" />
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#9C8578]">Actividades</span>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-[10px] text-[#5E8B8C] px-2"
-                onClick={() => setShowActivityModal(true)}
-              >
-                <Plus className="h-3 w-3 mr-1" /> Registrar
-              </Button>
-            </div>
-            {loadingActivities ? (
-              <p className="text-xs text-[#9C8578] animate-pulse">Cargando...</p>
-            ) : activities.length === 0 ? (
-              <p className="text-xs text-[#9C8578] italic">Sin actividades registradas</p>
-            ) : (
-              <div className="space-y-1.5 mb-3">
-                {activities.slice(0, 8).map((a) => (
-                  <div key={a.id} className="flex gap-2 text-xs">
-                    <span className="text-[#B8965A] flex-shrink-0">
-                      {a.type === 'LLAMADA' ? 'L' : a.type === 'VISITA' ? 'V' : a.type === 'EMAIL' ? 'E' : 'N'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[#D5C3B6]">{a.title}</span>
-                      <span className="text-[#9C8578] ml-1.5 text-[10px]">
-                        {new Date(a.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Nota rápida — visible directamente */}
-            <div className="flex gap-2">
-              <textarea
-                value={quickNote}
-                onChange={(e) => setQuickNote(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    saveQuickNote()
-                  }
-                }}
-                placeholder="Nota rápida (Enter para guardar)..."
-                className="flex-1 bg-[#2D3C3C]/60 border border-[#D5C3B6]/15 rounded-lg px-3 py-2 text-xs text-[#FAF6F2] placeholder:text-[#9C8578]/60 focus:outline-none focus:border-[#5E8B8C]/50 resize-none h-16"
-                disabled={savingNote}
-              />
-              <Button
-                size="sm"
-                onClick={saveQuickNote}
-                disabled={!quickNote.trim() || savingNote}
-                className="flex-shrink-0 h-16 bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30 disabled:opacity-50 px-2"
-              >
-                {savingNote ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </section>
-
-          <Separator className="bg-[#D5C3B6]/10 my-4" />
-
-          {/* Historial de etapas */}
-          <section>
-            <button
-              onClick={loadHistory}
-              className="flex items-center justify-between w-full mb-2 text-xs font-semibold uppercase tracking-wide text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
-            >
-              <span>Historial de etapas</span>
-              {showHistory ? '▲' : '▼'}
-            </button>
-            {showHistory && history.length > 0 && (
-              <div className="space-y-2">
-                {history.map((h) => {
-                  const from = STAGE_COLUMNS.find(s => s.stage === h.fromStage)
-                  const to = STAGE_COLUMNS.find(s => s.stage === h.toStage)
-                  return (
-                    <div key={h.id} className="flex items-center justify-between gap-2 p-2 bg-[#2D3C3C]/40 rounded-lg text-[10px]">
-                      <div className="flex-1">
-                        <div className="text-[#9C8578]">
-                          {new Date(h.changedAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                      <div className="mt-4 space-y-3 text-sm text-[#D5C3B6]">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Fecha objetivo</p>
+                          <p className="mt-1 text-[#FAF6F2]">{dueDate || 'No definida'}</p>
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-[#D5C3B6]">
-                          {from && <span>● {from.label}</span>}
-                          <span className="text-[#9C8578]">→</span>
-                          {to && <span>● {to.label}</span>}
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Actividades registradas</p>
+                          <p className="mt-1 text-[#FAF6F2]">{activities.length}</p>
                         </div>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </section>
 
-          <Separator className="bg-[#D5C3B6]/10 my-4" />
+                    <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5">
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578] mb-3">Recomendaciones</p>
+                      <RecommendationsPanel contactId={deal.contacts[0]?.contact.id ?? undefined} maxItems={3} />
+                    </div>
+                  </aside>
+                </div>
+              </TabsContent>
 
-          <AttachmentsSection dealId={deal.id} attachments={attachments} onUpdate={onUpdate} />
+              <TabsContent value="progress" className="space-y-4">
+                <section className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Progreso</p>
+                      <h3 className="mt-2 text-lg font-semibold text-[#FAF6F2]">Estado de la oportunidad</h3>
+                    </div>
+                    <Button size="sm" variant="outline" className="border-[#D5C3B6]/20 text-[#9C8578]" onClick={loadActivities}>
+                      Actualizar
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#212E2E] p-5">
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Etapa actual</p>
+                      <p className="mt-4 text-4xl font-semibold text-[#FAF6F2]">{STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.label || deal.stage}</p>
+                      <p className="mt-2 text-sm text-[#9C8578]">Avance del ciclo de venta</p>
+                    </div>
+                    <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#212E2E] p-5">
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Interacciones</p>
+                      <p className="mt-4 text-4xl font-semibold text-[#FAF6F2]">{activities.length}</p>
+                      <p className="mt-2 text-sm text-[#9C8578]">Registros totales</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-5 space-y-4">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#9C8578]">
+                    <Building2 className="h-4 w-4 text-[#5E8B8C]" />
+                    <span>Actualizaciones rápidas</span>
+                  </div>
+                  <Select value={localStage} onValueChange={(v) => handleStageChange(v as CrmDealStage)} disabled={movingStage}>
+                    <SelectTrigger className="w-full h-10 bg-[#2D3C3C] border-[#D5C3B6]/15 text-[#FAF6F2] text-xs">
+                      <SelectValue placeholder="Cambiar etapa" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
+                      {STAGE_COLUMNS.filter((s) => s.stage !== 'ADMINISTRAR').map((s) => (
+                        <SelectItem key={s.stage} value={s.stage} className="text-xs">
+                          • {s.label}
+                        </SelectItem>
+                      ))}
+                      <Separator className="bg-[#D5C3B6]/10 my-1" />
+                      <SelectItem value="ADMINISTRAR" className="text-xs text-yellow-500" disabled>
+                        Administrar (requiere confirmación)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {['FIRMA_CONTRATO', 'ENTREGA_LLAVES'].includes(deal.stage) && <AdminRequirements deal={deal} />}
+                  <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#212E2E] p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Fecha objetivo</p>
+                        <p className="mt-2 text-sm font-semibold text-[#FAF6F2]">{dueDate || 'No definida'}</p>
+                      </div>
+                      <input
+                        type="date"
+                        value={dueDate}
+                        onChange={handleDueDateChange}
+                        disabled={savingDate}
+                        className="h-10 bg-[#2D3C3C] border border-[#D5C3B6]/15 rounded px-3 text-xs text-[#FAF6F2] focus:outline-none focus:border-[#5E8B8C]/50 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <StageChecklist dealId={deal.id} onCanAdvanceChange={setCanAdvance} />
+              </TabsContent>
+
+              <TabsContent value="timeline" className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Registro</p>
+                    <h3 className="text-lg font-semibold text-[#FAF6F2]">Línea de tiempo de actividades</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => setShowActivityModal(true)}>
+                      Registrar actividad
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D5C3B6]/20 text-[#9C8578]" onClick={loadActivities}>
+                      Actualizar actividades
+                    </Button>
+                  </div>
+                </div>
+
+                {loadingActivities ? (
+                  <p className="text-xs text-[#9C8578] animate-pulse">Cargando...</p>
+                ) : activities.length === 0 ? (
+                  <p className="text-xs text-[#9C8578] italic">Sin actividades registradas</p>
+                ) : (
+                  <div className="space-y-3">
+                    {activities.map((a) => (
+                      <div key={a.id} className="rounded-3xl border border-[#D5C3B6]/10 bg-[#212E2E] p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">{a.type}</p>
+                            <p className="mt-2 text-sm font-semibold text-[#FAF6F2]">{a.title}</p>
+                          </div>
+                          <p className="text-xs text-[#9C8578]">{new Date(a.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</p>
+                        </div>
+                        {a.description && <p className="mt-3 text-xs text-[#D5C3B6]">{a.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="rounded-3xl border border-[#D5C3B6]/10 bg-[#1B2A2A] p-4">
+                  <div className="flex gap-2">
+                    <textarea
+                      value={quickNote}
+                      onChange={(e) => setQuickNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          saveQuickNote()
+                        }
+                      }}
+                      placeholder="Nota rápida (Enter para guardar)..."
+                      className="flex-1 bg-[#2D3C3C]/60 border border-[#D5C3B6]/15 rounded-lg px-3 py-2 text-xs text-[#FAF6F2] placeholder:text-[#9C8578]/60 focus:outline-none focus:border-[#5E8B8C]/50 resize-none h-20"
+                      disabled={savingNote}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={saveQuickNote}
+                      disabled={!quickNote.trim() || savingNote}
+                      className="flex-shrink-0 h-12 bg-[#5E8B8C]/20 text-[#5E8B8C] hover:bg-[#5E8B8C]/30 disabled:opacity-50 px-4"
+                    >
+                      {savingNote ? 'Guardando...' : 'Guardar'}
+                    </Button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={loadHistory}
+                  className="flex items-center justify-between w-full mb-2 text-xs font-semibold uppercase tracking-wide text-[#9C8578] hover:text-[#D5C3B6] transition-colors"
+                >
+                  <span>Historial de etapas</span>
+                  {showHistory ? '▲' : '▼'}
+                </button>
+                {showHistory && history.length > 0 && (
+                  <div className="space-y-2">
+                    {history.map((h) => {
+                      const from = STAGE_COLUMNS.find((s) => s.stage === h.fromStage)
+                      const to = STAGE_COLUMNS.find((s) => s.stage === h.toStage)
+                      return (
+                        <div key={h.id} className="flex items-center justify-between gap-2 p-3 bg-[#2D3C3C]/40 rounded-3xl text-[10px]">
+                          <div>
+                            <div className="text-[#9C8578]">
+                              {new Date(h.changedAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 text-[#D5C3B6]">
+                              {from && <span>● {from.label}</span>}
+                              <span className="text-[#9C8578]">→</span>
+                              {to && <span>● {to.label}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+
+            <Separator className="bg-[#D5C3B6]/10 my-4" />
+            <AttachmentsSection dealId={deal.id} attachments={attachments} onUpdate={onUpdate} />
           </div>
-        </SheetContent>
       </Sheet>
 
       {/* Sub-modales */}

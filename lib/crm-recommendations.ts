@@ -29,17 +29,119 @@ export interface Recommendation {
  * Generar recomendaciones basadas en reglas de negocio
  */
 export async function getRecommendations(
-  brokerId: string
+  brokerId: string,
+  contactId?: string
 ): Promise<Recommendation[]> {
   const recommendations: Recommendation[] = [];
   const now = new Date();
 
   try {
+    if (contactId) {
+      const contact = await prisma.crmContact.findUnique({
+        where: { id: contactId },
+        include: {
+          score: true,
+          activities: {
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          },
+          deals: {
+            include: {
+              deal: {
+                include: {
+                  property: { select: { address: true, code: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (contact && contact.brokerId === brokerId) {
+        const lastActivity = contact.activities[0];
+        const daysSinceLastActivity = lastActivity
+          ? Math.floor((now.getTime() - new Date(lastActivity.createdAt).getTime()) / 86_400_000)
+          : null;
+
+        if (daysSinceLastActivity === null || daysSinceLastActivity > 5) {
+          recommendations.push({
+            id: `contact-followup-${contact.id}`,
+            type: 'FOLLOWUP',
+            priority: daysSinceLastActivity && daysSinceLastActivity > 10 ? 'HIGH' : 'MEDIUM',
+            title: 'Contactar de nuevo',
+            message: daysSinceLastActivity === null
+              ? `${contact.name} no registra actividad. Revisa el estado y crea un nuevo acercamiento.`
+              : `${contact.name} no tiene actividad hace ${daysSinceLastActivity} día${daysSinceLastActivity !== 1 ? 's' : ''}. ` +
+                'Este contacto requiere una actualización urgente.',
+            actionLabel: 'Ver contacto',
+            actionUrl: `/broker/crm/contactos/${contact.id}`,
+            contactId: contact.id,
+            createdAt: now,
+          });
+        }
+
+        const activeDeal = contact.deals.find((link) => link.deal && link.deal.stage !== 'CLOSED');
+        if (!activeDeal) {
+          recommendations.push({
+            id: `contact-no-deal-${contact.id}`,
+            type: 'MATCH',
+            priority: 'MEDIUM',
+            title: 'Buscar nueva oportunidad',
+            message: `Este contacto no tiene una operación activa. Genera una nueva propuesta para avanzar en la relación.`,
+            actionLabel: 'Crear deal',
+            actionUrl: `/broker/crm/workspace`,
+            contactId: contact.id,
+            createdAt: now,
+          });
+        }
+
+        const score = contact.score?.score ?? 60;
+        if (score < 40) {
+          recommendations.push({
+            id: `contact-risk-${contact.id}`,
+            type: 'RISK',
+            priority: 'HIGH',
+            title: 'Contacto en riesgo',
+            message: `Score bajo (${score}/100). Refuerza el seguimiento antes de que se enfríe la relación.`,
+            actionLabel: 'Revisar contacto',
+            actionUrl: `/broker/crm/contactos/${contact.id}`,
+            contactId: contact.id,
+            createdAt: now,
+          });
+        }
+
+        contact.deals.forEach((linkedDeal) => {
+          const deal = linkedDeal.deal;
+          if (!deal?.dueDate) return;
+
+          const daysUntilDue = Math.ceil((deal.dueDate.getTime() - now.getTime()) / 86_400_000);
+          if (daysUntilDue <= 7 && daysUntilDue >= 0) {
+            recommendations.push({
+              id: `contact-deadline-${deal.id}`,
+              type: 'DEADLINE',
+              priority: 'HIGH',
+              title: 'Deal cercano a vencer',
+              message: `${contact.name} tiene ${deal.code} con fecha objetivo en ${daysUntilDue} día${daysUntilDue !== 1 ? 's' : ''}. Revisa acciones clave.`,
+              actionLabel: 'Abrir deal',
+              actionUrl: `/broker/crm/workspace`,
+              dealId: deal.id,
+              contactId: contact.id,
+              createdAt: now,
+            });
+          }
+        });
+
+        if (recommendations.length > 0) {
+          return recommendations.sort((a, b) => ({ HIGH: 0, MEDIUM: 1, LOW: 2 }[a.priority] - ({ HIGH: 0, MEDIUM: 1, LOW: 2 }[b.priority])));
+        }
+      }
+    }
+
     // 1. Deals sin actividad reciente (>5 días) — URGENTE
     const staleDeals = await prisma.crmDeal.findMany({
       where: {
         brokerId,
-        status: "ACTIVE",
+        status: 'ACTIVE',
       },
       include: {
         contacts: { include: { contact: true }, take: 1 },

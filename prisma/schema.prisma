@@ -78,6 +78,8 @@ model User {
   brokerIntegrations BrokerIntegration[] @relation("BrokerIntegrations")
   whatsappMessages  WhatsAppMessage[] @relation("WhatsAppMessages")
   whatsappTemplates WhatsAppTemplate[] @relation("WhatsAppTemplates")
+  brokerGoals        BrokerGoal[]         @relation("BrokerGoals")
+  brokerWeekPlans    BrokerWeekPlan[]     @relation("BrokerWeekPlans")
 
   // FASE VIXIEES — Task Engine + Playbook + Templates
   brokerTasks        CrmTask[]            @relation("BrokerTasks")
@@ -1254,6 +1256,60 @@ model CrmMessageTemplate {
 
   @@index([brokerId, channel])
   @@unique([brokerId, name])
+}
+
+model BrokerGoal {
+  id         String     @id @default(cuid())
+  brokerId   String
+  broker     User       @relation("BrokerGoals", fields: [brokerId], references: [id])
+
+  period     GoalPeriod
+  week       Int?
+  month      Int?
+  year       Int
+  metric     GoalMetric
+  target     Float
+  unit       String     @default("count")
+  commitment String?
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([brokerId, period, metric, week, month, year])
+  @@index([brokerId, period, year])
+}
+
+model BrokerWeekPlan {
+  id               String   @id @default(cuid())
+  brokerId         String
+  broker           User     @relation("BrokerWeekPlans", fields: [brokerId], references: [id])
+
+  week             Int
+  year             Int
+  planText         String?  @db.Text
+  workDays         Json     @default("{}")
+  dailyCommitments Json     @default("{}")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([brokerId, week, year])
+  @@index([brokerId, year])
+}
+
+enum GoalPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum GoalMetric {
+  CONTACTS
+  VISITS
+  DEALS_CLOSED
+  COMMISSION_CLP
+  MANDATES
+  PROPERTIES_PUBLISHED
 }
 
 // ── Enums CRM ────────────────────────────────────────────────

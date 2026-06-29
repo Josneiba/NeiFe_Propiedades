@@ -35,16 +35,18 @@ const PRIORITY_ICON_COLORS: Record<string, string> = {
 
 interface RecommendationsPanelProps {
   maxItems?: number;
+  contactId?: string;
 }
 
-export function RecommendationsPanel({ maxItems = 5 }: RecommendationsPanelProps) {
+export function RecommendationsPanel({ maxItems = 5, contactId }: RecommendationsPanelProps) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchRecommendations() {
       try {
-        const res = await fetch("/api/crm/recommendations");
+        const query = contactId ? `?contactId=${encodeURIComponent(contactId)}` : "";
+        const res = await fetch(`/api/crm/recommendations${query}`);
         if (res.ok) {
           const data = await res.json();
           setRecommendations(data.slice(0, maxItems));
@@ -56,7 +58,7 @@ export function RecommendationsPanel({ maxItems = 5 }: RecommendationsPanelProps
       }
     }
     fetchRecommendations();
-  }, [maxItems]);
+  }, [contactId, maxItems]);
 
   if (loading) {
     return (

@@ -10,12 +10,29 @@ interface WhatsAppButtonProps {
   message?: string
   size?: 'sm' | 'default'
   className?: string
+  onAction?: () => void | Promise<void>
 }
 
-export function WhatsAppButton({ phone, message = '', size = 'sm', className }: WhatsAppButtonProps) {
-  function handleClick() {
+export function WhatsAppButton({
+  phone,
+  message = '',
+  size = 'sm',
+  className,
+  onAction,
+}: WhatsAppButtonProps) {
+  async function handleClick() {
     const url = buildWhatsAppUrl(phone, message)
-    window.open(url, '_blank', 'noopener,noreferrer')
+    const win = window.open(url, '_blank', 'noopener,noreferrer')
+
+    try {
+      await onAction?.()
+    } catch (error) {
+      console.error('Error registrando acción de WhatsApp:', error)
+    }
+
+    if (win) {
+      win.focus()
+    }
   }
 
   return (
