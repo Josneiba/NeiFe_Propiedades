@@ -7,6 +7,7 @@ import { DealDrawer } from '@/components/broker/crm/deal-drawer'
 import { GoalDashboard } from '@/components/broker/crm/goal-dashboard'
 import { WeeklyPlanCard } from '@/components/broker/crm/weekly-plan-card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { RefreshCw, AlertTriangle, Calendar, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import type { TaskSuggestion } from '@/lib/task-engine'
@@ -29,6 +30,27 @@ interface WeekPlanData {
 interface GoalsData {
   progress: BrokerGoalProgress[]
   weekPlan: WeekPlanData | null
+  goals: { id: string; period: string; metric: string; target: number; unit: string }[]
+  history?: any[]
+}
+
+function goalMetricLabel(metric: string) {
+  switch (metric) {
+    case 'CONTACTS':
+      return 'Contactos'
+    case 'VISITS':
+      return 'Visitas'
+    case 'DEALS_CLOSED':
+      return 'Cierres'
+    case 'COMMISSION_CLP':
+      return 'Comisión'
+    case 'MANDATES':
+      return 'Mandatos'
+    case 'PROPERTIES_PUBLISHED':
+      return 'Propiedades'
+    default:
+      return metric
+  }
 }
 
 export default function MiDiaPage() {
@@ -131,8 +153,14 @@ export default function MiDiaPage() {
     }
   }
 
+  const manualTasks = data?.manualTasks ?? []
+  const manualCount = manualTasks.length
+  const suggestedCount = data?.suggestions.length ?? 0
   const urgent = data?.suggestions.filter((s) => s.urgencyScore >= 70) ?? []
   const normal = data?.suggestions.filter((s) => s.urgencyScore < 70) ?? []
+  const definedGoals = goalsData?.goals?.length ?? 0
+  const completedGoals = goalsData?.progress.filter((item) => item.completed).length ?? 0
+  const weeklyCommitmentCount = Object.values(goalsData?.weekPlan?.dailyCommitments ?? {}).filter(Boolean).length
 
   return (
     <div className="min-h-screen bg-[#1a2424] text-[#FAF6F2]">
@@ -162,15 +190,19 @@ export default function MiDiaPage() {
           </Button>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid gap-3 lg:grid-cols-4">
           <DailyProgress completed={data?.todayActivities ?? 0} goal={dailyGoal} />
           <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4 flex flex-col justify-center">
             <span className="text-xs text-[#D5C3B6]/60">Deals activos</span>
             <span className="text-2xl font-bold text-[#FAF6F2]">{data?.totalDeals ?? 0}</span>
           </div>
           <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4 flex flex-col justify-center">
-            <span className="text-xs text-[#D5C3B6]/60">Tareas pendientes</span>
-            <span className="text-2xl font-bold text-[#C27F79]">{data?.suggestions.length ?? 0}</span>
+            <span className="text-xs text-[#D5C3B6]/60">Tareas sugeridas</span>
+            <span className="text-2xl font-bold text-[#C27F79]">{suggestedCount}</span>
+          </div>
+          <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4 flex flex-col justify-center">
+            <span className="text-xs text-[#D5C3B6]/60">Tareas manuales</span>
+            <span className="text-2xl font-bold text-[#C27F79]">{manualCount}</span>
           </div>
         </div>
 
@@ -181,17 +213,87 @@ export default function MiDiaPage() {
         )}
 
         {!goalsLoading && goalsData && (
-          <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
-            <div className="space-y-6">
-              <GoalDashboard progress={goalsData.progress} />
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4">
+                <p className="text-xs text-[#D5C3B6]/60">Objetivos definidos</p>
+                <p className="text-2xl font-bold text-[#FAF6F2]">{definedGoals}</p>
+              </div>
+              <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4">
+                <p className="text-xs text-[#D5C3B6]/60">Metas completadas</p>
+                <p className="text-2xl font-bold text-[#FAF6F2]">{completedGoals}</p>
+              </div>
+              <div className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4">
+                <p className="text-xs text-[#D5C3B6]/60">Compromisos semanales</p>
+                <p className="text-2xl font-bold text-[#FAF6F2]">{weeklyCommitmentCount}</p>
+              </div>
             </div>
-            <WeeklyPlanCard
-              initialPlanText={goalsData.weekPlan?.planText ?? null}
-              initialWorkDays={goalsData.weekPlan?.workDays ?? {}}
-              initialDailyCommitments={goalsData.weekPlan?.dailyCommitments ?? {}}
-              onSave={handleSaveWeekPlan}
-            />
-          </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
+              <div className="space-y-6">
+                <GoalDashboard progress={goalsData.progress} />
+              </div>
+              <WeeklyPlanCard
+                initialPlanText={goalsData.weekPlan?.planText ?? null}
+                initialWorkDays={goalsData.weekPlan?.workDays ?? {}}
+                initialDailyCommitments={goalsData.weekPlan?.dailyCommitments ?? {}}
+                onSave={handleSaveWeekPlan}
+              />
+            </div>
+          </>
+        )}
+
+        {manualCount > 0 && data && (
+          <section className="rounded-3xl border border-[#2D3C3C] bg-[#1a2a2a] p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs text-[#D5C3B6]/70 uppercase tracking-[0.18em]">Agenda de hoy</p>
+                <h2 className="text-lg font-semibold text-[#FAF6F2]">Tareas manuales pendientes</h2>
+              </div>
+              <Badge variant="outline" className="text-xs text-[#D5C3B6] px-2 py-1">
+                {manualCount} tarea{manualCount === 1 ? '' : 's'}
+              </Badge>
+            </div>
+
+            <div className="space-y-3">
+              {manualTasks.slice(0, 5).map((task) => (
+                <div key={task.id} className="rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs text-[#B8965A]">{task.deal?.code ?? 'Sin deal'}</p>
+                      <p className="text-sm font-semibold text-[#FAF6F2] truncate">{task.title}</p>
+                      <p className="text-xs text-[#D5C3B6]/70 mt-1">
+                        {task.deal?.title ? `${task.deal.title}` : 'Tarea sin deal asociado'}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right space-y-1">
+                      {task.priority != null && (
+                        <Badge variant="secondary" className="text-[11px] px-2 py-1">
+                          Prioridad {task.priority}
+                        </Badge>
+                      )}
+                      <p className="text-[11px] text-[#9C8578]">
+                        {new Date(task.dueDate).toLocaleString('es-CL', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  {task.contact?.name && (
+                    <p className="mt-3 text-xs text-[#D5C3B6]/70">Contacto: {task.contact.name}</p>
+                  )}
+                </div>
+              ))}
+
+              {manualCount > 5 && (
+                <p className="text-xs text-[#9C8578]">Mostrando 5 de {manualCount} tareas manuales.</p>
+              )}
+            </div>
+          </section>
         )}
 
         <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
