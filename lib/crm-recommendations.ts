@@ -80,7 +80,7 @@ export async function getRecommendations(
           });
         }
 
-        const activeDeal = contact.deals.find((link) => link.deal && link.deal.stage !== 'CLOSED');
+        const activeDeal = contact.deals.find((link) => link.deal && link.deal.stage !== 'ADMINISTRAR');
         if (!activeDeal) {
           recommendations.push({
             id: `contact-no-deal-${contact.id}`,
