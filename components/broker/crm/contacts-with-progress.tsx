@@ -1,84 +1,44 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
+import { WhatsAppButton } from '@/components/broker/crm/whatsapp-button'
+import { cn } from '@/lib/utils'
 
-interface ContactScore {
-  score: number
-  lastActivityDays: number | null
-  recommendation: string | null
+interface HotContact {
+  contactId: string
+  contactName: string
+  contactPhone: string | null
+  dealCode?: string | null
+  dealStage?: string | null
+  daysWithoutContact: number
+  urgency: 'HIGH' | 'MEDIUM' | 'LOW'
+  successProbability: number
+  reason: string
+  suggestedAction: string
 }
 
-interface ContactProgressItem {
-  id: string
-  name: string
-  score?: ContactScore | null
-  urgencyLevel?: string | null
-  deals?: { deal: { id: string } }[]
-}
-
-interface RecommendationItem {
-  contactId?: string
-  priority: 'HIGH' | 'MEDIUM' | 'LOW'
-  message: string
-}
-
-const URGENCY_COLOR: Record<string, string> = {
-  HIGH: 'border-[#ef4444]/30 bg-[#ef4444]/10 text-[#ef4444]',
-  MEDIUM: 'border-[#B8965A]/30 bg-[#B8965A]/10 text-[#B8965A]',
-  LOW: 'border-[#5E8B8C]/30 bg-[#5E8B8C]/10 text-[#5E8B8C]',
-}
-
-function urgencyLabel(level?: string) {
-  switch (level) {
-    case 'HIGH':
-      return 'Urgente'
-    case 'LOW':
-      return 'Bajo'
-    default:
-      return 'Normal'
-  }
-}
-
-function mapRecommendations(items: RecommendationItem[]) {
-  return items.reduce<Record<string, RecommendationItem>>((acc, rec) => {
-    if (!rec.contactId) return acc
-    const existing = acc[rec.contactId]
-    const priorityValue = { HIGH: 3, MEDIUM: 2, LOW: 1 }
-    if (!existing || priorityValue[rec.priority] > priorityValue[existing.priority]) {
-      acc[rec.contactId] = rec
-    }
-    return acc
-  }, {})
+const URGENCY_DOT: Record<string, string> = {
+  HIGH: 'bg-red-400',
+  MEDIUM: 'bg-amber-400',
+  LOW: 'bg-emerald-400',
 }
 
 export function ContactsWithProgress() {
-  const [contacts, setContacts] = useState<ContactProgressItem[]>([])
-  const [recommendations, setRecommendations] = useState<Record<string, RecommendationItem>>({})
+  const [contacts, setContacts] = useState<HotContact[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [contactsRes, recommendationsRes] = await Promise.all([
-          fetch('/api/crm/contacts?status=ACTIVE&limit=6'),
-          fetch('/api/crm/recommendations'),
-        ])
-
-        if (!contactsRes.ok || !recommendationsRes.ok) {
-          throw new Error('Error al cargar datos de inteligencia')
-        }
-
-        const contactsData = await contactsRes.json()
-        const recommendationsData = await recommendationsRes.json()
-
-        setContacts((contactsData.contacts ?? contactsData) as ContactProgressItem[])
-        setRecommendations(mapRecommendations(recommendationsData as RecommendationItem[]))
+        const res = await fetch('/api/crm/contact-suggestions')
+        if (!res.ok) throw new Error('Error al cargar contactos con progreso')
+        const data = await res.json()
+        setContacts(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error(error)
-        toast.error('No se pudieron cargar contactos con progreso')
       } finally {
         setLoading(false)
       }
@@ -87,64 +47,79 @@ export function ContactsWithProgress() {
     load()
   }, [])
 
-  const sortedContacts = useMemo(() => {
-    return [...contacts].sort((a, b) => {
-      const urgencyOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 }
-      const aUrgency = a.urgencyLevel ? urgencyOrder[a.urgencyLevel] ?? 1 : urgencyOrder[recommendations[a.id]?.priority ?? 'MEDIUM']
-      const bUrgency = b.urgencyLevel ? urgencyOrder[b.urgencyLevel] ?? 1 : urgencyOrder[recommendations[b.id]?.priority ?? 'MEDIUM']
-      if (aUrgency !== bUrgency) return aUrgency - bUrgency
-      return (b.score?.score ?? 0) - (a.score?.score ?? 0)
-    })
-  }, [contacts, recommendations])
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((item) => (
+          <div key={item} className="h-20 rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  if (contacts.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-[#2D3C3C] bg-[#1a2a2a] py-8 text-center text-sm text-[#9C8578]">
+        ✨ Todos los contactos están al día
+      </div>
+    )
+  }
 
   return (
     <Card className="bg-[#1a2a2a] border-[#2D3C3C]">
       <CardHeader>
         <CardTitle>Contactos con progreso</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {loading ? (
-          <p className="text-sm text-[#D5C3B6]">Cargando contactos...</p>
-        ) : sortedContacts.length === 0 ? (
-          <p className="text-sm text-[#D5C3B6]">No hay contactos con datos de progreso.</p>
-        ) : (
-          sortedContacts.slice(0, 5).map((contact) => {
-            const recommendation = contact.score?.recommendation ?? recommendations[contact.id]?.message
-            const lastContacted = contact.score?.lastActivityDays == null
-              ? 'Sin registro'
-              : contact.score.lastActivityDays === 0
-                ? 'Hoy'
-                : `${contact.score.lastActivityDays}d`
-            const scoreValue = contact.score?.score ?? 0
-            const urgency = contact.urgencyLevel ?? recommendations[contact.id]?.priority ?? 'MEDIUM'
-
-            return (
-              <div key={contact.id} className="rounded-3xl border border-[#2D3C3C] bg-[#152022] p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#FAF6F2] truncate">{contact.name}</p>
-                    <p className="text-xs text-[#9C8578] mt-1 line-clamp-2">
-                      {recommendation ?? 'Sin recomendación disponible'}
-                    </p>
-                  </div>
-                  <div className="space-y-2 text-right">
-                    <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-semibold ${URGENCY_COLOR[urgency]}`}>
-                      {urgencyLabel(urgency)}
-                    </span>
-                    <p className="text-[11px] text-[#D5C3B6]">{lastContacted}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[#D5C3B6]">
-                  <span>{contact.deals?.length ?? 0} operación{contact.deals?.length === 1 ? '' : 'es'}</span>
-                  <span>Puntaje {scoreValue}</span>
-                </div>
-
-                <Progress value={Math.min(100, Math.max(0, scoreValue))} className="mt-3 h-2 rounded-full bg-[#0f1b1b]" />
+      <CardContent className="space-y-3">
+        {contacts.slice(0, 5).map((contact) => (
+          <div
+            key={contact.contactId}
+            className="grid gap-3 rounded-3xl border border-[#2D3C3C] bg-[#152022] p-4 sm:grid-cols-[1fr_auto]"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={cn('h-2.5 w-2.5 rounded-full', URGENCY_DOT[contact.urgency] ?? 'bg-[#9C8578]')} />
+                <Link href={`/broker/crm/contactos/${contact.contactId}`} className="text-sm font-semibold text-[#FAF6F2] truncate hover:text-[#B8965A]">
+                  {contact.contactName}
+                </Link>
               </div>
-            )
-          })
-        )}
+              <p className="mt-1 text-xs text-[#9C8578] truncate">{contact.reason}</p>
+              <p className="mt-1 text-xs text-[#9C8578]">
+                {contact.daysWithoutContact === 0
+                  ? 'Contactado hoy'
+                  : contact.daysWithoutContact === 1
+                  ? 'Hace 1 día'
+                  : `Hace ${contact.daysWithoutContact} días`}
+              </p>
+              <p className="mt-2 text-xs text-[#D5C3B6] truncate">
+                {contact.dealCode ? `${contact.dealCode} · ${contact.dealStage ?? 'Sin etapa'}` : 'Sin operación activa'}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 items-end justify-between">
+              <span
+                className={cn(
+                  'rounded-full px-2 py-1 text-[10px] font-semibold uppercase',
+                  contact.successProbability >= 70
+                    ? 'bg-emerald-500/10 text-emerald-300'
+                    : contact.successProbability >= 50
+                    ? 'bg-amber-500/10 text-amber-300'
+                    : 'bg-[#9C8578]/10 text-[#9C8578]',
+                )}
+              >
+                {contact.successProbability}%
+              </span>
+              <div className="flex items-center gap-2">
+                {contact.contactPhone ? (
+                  <a href={`tel:${contact.contactPhone}`} className="h-9 w-9 rounded-xl border border-[#2D3C3C] bg-[#132023] flex items-center justify-center text-[#9C8578] hover:text-[#FAF6F2] transition">
+                    <Phone className="w-4 h-4" />
+                  </a>
+                ) : null}
+                {contact.contactPhone ? <WhatsAppButton phone={contact.contactPhone} size="sm" /> : null}
+              </div>
+            </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   )

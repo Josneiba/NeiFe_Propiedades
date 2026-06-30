@@ -1,16 +1,12 @@
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
-import { getCurrentWeekNumber, getCurrentYear, getISOWeekRange, getRealProgressForRange } from '@/lib/goal-engine'
-
-const METRIC_LABELS: Record<string, string> = {
-  CONTACTS: 'Contactos',
-  VISITS: 'Visitas',
-  DEALS_CLOSED: 'Cierres',
-  COMMISSION_CLP: 'Comisión',
-  MANDATES: 'Mandatos',
-  PROPERTIES_PUBLISHED: 'Propiedades',
-}
+import { NextRequest, NextResponse } from 'next/server'
+import {
+  getCurrentWeekNumber,
+  getCurrentYear,
+  getISOWeekRange,
+  getRealProgressForRange,
+} from '@/lib/goal-engine'
 
 const ALLOWED_METRICS = [
   'CONTACTS',
@@ -21,59 +17,51 @@ const ALLOWED_METRICS = [
   'PROPERTIES_PUBLISHED',
 ] as const
 
-type GoalMetric = (typeof ALLOWED_METRICS)[number]
-
-function isGoalMetric(value: string | null): value is GoalMetric {
-  return typeof value === 'string' && ALLOWED_METRICS.includes(value as GoalMetric)
+function isGoalMetric(value: string | null): value is (typeof ALLOWED_METRICS)[number] {
+  return typeof value === 'string' && ALLOWED_METRICS.includes(value as any)
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const session = await auth()
   if (!session?.user?.id || session.user.role !== 'BROKER') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const url = new URL(request.url)
-  const metricParam = url.searchParams.get('metric')
-  const metric: GoalMetric = isGoalMetric(metricParam) ? metricParam : 'CONTACTS'
-
+  const metricParam = request.nextUrl.searchParams.get('metric')
+  const metric = isGoalMetric(metricParam) ? metricParam : 'CONTACTS'
   const brokerId = session.user.id
   const currentWeek = getCurrentWeekNumber()
   const currentYear = getCurrentYear()
 
-  const weeks = Array.from({ length: 8 }, (_, index) => {
-    const week = currentWeek - (7 - index)
-    if (week > 0) {
-      return { week, year: currentYear }
+  const weeks = [] as { week: number; year: number }[]
+  for (let i = 5; i >= 0; i -= 1) {
+    let week = currentWeek - i
+    let year = currentYear
+    if (week <= 0) {
+      week += 52
+      year -= 1
     }
+    weeks.push({ week, year })
+  }
 
-    return {
-      week: week + 52,
-      year: currentYear - 1,
-    }
+  const currentGoal = await prisma.brokerGoal.findFirst({
+    where: { brokerId, period: 'WEEKLY', metric, year: currentYear, week: currentWeek },
   })
+  const target = currentGoal?.target ?? 0
 
-  const goals = await prisma.brokerGoal.findMany({
-    where: {
-      brokerId,
-      period: 'WEEKLY',
-      metric,
-      OR: weeks.map(({ week, year }) => ({ week, year })),
-    },
-  })
-
-  const data = await Promise.all(
-    weeks.map(async ({ week, year: weekYear }) => {
-      const { start, end } = getISOWeekRange(week, weekYear)
-      const actual = await getRealProgressForRange(brokerId, metric, start, end)
-      const goal = goals.find((item) => item.week === week && item.year === weekYear)
+  const result = await Promise.all(
+    weeks.map(async ({ week, year }) => {
+      const { start, end } = getISOWeekRange(week, year)
+      const real = await getRealProgressForRange(brokerId, metric, start, end)
+      const startLabel = start.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+      const endLabel = new Date(end.getTime() - 1).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
       return {
-        label: `S${week}`,
-        actual,
-        target: goal?.target ?? 0,
+        label: `${startLabel}–${endLabel}`,
+        target,
+        real,
       }
     }),
   )
 
-  return NextResponse.json({ metric, metricLabel: METRIC_LABELS[metric], data })
+  return NextResponse.json(result)
 }
