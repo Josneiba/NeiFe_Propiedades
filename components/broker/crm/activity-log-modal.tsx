@@ -17,6 +17,14 @@ const ACTIVITY_TYPES = [
   { value: 'TAREA', label: '✅ Tarea' },
 ]
 
+const ACTIVITY_OUTCOMES = [
+  { value: 'CONTACTADO', label: 'Contactado' },
+  { value: 'NO_CONTESTO', label: 'No contestó' },
+  { value: 'REPROGRAMAR', label: 'Reprogramar' },
+  { value: 'SEGUIMIENTO', label: 'Seguimiento' },
+  { value: 'OTRO', label: 'Otro' },
+]
+
 interface Props {
   dealId?: string
   contactId?: string
@@ -33,6 +41,7 @@ export function ActivityLogModal({
   onCreated,
 }: Props) {
   const [type, setType] = useState('LLAMADA')
+  const [outcome, setOutcome] = useState('CONTACTADO')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -48,6 +57,7 @@ export function ActivityLogModal({
           type,
           title,
           description,
+          outcome,
           dealId,
           contactId,
           isDone: true,
@@ -93,6 +103,19 @@ export function ActivityLogModal({
               placeholder="Ej: Llamada confirmó visita para el viernes"
               className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]"
             />
+          </div>
+          <div>
+            <Label className="text-xs text-[#9C8578] mb-1.5 block">Resultado</Label>
+            <Select value={outcome} onValueChange={setOutcome}>
+              <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#2D3C3C] border-[#D5C3B6]/20">
+                {ACTIVITY_OUTCOMES.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs text-[#9C8578] mb-1.5 block">Notas adicionales (opcional)</Label>

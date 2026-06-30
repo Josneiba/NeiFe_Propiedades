@@ -63,6 +63,9 @@ export async function POST(request: NextRequest) {
     dealId,
     contactId,
     scheduledAt,
+    outcome,
+    isDone,
+    completedAt,
   } = body
 
   if (!type || !title) {
@@ -82,7 +85,9 @@ export async function POST(request: NextRequest) {
         dealId: dealId || null,
         contactId: contactId || null,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        isDone: false,
+        outcome: outcome || null,
+        isDone: isDone ?? false,
+        completedAt: completedAt ? new Date(completedAt) : isDone ? new Date() : null,
       },
       include: {
         deal: true,

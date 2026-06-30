@@ -1019,6 +1019,7 @@ model CrmActivity {
   contact     CrmContact?     @relation(fields: [contactId], references: [id])
   scheduledAt DateTime?
   completedAt DateTime?
+  outcome     String?
   isDone      Boolean         @default(false)
   createdAt   DateTime        @default(now())
 

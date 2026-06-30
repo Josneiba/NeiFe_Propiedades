@@ -35,6 +35,7 @@ export async function PATCH(
     data: {
       isDone: isDone ?? true,
       completedAt: isDone ? new Date() : null,
+      outcome: body.outcome ?? undefined,
     },
     include: { deal: true, contact: true },
   })

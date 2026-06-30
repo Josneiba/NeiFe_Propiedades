@@ -20,6 +20,7 @@ interface ContactActivity {
   description?: string | null
   scheduledAt?: string | Date | null
   completedAt?: string | Date | null
+  outcome?: string | null
   isDone?: boolean
   createdAt: string | Date
 }
@@ -352,6 +353,9 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
                       </div>
                       {activity.description && (
                         <p className="mt-3 text-sm text-[#D5C3B6]">{activity.description}</p>
+                      )}
+                      {activity.outcome && (
+                        <p className="mt-3 text-xs uppercase tracking-[0.18em] text-[#9C8578]">Resultado: {activity.outcome}</p>
                       )}
                     </div>
                   ))}

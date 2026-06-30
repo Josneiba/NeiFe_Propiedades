@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RefreshCw, AlertTriangle, Calendar, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
+import { KpiWeeklyPanel } from '@/components/broker/crm/kpi-weekly-panel'
+import { OpenTasksBadges } from '@/components/broker/crm/open-tasks-badges'
+import { ContactsWithProgress } from '@/components/broker/crm/contacts-with-progress'
+import { VerlaufChart } from '@/components/broker/crm/verlauf-chart'
 import type { TaskSuggestion } from '@/lib/task-engine'
 import type { DealCardData } from '@/components/broker/crm/kanban-card'
 import type { BrokerGoalProgress } from '@/lib/goal-engine'
@@ -231,14 +235,20 @@ export default function MiDiaPage() {
 
             <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
               <div className="space-y-6">
+                <KpiWeeklyPanel />
                 <GoalDashboard progress={goalsData.progress} />
+                <ContactsWithProgress />
               </div>
-              <WeeklyPlanCard
-                initialPlanText={goalsData.weekPlan?.planText ?? null}
-                initialWorkDays={goalsData.weekPlan?.workDays ?? {}}
-                initialDailyCommitments={goalsData.weekPlan?.dailyCommitments ?? {}}
-                onSave={handleSaveWeekPlan}
-              />
+              <div className="space-y-6">
+                <OpenTasksBadges />
+                <VerlaufChart />
+                <WeeklyPlanCard
+                  initialPlanText={goalsData.weekPlan?.planText ?? null}
+                  initialWorkDays={goalsData.weekPlan?.workDays ?? {}}
+                  initialDailyCommitments={goalsData.weekPlan?.dailyCommitments ?? {}}
+                  onSave={handleSaveWeekPlan}
+                />
+              </div>
             </div>
           </>
         )}

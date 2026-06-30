@@ -49,13 +49,14 @@ function getDailyRange(date = new Date()) {
   return { start, end }
 }
 
-function getWeeklyRange(week: number, year: number) {
+export function getISOWeekRange(week: number, year: number) {
   const jan4 = new Date(Date.UTC(year, 0, 4))
   const jan4Day = jan4.getUTCDay() || 7
   const week1Start = new Date(jan4)
   week1Start.setUTCDate(jan4.getUTCDate() + 1 - jan4Day)
   const start = new Date(week1Start.getTime() + (week - 1) * 7 * 86_400_000)
-  return { start, end: new Date(start.getTime() + 7 * 86_400_000) }
+  const end = new Date(start.getTime() + 7 * 86_400_000)
+  return { start, end }
 }
 
 function getMonthlyRange(month: number, year: number) {
@@ -70,7 +71,7 @@ function getGoalRange(goal: BrokerGoal) {
   }
 
   if (goal.period === 'WEEKLY') {
-    return getWeeklyRange(goal.week ?? getCurrentWeekNumber(), goal.year)
+    return getISOWeekRange(goal.week ?? getCurrentWeekNumber(), goal.year)
   }
 
   return getMonthlyRange(goal.month ?? getCurrentMonth(), goal.year)
@@ -145,6 +146,15 @@ async function fetchGoalMetricValue(
     default:
       return 0
   }
+}
+
+export async function getRealProgressForRange(
+  brokerId: string,
+  metric: GoalMetric,
+  start: Date,
+  end: Date,
+) {
+  return fetchGoalMetricValue(brokerId, metric, start, end)
 }
 
 export async function getBrokerGoalProgress(brokerId: string) {
