@@ -1,37 +1,79 @@
 import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { getCurrentYear, getCurrentWeekNumber, getISOWeekRange, getRealProgressForRange } from '@/lib/goal-engine'
+import { getCurrentWeekNumber, getCurrentYear, getISOWeekRange, getRealProgressForRange } from '@/lib/goal-engine'
 
-export async function GET() {
+const METRIC_LABELS: Record<string, string> = {
+  CONTACTS: 'Contactos',
+  VISITS: 'Visitas',
+  DEALS_CLOSED: 'Cierres',
+  COMMISSION_CLP: 'Comisión',
+  MANDATES: 'Mandatos',
+  PROPERTIES_PUBLISHED: 'Propiedades',
+}
+
+const ALLOWED_METRICS = [
+  'CONTACTS',
+  'VISITS',
+  'DEALS_CLOSED',
+  'COMMISSION_CLP',
+  'MANDATES',
+  'PROPERTIES_PUBLISHED',
+] as const
+
+type GoalMetric = (typeof ALLOWED_METRICS)[number]
+
+function isGoalMetric(value: string | null): value is GoalMetric {
+  return typeof value === 'string' && ALLOWED_METRICS.includes(value as GoalMetric)
+}
+
+export async function GET(request: Request) {
   const session = await auth()
   if (!session?.user?.id || session.user.role !== 'BROKER') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const brokerId = session.user.id
-  const year = getCurrentYear()
-  const currentWeek = getCurrentWeekNumber()
+  const url = new URL(request.url)
+  const metricParam = url.searchParams.get('metric')
+  const metric: GoalMetric = isGoalMetric(metricParam) ? metricParam : 'CONTACTS'
 
-  const weeks = Array.from({ length: 12 }, (_, index) => currentWeek - (11 - index))
-    .map((week) => {
-      const weekOffset = week <= 0 ? week + 52 : week
-      return { week: weekOffset, year: week <= 0 ? year - 1 : year }
-    })
+  const brokerId = session.user.id
+  const currentWeek = getCurrentWeekNumber()
+  const currentYear = getCurrentYear()
+
+  const weeks = Array.from({ length: 8 }, (_, index) => {
+    const week = currentWeek - (7 - index)
+    if (week > 0) {
+      return { week, year: currentYear }
+    }
+
+    return {
+      week: week + 52,
+      year: currentYear - 1,
+    }
+  })
+
+  const goals = await prisma.brokerGoal.findMany({
+    where: {
+      brokerId,
+      period: 'WEEKLY',
+      metric,
+      OR: weeks.map(({ week, year }) => ({ week, year })),
+    },
+  })
 
   const data = await Promise.all(
     weeks.map(async ({ week, year: weekYear }) => {
       const { start, end } = getISOWeekRange(week, weekYear)
-      const totalContacts = await getRealProgressForRange(brokerId, 'CONTACTS', start, end)
-      const totalVisits = await getRealProgressForRange(brokerId, 'VISITS', start, end)
+      const actual = await getRealProgressForRange(brokerId, metric, start, end)
+      const goal = goals.find((item) => item.week === week && item.year === weekYear)
       return {
-        week,
-        year: weekYear,
-        contacts: totalContacts,
-        visits: totalVisits,
+        label: `S${week}`,
+        actual,
+        target: goal?.target ?? 0,
       }
     }),
   )
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ metric, metricLabel: METRIC_LABELS[metric], data })
 }
