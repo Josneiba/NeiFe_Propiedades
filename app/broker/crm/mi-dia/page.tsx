@@ -3,70 +3,33 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { TaskQueue } from '@/components/broker/crm/task-queue'
-import { DailyProgress } from '@/components/broker/crm/daily-progress'
 import { DealDrawer } from '@/components/broker/crm/deal-drawer'
-import { GoalDashboard } from '@/components/broker/crm/goal-dashboard'
-import { WeeklyPlanCard } from '@/components/broker/crm/weekly-plan-card'
 import { OpenTasksBadges } from '@/components/broker/crm/open-tasks-badges'
 import { ContactsWithProgress } from '@/components/broker/crm/contacts-with-progress'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
-import { VerlaufChart } from '@/components/broker/goals/verlauf-chart'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { RefreshCw, Plus, AlertTriangle, Calendar, Settings2, TrendingUp } from 'lucide-react'
+import { RefreshCw, Plus, AlertTriangle, Calendar, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { TaskSuggestion } from '@/lib/task-engine'
 import type { DealCardData } from '@/components/broker/crm/kanban-card'
-import type { BrokerGoalProgress } from '@/lib/goal-engine'
 
 interface DayData {
-  manualTasks: any[]
   suggestions: TaskSuggestion[]
   todayActivities: number
   totalDeals: number
 }
 
-interface WeekPlanData {
-  planText?: string | null
-  workDays?: Record<string, string>
-  dailyCommitments?: Record<string, string>
-}
-
-interface GoalsData {
-  progress: BrokerGoalProgress[]
-  weekPlan: WeekPlanData | null
-}
-
-const METRIC_LABELS: Record<string, string> = {
-  CONTACTS: 'Contactos',
-  VISITS: 'Visitas',
-  DEALS_CLOSED: 'Cierres',
-  COMMISSION_CLP: 'Comisión',
-  MANDATES: 'Mandatos',
-  PROPERTIES_PUBLISHED: 'Prop. publicadas',
-}
-
 export default function MiDiaPage() {
   const [dayData, setDayData] = useState<DayData | null>(null)
-  const [goalsData, setGoalsData] = useState<GoalsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
 
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [tasksRes, goalsRes] = await Promise.all([
-        fetch('/api/crm/tasks'),
-        fetch('/api/broker/goals'),
-      ])
-
+      const tasksRes = await fetch('/api/crm/tasks')
       if (tasksRes.ok) {
         setDayData(await tasksRes.json())
-      }
-
-      if (goalsRes.ok) {
-        const goalsJson = await goalsRes.json()
-        setGoalsData({ progress: goalsJson.progress ?? [], weekPlan: goalsJson.weekPlan ?? null })
       }
     } catch (error) {
       console.error(error)
@@ -113,7 +76,6 @@ export default function MiDiaPage() {
 
   const urgent = dayData?.suggestions.filter((s) => s.urgencyScore >= 70) ?? []
   const normal = dayData?.suggestions.filter((s) => s.urgencyScore < 70) ?? []
-  const weeklyMetrics = goalsData?.progress.filter((g) => g.period === 'WEEKLY') ?? []
 
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
@@ -149,12 +111,6 @@ export default function MiDiaPage() {
             <Link href="/broker/crm/goals" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
           </div>
           <KpiWeeklyPanel />
-        </section>
-
-        <section className="space-y-4">
-          {weeklyMetrics.map((metric) => (
-            <VerlaufChart key={metric.metric} metric={metric.metric} metricLabel={METRIC_LABELS[metric.metric] ?? metric.metric} />
-          ))}
         </section>
 
         <Link
@@ -199,7 +155,7 @@ export default function MiDiaPage() {
         )}
 
         {!loading && dayData?.suggestions.length === 0 && (
-          <div className="rounded-3xl border border-[#2D3C3C] bg-[#1a2a2a] py-16 text-center text-[#D5C3B6]/70">
+          <div className="rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] py-16 text-center text-[#D5C3B6]/70">
             <p>No hay tareas pendientes. Excelente trabajo!</p>
           </div>
         )}

@@ -9,8 +9,9 @@ export async function GET() {
   }
 
   const brokerId = session.user.id
+  const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
-  const [openDeals, openTasks, openContacts] = await Promise.all([
+  const [openDeals, openTasks, openContacts, urgentCount] = await Promise.all([
     prisma.crmDeal.count({
       where: { brokerId, status: 'ACTIVE' },
     }),
@@ -20,11 +21,21 @@ export async function GET() {
     prisma.crmContact.count({
       where: { brokerId, status: 'ACTIVE' },
     }),
+    prisma.crmDeal.count({
+      where: {
+        brokerId,
+        status: 'ACTIVE',
+        activities: {
+          none: { createdAt: { gte: twoDaysAgo } },
+        },
+      },
+    }),
   ])
 
   return NextResponse.json({
     openDeals,
     openTasks,
     openContacts,
+    urgentCount,
   })
 }

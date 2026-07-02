@@ -200,18 +200,6 @@ const brokerNavGroups = [
         id: undefined,
       },
       {
-        href: "/broker/crm/metricas",
-        label: "Métricas",
-        icon: TrendingUp,
-        id: undefined,
-      },
-      {
-        href: "/broker/crm/analytics",
-        label: "Análisis",
-        icon: PieChart,
-        id: undefined,
-      },
-      {
         href: "/broker/crm/plantillas",
         label: "Plantillas",
         icon: MessageSquare,
