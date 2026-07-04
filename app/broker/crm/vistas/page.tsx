@@ -49,6 +49,10 @@ export default function SavedViewsPage() {
   const [sortBy, setSortBy] = useState('updatedAt')
   const [sortOrder, setSortOrder] = useState('desc')
   const [filters, setFilters] = useState<Record<string, unknown>>({})
+
+  const toggleQuickSwitch = (key: string) => {
+    setFilters((current) => ({ ...current, [key]: !Boolean(current[key]) }))
+  }
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const loadViews = async () => {
@@ -218,6 +222,31 @@ export default function SavedViewsPage() {
                   <SelectItem value="MAINTENANCE">Mantenciones</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-3 rounded-xl border border-[#2D3C3C] bg-[#162121] p-3">
+              <p className="text-sm font-semibold text-[#FAF6F2]">Switches rápidos</p>
+              {entity === 'CONTACTS' ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[
+                    ['todayVisitsOnly', 'Solo visitas de hoy'],
+                    ['futureVisitsOnly', 'Solo visitas futuras'],
+                    ['noFutureVisits', 'Sin visitas futuras'],
+                    ['vipOnly', 'Solo clientes VIP'],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 text-sm text-[#D5C3B6]">
+                      <input type="checkbox" checked={Boolean(filters[key])} onChange={() => toggleQuickSwitch(key)} className="h-4 w-4 rounded border-[#2D3C3C] bg-[#1C2828]" />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              ) : entity === 'PROPERTIES' ? (
+                <label className="flex items-center gap-2 text-sm text-[#D5C3B6]">
+                  <input type="checkbox" checked={Boolean(filters.maintenanceOpenOnly)} onChange={() => toggleQuickSwitch('maintenanceOpenOnly')} className="h-4 w-4 rounded border-[#2D3C3C] bg-[#1C2828]" />
+                  Solo propiedades con mantenciones abiertas
+                </label>
+              ) : (
+                <p className="text-sm text-[#9C8578]">No hay switches rápidos disponibles para esta entidad.</p>
+              )}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">

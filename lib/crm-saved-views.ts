@@ -58,6 +58,10 @@ export async function ensureStandardSavedViews(prisma: PrismaClient, brokerId: s
 export async function executeSavedView(prisma: PrismaClient, brokerId: string, payload: SavedViewQueryPayload) {
   const { entity, filters = {}, sortBy, sortOrder } = payload
   const direction = sortDirection(sortOrder)
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayEnd = new Date(todayStart.getTime() + 86_400_000)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 86_400_000)
 
   if (entity === 'CONTACTS') {
     const where: Record<string, unknown> = { brokerId }
@@ -74,14 +78,21 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
     if (filters.priority) {
       where.priority = filters.priority
     }
-    if (filters.lastContactIsNull) {
-      where.OR = [
-        { activities: { none: {} } },
-        { activities: { none: { createdAt: { not: null } } } },
-      ]
+    if (filters.vipOnly) {
+      where.priority = 'HIGH'
     }
-    if (filters.missingDocuments) {
-      where.notes = { contains: 'document', mode: 'insensitive' }
+    if (filters.todayVisitsOnly) {
+      where.activities = { some: { type: 'VISITA', scheduledAt: { gte: todayStart, lt: todayEnd } } }
+    }
+    if (filters.futureVisitsOnly) {
+      where.activities = { some: { type: 'VISITA', scheduledAt: { gte: now } } }
+    }
+    if (filters.noFutureVisits) {
+      where.activities = { none: { type: 'VISITA', scheduledAt: { gte: now } } }
+    }
+    if (filters.lastContactIsNull) {
+      // Contacts with no recent activity in the last 30 days (includes contacts with no activities)
+      where.activities = { none: { createdAt: { gte: thirtyDaysAgo } } }
     }
 
     const contacts = await prisma.crmContact.findMany({
@@ -106,7 +117,7 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
   }
 
   if (entity === 'PROPERTIES') {
-    const where: Record<string, unknown> = { landlordId: brokerId }
+    const where: Record<string, unknown> = { managedBy: brokerId }
 
     if (Array.isArray(filters.propertyType) && filters.propertyType.length) {
       where.type = { in: filters.propertyType as string[] }
@@ -133,6 +144,9 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
     }
     if (filters.noVisits) {
       where.activityLogs = { none: { type: 'VISITA' } }
+    }
+    if (filters.maintenanceOpenOnly) {
+      where.maintenance = { some: { status: { in: ['REQUESTED', 'REVIEWING', 'APPROVED', 'IN_PROGRESS'] } } }
     }
 
     const properties = await prisma.property.findMany({
@@ -165,7 +179,9 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
   }
 
   if (entity === 'PAYMENTS') {
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = {
+      property: { managedBy: brokerId },
+    }
     if (filters.status) {
       where.status = filters.status
     }
@@ -183,7 +199,9 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
   }
 
   if (entity === 'MAINTENANCE') {
-    const where: Record<string, unknown> = { requesterId: brokerId }
+    const where: Record<string, unknown> = {
+      property: { managedBy: brokerId },
+    }
 
     if (filters.status) {
       where.status = filters.status

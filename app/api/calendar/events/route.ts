@@ -123,8 +123,26 @@ export async function GET(request: NextRequest) {
 
     let whereClause: any = {
       property: {
-        landlordId: session.user.id,
+        OR: [
+          { managedBy: session.user.id },
+          {
+            mandates: {
+              some: {
+                brokerId: session.user.id,
+                status: 'ACTIVE',
+              },
+            },
+          },
+        ],
       },
+    }
+
+    if (session.user.role !== 'BROKER' && session.user.role !== 'OWNER') {
+      whereClause = {
+        property: {
+          landlordId: session.user.id,
+        },
+      }
     }
 
     if (propertyId) {

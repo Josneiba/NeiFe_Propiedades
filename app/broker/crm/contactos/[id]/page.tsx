@@ -18,10 +18,17 @@ export default async function ContactDetailPage({
   const contact = await prisma.crmContact.findUnique({
     where: { id: params.id },
     include: {
+      broker: { select: { id: true, name: true } },
       deals: {
         include: {
           deal: {
-            include: {
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              stage: true,
+              dueDate: true,
+              propertyId: true,
               property: { select: { code: true, address: true, type: true } },
             },
           },
@@ -34,9 +41,83 @@ export default async function ContactDetailPage({
 
   if (!contact || contact.brokerId !== session.user.id) notFound()
 
+  const dealIds = contact.deals.map(({ deal }) => deal.id)
+  const propertyIds = contact.deals.map(({ deal }) => deal.propertyId).filter(Boolean) as string[]
+
+  const [tasks, payments, mandates, relatedContacts, attachments] = await Promise.all([
+    prisma.crmTask.findMany({
+      where: {
+        OR: [{ contactId: contact.id }, { dealId: { in: dealIds } }],
+      },
+      orderBy: { dueDate: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+        isCompleted: true,
+        dueDate: true,
+        priority: true,
+        createdAt: true,
+      },
+    }),
+    prisma.payment.findMany({
+      where: { propertyId: { in: propertyIds } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        amountCLP: true,
+        status: true,
+        month: true,
+        year: true,
+        createdAt: true,
+        paidAt: true,
+      },
+    }),
+    prisma.mandate.findMany({
+      where: {
+        brokerId: session.user.id,
+        propertyId: { in: propertyIds },
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        expiresAt: true,
+        status: true,
+        property: { select: { address: true, id: true } },
+      },
+    }),
+    prisma.crmDealContact.findMany({
+      where: { dealId: { in: dealIds } },
+      include: {
+        contact: { select: { id: true, name: true, type: true, phone: true } },
+      },
+    }),
+    prisma.crmDealAttachment.findMany({
+      where: { dealId: { in: dealIds } },
+      select: { id: true, fileName: true, fileUrl: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
+
   return (
     <div className="p-6">
-      <ContactDetailTabs contact={contact} />
+      <ContactDetailTabs
+        contact={{
+          ...contact,
+          tasks,
+          payments,
+          mandates,
+          relatedContacts: relatedContacts.map((item) => ({
+            id: item.contact.id,
+            name: item.contact.name,
+            role: item.role,
+            type: item.contact.type,
+            phone: item.contact.phone,
+          })),
+          attachments,
+        }}
+      />
     </div>
   )
 }
