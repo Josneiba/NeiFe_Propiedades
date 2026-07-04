@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
   const status = searchParams.get('status')
+  const source = searchParams.get('source')
   const q = searchParams.get('q')
 
   const where: any = { brokerId }
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
 
   if (status) {
     where.status = status
+  }
+
+  if (source) {
+    where.source = source as CrmLeadSource
   }
 
   if (q) {

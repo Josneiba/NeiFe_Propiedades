@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ContactsTable } from '@/components/broker/crm/contacts-table'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
 import { NewContactModal } from '@/components/broker/crm/new-contact-modal'
@@ -14,6 +15,7 @@ interface Contact {
   phone: string | null
   type: 'PROPIETARIO' | 'ARRENDATARIO' | 'INVERSIONISTA' | 'LEAD'
   status: 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'LOST'
+  source: 'PORTAL' | 'REFERIDO' | 'RRSS' | 'LLAMADA_DIRECTA' | 'LETRERO' | 'OTRO'
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
   deals: Array<{ deal: { id: string; code: string; title: string; stage: string } }>
   score: { score: number; recommendation: string } | null
@@ -30,6 +32,7 @@ interface NewContactFormData {
 }
 
 export default function ContactosPage() {
+  const searchParams = useSearchParams()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -38,6 +41,19 @@ export default function ContactosPage() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('all')
   const [status, setStatus] = useState('all')
+  const [source, setSource] = useState('all')
+
+  useEffect(() => {
+    const nextType = searchParams.get('type')?.toLowerCase() ?? 'all'
+    const nextStatus = searchParams.get('status')?.toLowerCase() ?? 'all'
+    const nextSource = searchParams.get('source')?.toLowerCase() ?? 'all'
+    const nextSearch = searchParams.get('q')?.toLowerCase() ?? ''
+
+    setType(nextType)
+    setStatus(nextStatus)
+    setSource(nextSource)
+    setSearch(nextSearch)
+  }, [searchParams])
 
   const loadContacts = useCallback(async () => {
     try {
@@ -46,7 +62,8 @@ export default function ContactosPage() {
       if (search) params.set('q', search)
       if (type !== 'all') params.set('type', type.toUpperCase())
       if (status !== 'all') params.set('status', status.toUpperCase())
-      
+      if (source !== 'all') params.set('source', source.toUpperCase())
+
       const res = await fetch(`/api/crm/contacts?${params}`)
       if (!res.ok) throw new Error()
       const data = await res.json()
@@ -56,7 +73,7 @@ export default function ContactosPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, type, status])
+  }, [search, type, status, source])
 
   useEffect(() => { loadContacts() }, [loadContacts])
 
@@ -85,8 +102,13 @@ export default function ContactosPage() {
       filtered = filtered.filter((c) => c.status === status.toUpperCase())
     }
 
+    // Source filter
+    if (source !== 'all') {
+      filtered = filtered.filter((c) => c.source === source.toUpperCase())
+    }
+
     setFilteredContacts(filtered)
-  }, [contacts, search, type, status])
+  }, [contacts, search, type, status, source])
 
   const handleCreateContact = async (data: NewContactFormData) => {
     try {
@@ -125,6 +147,7 @@ export default function ContactosPage() {
     setSearch('')
     setType('all')
     setStatus('all')
+    setSource('all')
   }
 
   return (

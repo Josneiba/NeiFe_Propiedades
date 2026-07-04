@@ -6,6 +6,10 @@ import { TaskQueue } from '@/components/broker/crm/task-queue'
 import { DealDrawer } from '@/components/broker/crm/deal-drawer'
 import { OpenTasksBadges } from '@/components/broker/crm/open-tasks-badges'
 import { ContactsWithProgress } from '@/components/broker/crm/contacts-with-progress'
+import { ActionItemsGrid } from '@/components/broker/crm/action-items-grid'
+import { ResourcesSection } from '@/components/broker/crm/resources-section'
+import { QuickFiltersSection } from '@/components/broker/crm/quick-filters-section'
+import { GroupsSection } from '@/components/broker/crm/groups-section'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Plus, AlertTriangle, Calendar, Settings2 } from 'lucide-react'
@@ -133,6 +137,11 @@ export default function MiDiaPage() {
           <p className="text-sm font-semibold text-[#FAF6F2] mb-2.5">Vencimientos abiertos</p>
           <OpenTasksBadges />
         </section>
+
+        <ActionItemsGrid />
+        <ResourcesSection />
+        <QuickFiltersSection />
+        <GroupsSection />
 
         {urgent.length > 0 && (
           <section>
