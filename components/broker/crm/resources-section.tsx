@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const RESOURCES = [
-  { title: 'Notas de Cartera', href: '/broker/cartera' },
+  { title: 'Notas de Propiedades', href: '/broker/cartera' },
   { title: 'Propiedades', href: '/broker/propiedades' },
-  { title: 'Enviar Comunicado', href: '/broker/avisos' },
-  { title: 'Analytics', href: '/broker/crm/analytics' },
-  { title: 'Manual del Corredor', href: '/legal' },
-  { title: 'Mantenciones', href: '/broker/mantenciones' },
+  { title: 'Enviar Mensaje', href: '/broker/avisos' },
+  { title: 'Analíticas', href: '/broker/crm/analytics' },
+  { title: 'Centro de Documentos', href: '/broker/crm/plantillas' },
+  { title: 'Calendario de Inspecciones y Mantenciones', href: '/broker/crm/calendario' },
 ]
 
 export function ResourcesSection() {

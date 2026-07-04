@@ -1,0 +1,253 @@
+
+> my-project@0.1.0 build C:\Users\josva\Documents\JVNB\NeiFe_Propiedades
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.
+Prisma schema loaded from prisma\schema.prisma
+
+Ô£ö Generated Prisma Client (v6.19.2) to .\node_modules\.pnpm\@prisma+client@6.19.2_prism_194920a5ab5989f9821c66715ecadd58\node_modules\@prisma\client in 866ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+Ôû▓ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Ô£ô Compiled successfully in 2.1min
+  Running TypeScript ...
+  Finished TypeScript in 89s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/123) ...
+  Generating static pages using 3 workers (30/123) 
+  Generating static pages using 3 workers (61/123) 
+  Generating static pages using 3 workers (92/123) 
+Ô£ô Generating static pages using 3 workers (123/123) in 3.1s
+  Finalizing page optimization ...
+
+Route (app)
+Ôöî ãÆ /
+Ôö£ Ôùï /_not-found
+Ôö£ ãÆ /api/applications
+Ôö£ ãÆ /api/applications/[id]
+Ôö£ ãÆ /api/auth/[...nextauth]
+Ôö£ ãÆ /api/auth/password-reset-confirm
+Ôö£ ãÆ /api/auth/password-reset-request
+Ôö£ ãÆ /api/auth/registro
+Ôö£ ãÆ /api/auth/resend-verification
+Ôö£ ãÆ /api/auth/verification-status
+Ôö£ ãÆ /api/auth/verify-email
+Ôö£ ãÆ /api/broker-permissions
+Ôö£ ãÆ /api/broker-permissions/[id]
+Ôö£ ãÆ /api/broker-permissions/check
+Ôö£ ãÆ /api/broker-permissions/dual-request
+Ôö£ ãÆ /api/broker-permissions/end
+Ôö£ ãÆ /api/broker-permissions/sent
+Ôö£ ãÆ /api/broker-property-requests
+Ôö£ ãÆ /api/broker-property-requests/[id]
+Ôö£ ãÆ /api/broker/clientes
+Ôö£ ãÆ /api/broker/clientes/[landlordId]
+Ôö£ ãÆ /api/broker/contactos
+Ôö£ ãÆ /api/broker/goals
+Ôö£ ãÆ /api/broker/goals/verlauf
+Ôö£ ãÆ /api/broker/goals/weekly-compare
+Ôö£ ãÆ /api/broker/leads/quick-create
+Ôö£ ãÆ /api/broker/leads/search
+Ôö£ ãÆ /api/broker/messages
+Ôö£ ãÆ /api/broker/open-counts
+Ôö£ ãÆ /api/broker/opportunities/[opportunityId]/attachments
+Ôö£ ãÆ /api/broker/opportunities/[opportunityId]/attachments/[attachmentId]
+Ôö£ ãÆ /api/broker/properties
+Ôö£ ãÆ /api/broker/properties/[id]
+Ôö£ ãÆ /api/broker/quick-actions
+Ôö£ ãÆ /api/broker/settings
+Ôö£ ãÆ /api/broker/statements
+Ôö£ ãÆ /api/broker/statements/[id]/pdf
+Ôö£ ãÆ /api/broker/urgent-summary
+Ôö£ ãÆ /api/calendar/events
+Ôö£ ãÆ /api/calendar/events/[id]
+Ôö£ ãÆ /api/calendar/google-sync
+Ôö£ ãÆ /api/calendar/summary
+Ôö£ ãÆ /api/contracts
+Ôö£ ãÆ /api/contracts/renew
+Ôö£ ãÆ /api/crm/activities
+Ôö£ ãÆ /api/crm/activities/[id]
+Ôö£ ãÆ /api/crm/comparator
+Ôö£ ãÆ /api/crm/contact-suggestions
+Ôö£ ãÆ /api/crm/contacts
+Ôö£ ãÆ /api/crm/contacts/[id]
+Ôö£ ãÆ /api/crm/deals
+Ôö£ ãÆ /api/crm/deals/[id]
+Ôö£ ãÆ /api/crm/deals/[id]/attachments
+Ôö£ ãÆ /api/crm/deals/[id]/attachments/[attachmentId]
+Ôö£ ãÆ /api/crm/deals/[id]/contacts
+Ôö£ ãÆ /api/crm/deals/[id]/contacts/[contactId]
+Ôö£ ãÆ /api/crm/deals/[id]/history
+Ôö£ ãÆ /api/crm/deals/[id]/playbook
+Ôö£ ãÆ /api/crm/deals/[id]/stage
+Ôö£ ãÆ /api/crm/metrics/enhanced
+Ôö£ ãÆ /api/crm/metrics/overview
+Ôö£ ãÆ /api/crm/metrics/recalculate
+Ôö£ ãÆ /api/crm/metrics/scores
+Ôö£ ãÆ /api/crm/properties
+Ôö£ ãÆ /api/crm/properties/[id]
+Ôö£ ãÆ /api/crm/recommendations
+Ôö£ ãÆ /api/crm/sequences
+Ôö£ ãÆ /api/crm/tasks
+Ôö£ ãÆ /api/crm/tasks/[id]/complete
+Ôö£ ãÆ /api/crm/templates
+Ôö£ ãÆ /api/crm/templates/[id]/render
+Ôö£ ãÆ /api/cron/contract-alerts
+Ôö£ ãÆ /api/cron/create-monthly-payments
+Ôö£ ãÆ /api/cron/crm-scoring
+Ôö£ ãÆ /api/cron/mark-overdue
+Ôö£ ãÆ /api/cron/monthly-report
+Ôö£ ãÆ /api/cron/monthly-summary
+Ôö£ ãÆ /api/cron/payment-reminders
+Ôö£ ãÆ /api/cron/process-whatsapp
+Ôö£ ãÆ /api/dashboard/stats
+Ôö£ ãÆ /api/geocode
+Ôö£ ãÆ /api/invitations
+Ôö£ ãÆ /api/invitations/[token]
+Ôö£ ãÆ /api/maintenance
+Ôö£ ãÆ /api/maintenance/[id]
+Ôö£ ãÆ /api/mandates
+Ôö£ ãÆ /api/mandates/[id]
+Ôö£ ãÆ /api/mandates/[id]/document
+Ôö£ ãÆ /api/mandates/[id]/sign
+Ôö£ ãÆ /api/mandates/revoke
+Ôö£ ãÆ /api/messages/[id]
+Ôö£ ãÆ /api/messages/property/[propertyId]
+Ôö£ ãÆ /api/notifications
+Ôö£ ãÆ /api/notifications/crm-alerts
+Ôö£ ãÆ /api/notifications/stream
+Ôö£ ãÆ /api/payments
+Ôö£ ãÆ /api/payments/[id]
+Ôö£ ãÆ /api/payments/generate-monthly
+Ôö£ ãÆ /api/pdf
+Ôö£ ãÆ /api/pdf/[...path]
+Ôö£ ãÆ /api/pdf/export
+Ôö£ ãÆ /api/properties
+Ôö£ ãÆ /api/properties/[id]
+Ôö£ ãÆ /api/properties/[id]/applications
+Ôö£ ãÆ /api/properties/[id]/checklist
+Ôö£ ãÆ /api/properties/[id]/inspections
+Ôö£ ãÆ /api/properties/[id]/inspections/[inspectionId]
+Ôö£ ãÆ /api/properties/[id]/ipc-adjustment
+Ôö£ ãÆ /api/properties/[id]/ipc-adjustments
+Ôö£ ãÆ /api/properties/[id]/photos
+Ôö£ ãÆ /api/properties/[id]/providers
+Ôö£ ãÆ /api/properties/[id]/rent-adjustments
+Ôö£ ãÆ /api/properties/[id]/report
+Ôö£ ãÆ /api/properties/[id]/security-deposit
+Ôö£ ãÆ /api/properties/[id]/timeline
+Ôö£ ãÆ /api/properties/[id]/toggle-applications
+Ôö£ ãÆ /api/properties/current
+Ôö£ ãÆ /api/property-access-requests
+Ôö£ ãÆ /api/property-access-requests/[id]
+Ôö£ ãÆ /api/providers
+Ôö£ ãÆ /api/providers/[id]
+Ôö£ ãÆ /api/public/upload
+Ôö£ ãÆ /api/reports/monthly
+Ôö£ ãÆ /api/search/global
+Ôö£ ãÆ /api/services
+Ôö£ ãÆ /api/services/upload
+Ôö£ ãÆ /api/sync/broker-property-access
+Ôö£ ãÆ /api/sync/broker-property-status
+Ôö£ ãÆ /api/test-resend
+Ôö£ ãÆ /api/upload
+Ôö£ ãÆ /api/users
+Ôö£ ãÆ /api/users/me
+Ôö£ ãÆ /api/users/me/notification-preferences
+Ôö£ ãÆ /api/users/me/onboarding-complete
+Ôö£ ãÆ /api/users/me/password
+Ôö£ ãÆ /api/users/me/sessions
+Ôö£ ãÆ /api/whatsapp
+Ôö£ ãÆ /arriendos/[id]
+Ôö£ ãÆ /broker
+Ôö£ ãÆ /broker/avisos
+Ôö£ ãÆ /broker/calendario
+Ôö£ ãÆ /broker/cartera
+Ôö£ ãÆ /broker/clientes
+Ôö£ ãÆ /broker/clientes/[landlordId]
+Ôö£ ãÆ /broker/configuracion
+Ôö£ ãÆ /broker/contactos
+Ôö£ ãÆ /broker/contratos
+Ôö£ ãÆ /broker/crm
+Ôö£ ãÆ /broker/crm/analytics
+Ôö£ ãÆ /broker/crm/calendario
+Ôö£ ãÆ /broker/crm/contactos
+Ôö£ ãÆ /broker/crm/contactos/[id]
+Ôö£ ãÆ /broker/crm/goals
+Ôö£ ãÆ /broker/crm/metricas
+Ôö£ ãÆ /broker/crm/mi-dia
+Ôö£ ãÆ /broker/crm/plantillas
+Ôö£ ãÆ /broker/crm/workspace
+Ôö£ ãÆ /broker/leads/[id]
+Ôö£ ãÆ /broker/leads/nuevo
+Ôö£ ãÆ /broker/mandatos
+Ôö£ ãÆ /broker/mandatos/nuevo
+Ôö£ ãÆ /broker/mantenciones
+Ôö£ ãÆ /broker/pagos
+Ôö£ ãÆ /broker/post-venta
+Ôö£ ãÆ /broker/propiedades
+Ôö£ ãÆ /broker/propiedades/[id]
+Ôö£ ãÆ /broker/propiedades/[id]/inspecciones
+Ôö£ ãÆ /broker/propiedades/[id]/reajustes
+Ôö£ ãÆ /broker/propiedades/nueva
+Ôö£ ãÆ /broker/rendiciones
+Ôö£ ãÆ /broker/servicios
+Ôö£ ãÆ /broker/settings
+Ôö£ ãÆ /dashboard
+Ôö£ ãÆ /dashboard/calendario
+Ôö£ ãÆ /dashboard/configuracion
+Ôö£ ãÆ /dashboard/contratos
+Ôö£ ãÆ /dashboard/mantenciones
+Ôö£ ãÆ /dashboard/mapa
+Ôö£ ãÆ /dashboard/mensajes
+Ôö£ ãÆ /dashboard/mensajes/[propertyId]
+Ôö£ ãÆ /dashboard/pagos
+Ôö£ ãÆ /dashboard/postulaciones
+Ôö£ ãÆ /dashboard/propiedades
+Ôö£ ãÆ /dashboard/propiedades/[id]
+Ôö£ ãÆ /dashboard/propiedades/[id]/editar
+Ôö£ ãÆ /dashboard/propiedades/[id]/historial-renta
+Ôö£ ãÆ /dashboard/propiedades/[id]/inspecciones
+Ôö£ ãÆ /dashboard/propiedades/[id]/reajustes
+Ôö£ ãÆ /dashboard/propiedades/[id]/reporte
+Ôö£ ãÆ /dashboard/propiedades/nueva
+Ôö£ ãÆ /dashboard/proveedores
+Ôö£ ãÆ /dashboard/proveedores/[id]
+Ôö£ ãÆ /dashboard/proveedores/agregar
+Ôö£ ãÆ /dashboard/servicios
+Ôö£ ãÆ /dashboard/solicitudes-acceso-propiedades
+Ôö£ ãÆ /dashboard/solicitudes-corredores
+Ôö£ ãÆ /invitacion/[token]
+Ôö£ Ôùï /legal
+Ôö£ ãÆ /login
+Ôö£ ãÆ /mandatos/[id]/documento
+Ôö£ ãÆ /mandatos/[id]/seguimiento
+Ôö£ ãÆ /mi-arriendo
+Ôö£ ãÆ /mi-arriendo/contactos
+Ôö£ ãÆ /mi-arriendo/contrato
+Ôö£ ãÆ /mi-arriendo/mantenciones
+Ôö£ ãÆ /mi-arriendo/mantenciones/reportar
+Ôö£ ãÆ /mi-arriendo/pagos
+Ôö£ ãÆ /mi-arriendo/servicios
+Ôö£ ãÆ /postular/[slug]
+Ôö£ Ôùï /privacidad
+Ôö£ ãÆ /registro
+Ôöö Ôùï /terminos
+
+
+ãÆ Proxy (Middleware)
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

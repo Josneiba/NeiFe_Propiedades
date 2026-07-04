@@ -53,11 +53,37 @@ export async function GET(request: NextRequest) {
         take: 3,
       },
       score: true,
+      activities: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { createdAt: true },
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json(contacts)
+  const enriched = contacts.map((contact) => {
+    const lastActivityAt = contact.activities[0]?.createdAt ?? contact.updatedAt
+    const daysSinceActivity = Math.max(0, Math.floor((Date.now() - new Date(lastActivityAt).getTime()) / 86_400_000))
+
+    let stallReason: string | null = null
+    if (contact.status === 'INACTIVE') {
+      stallReason = 'NO_INTERESADO'
+    } else if (daysSinceActivity >= 45) {
+      stallReason = 'SIN_CONTACTO_RECIENTE'
+    } else if (daysSinceActivity >= 28) {
+      stallReason = 'NO_CONTACTABLE'
+    } else if (daysSinceActivity >= 14) {
+      stallReason = 'MUY_OCUPADO'
+    }
+
+    return {
+      ...contact,
+      stallReason,
+    }
+  })
+
+  return NextResponse.json(enriched)
 }
 
 export async function POST(request: NextRequest) {

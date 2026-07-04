@@ -2,8 +2,6 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { CrmCalendarClient } from '@/components/broker/crm/crm-calendar-client'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle2 } from 'lucide-react'
 
 export const metadata = {
   title: 'Calendario CRM | NeiFe',
@@ -53,13 +51,6 @@ export default async function CalendarioPage() {
             {transformedDeals.length} operación{transformedDeals.length !== 1 ? 'es' : ''} con fecha objetivo
           </p>
         </div>
-
-        <Alert className="mb-6 bg-[#5E8B8C]/10 border-[#5E8B8C]/30">
-          <CheckCircle2 className="h-4 w-4 text-[#5E8B8C]" />
-          <AlertDescription className="text-[#D5C3B6]">
-            Los eventos que crees aquí se sincronizan automáticamente con tu Google Calendar
-          </AlertDescription>
-        </Alert>
 
         <CrmCalendarClient initialDeals={transformedDeals} />
       </div>

@@ -199,12 +199,6 @@ const brokerNavGroups = [
         icon: Calendar,
         id: undefined,
       },
-      {
-        href: "/broker/crm/plantillas",
-        label: "Plantillas",
-        icon: MessageSquare,
-        id: undefined,
-      },
     ],
   },
   {

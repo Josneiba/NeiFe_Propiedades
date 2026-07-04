@@ -10,6 +10,7 @@ import { ActionItemsGrid } from '@/components/broker/crm/action-items-grid'
 import { ResourcesSection } from '@/components/broker/crm/resources-section'
 import { QuickFiltersSection } from '@/components/broker/crm/quick-filters-section'
 import { GroupsSection } from '@/components/broker/crm/groups-section'
+import { UrgentActionsSection } from '@/components/broker/crm/urgent-actions-section'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Plus, AlertTriangle, Calendar, Settings2 } from 'lucide-react'
@@ -83,7 +84,7 @@ export default function MiDiaPage() {
 
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
-      <div className="max-w-2xl mx-auto p-4 space-y-5">
+      <div className="mx-auto w-full max-w-7xl p-4 space-y-5 lg:px-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Mi Día</h1>
@@ -109,9 +110,11 @@ export default function MiDiaPage() {
           </div>
         </div>
 
+        <UrgentActionsSection />
+
         <section>
           <div className="flex items-center justify-between mb-2.5">
-            <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores semanales</p>
+            <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores Clave</p>
             <Link href="/broker/crm/goals" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
           </div>
           <KpiWeeklyPanel />
@@ -125,23 +128,30 @@ export default function MiDiaPage() {
           Planificación semanal
         </Link>
 
-        <section>
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-sm font-semibold text-[#FAF6F2]">Contactos con progreso</p>
-            <Link href="/broker/crm/contactos" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
+        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+          <div className="space-y-5">
+            <section>
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-sm font-semibold text-[#FAF6F2]">Seguimiento de Clientes</p>
+                <Link href="/broker/crm/contactos" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
+              </div>
+              <ContactsWithProgress />
+            </section>
+
+            <section>
+              <p className="text-sm font-semibold text-[#FAF6F2] mb-2.5">Tareas y pagos vencidos</p>
+              <OpenTasksBadges />
+            </section>
+
+            <ActionItemsGrid />
           </div>
-          <ContactsWithProgress />
-        </section>
 
-        <section>
-          <p className="text-sm font-semibold text-[#FAF6F2] mb-2.5">Vencimientos abiertos</p>
-          <OpenTasksBadges />
-        </section>
-
-        <ActionItemsGrid />
-        <ResourcesSection />
-        <QuickFiltersSection />
-        <GroupsSection />
+          <div className="space-y-5">
+            <ResourcesSection />
+            <QuickFiltersSection />
+            <GroupsSection />
+          </div>
+        </div>
 
         {urgent.length > 0 && (
           <section>

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function NewContactModal({ onCreated }: { onCreated?: () => void }) {
+export function NewContactModal({ onCreated, variant = 'default' }: { onCreated?: () => void; variant?: 'default' | 'fab' }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
@@ -53,10 +53,16 @@ export function NewContactModal({ onCreated }: { onCreated?: () => void }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Contacto
-        </Button>
+        {variant === 'fab' ? (
+          <button className="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-[#5E8B8C] text-white shadow-lg shadow-[#1C2828]/40 transition hover:scale-105">
+            <Plus className="h-6 w-6" />
+          </button>
+        ) : (
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Contacto
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="bg-[#1C2828] border-[#D5C3B6]/15 text-[#FAF6F2] max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pt-2">
@@ -96,8 +102,8 @@ export function NewContactModal({ onCreated }: { onCreated?: () => void }) {
                 <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/20">
                   <SelectItem value="PORTAL">Portal</SelectItem>
                   <SelectItem value="REFERIDO">Referido</SelectItem>
-                  <SelectItem value="REDES_SOCIALES">Redes Sociales</SelectItem>
-                  <SelectItem value="LLAMADA">Llamada</SelectItem>
+                  <SelectItem value="RRSS">RRSS</SelectItem>
+                  <SelectItem value="LLAMADA_DIRECTA">Llamada directa</SelectItem>
                   <SelectItem value="LETRERO">Letrero</SelectItem>
                   <SelectItem value="OTRO">Otro</SelectItem>
                 </SelectContent>

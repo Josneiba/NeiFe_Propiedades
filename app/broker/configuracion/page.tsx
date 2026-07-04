@@ -41,6 +41,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
 
 interface UserProfile {
   name: string | null
@@ -86,6 +87,8 @@ export default function BrokerConfiguracionPage() {
   
   // Sessions section
   const [sessionLoading, setSessionLoading] = useState(false)
+  const [googleSyncEnabled, setGoogleSyncEnabled] = useState(false)
+  const [googleSyncLoading, setGoogleSyncLoading] = useState(true)
 
   const applyUserData = (user: UserProfile) => {
     setProfile(user)
@@ -95,6 +98,23 @@ export default function BrokerConfiguracionPage() {
   // Load profile on mount
   useEffect(() => {
     const controller = new AbortController()
+
+    const loadSettings = async () => {
+      try {
+        const stored = window.localStorage.getItem("broker-google-sync")
+        if (stored !== null) {
+          setGoogleSyncEnabled(stored === "true")
+        }
+        const res = await fetch("/api/broker/settings")
+        if (res.ok) {
+          await res.json()
+        }
+      } catch {
+        toast({ title: "Error", description: "No se pudo cargar la configuración", variant: "destructive" })
+      } finally {
+        setGoogleSyncLoading(false)
+      }
+    }
 
     const loadProfile = async () => {
       try {
@@ -118,12 +138,19 @@ export default function BrokerConfiguracionPage() {
       }
     }
 
+    void loadSettings()
     loadProfile()
 
     return () => {
       controller.abort()
     }
   }, [toast])
+
+  const handleGoogleSyncToggle = async (checked: boolean) => {
+    setGoogleSyncEnabled(checked)
+    window.localStorage.setItem("broker-google-sync", String(checked))
+    toast({ title: "Éxito", description: "Preferencia visual de calendario guardada" })
+  }
 
   // Handle profile save
   const handleProfileSave = async () => {
@@ -319,6 +346,27 @@ export default function BrokerConfiguracionPage() {
         <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[#FAF6F2]">Configuración</h1>
         <p className="text-sm text-[#9C8578] mt-0.5">Administra tu perfil, empresa y datos bancarios</p>
       </div>
+
+      <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
+        <CardHeader>
+          <CardTitle className="text-[#FAF6F2] flex items-center gap-2">
+            <Shield className="h-5 w-5 text-[#5E8B8C]" />
+            Integraciones
+          </CardTitle>
+          <CardDescription className="text-[#9C8578]">
+            Controla la sincronización del calendario con Google Calendar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium text-[#FAF6F2]">Sincronizar mi calendario con Google Calendar</p>
+            <p className="mt-1 text-sm text-[#9C8578]">
+              {googleSyncLoading ? "Cargando..." : googleSyncEnabled ? "Activado" : "Desactivado"}
+            </p>
+          </div>
+          <Switch checked={googleSyncEnabled} onCheckedChange={handleGoogleSyncToggle} />
+        </CardContent>
+      </Card>
 
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>

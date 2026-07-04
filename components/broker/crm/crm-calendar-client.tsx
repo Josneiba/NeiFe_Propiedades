@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Filter, ListChecks, Plus, Repeat2 } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Filter, ListChecks, Plus, Repeat2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 
 interface ScheduledDeal {
   id: string
@@ -59,6 +64,15 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
   })
   const [fabOpen, setFabOpen] = useState(false)
   const [now, setNow] = useState(new Date())
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalAction, setModalAction] = useState<'task' | 'payment' | 'visit' | 'contact' | 'event' | null>(null)
+  const [formTitle, setFormTitle] = useState('')
+  const [formDescription, setFormDescription] = useState('')
+  const [formDate, setFormDate] = useState('')
+  const [formPriority, setFormPriority] = useState('1')
+  const [formPropertyId, setFormPropertyId] = useState('')
+  const [formType, setFormType] = useState('OTHER')
+  const [formContact, setFormContact] = useState('')
 
   useEffect(() => { setDeals(initialDeals) }, [initialDeals])
   useEffect(() => {
@@ -204,58 +218,73 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
     setActiveFilters((value) => ({ ...value, [category]: !value[category] }))
   }
 
-  const createQuickAction = async (action: 'task' | 'payment' | 'visit' | 'contact' | 'event') => {
+  const openQuickActionForm = (action: 'task' | 'payment' | 'visit' | 'contact' | 'event') => {
     setFabOpen(false)
-    try {
-      const start = new Date(selectedDate)
-      start.setHours(9, 0, 0, 0)
-      const propertyId = properties[0]?.id
+    setModalAction(action)
+    const start = new Date(selectedDate)
+    start.setHours(9, 0, 0, 0)
+    setFormTitle(action === 'task' ? 'Nueva tarea' : action === 'payment' ? 'Cobro programado' : action === 'visit' ? 'Visita agendada' : action === 'contact' ? 'Contacto registrado' : 'Evento de agenda')
+    setFormDescription('')
+    setFormDate(start.toISOString().slice(0, 16))
+    setFormPriority('1')
+    setFormPropertyId(properties[0]?.id ?? '')
+    setFormType('OTHER')
+    setFormContact('')
+    setModalOpen(true)
+  }
 
-      if (action === 'task') {
+  const submitQuickAction = async () => {
+    if (!modalAction) return
+
+    try {
+      const start = new Date(formDate)
+      const propertyId = formPropertyId || properties[0]?.id
+
+      if (modalAction === 'task') {
         await fetch('/api/crm/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'SEGUIMIENTO',
-            title: 'Tarea creada desde el calendario',
-            description: 'Registro rápido desde agenda',
+            title: formTitle,
+            description: formDescription,
             dueDate: start.toISOString(),
-            priority: 1,
+            priority: Number(formPriority),
           }),
         })
-      } else if (action === 'payment') {
+      } else if (modalAction === 'payment') {
         if (!propertyId) throw new Error('No hay propiedad disponible')
         await fetch('/api/calendar/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'Cobro programado',
-            description: 'Cobro creado desde la agenda',
+            title: formTitle,
+            description: formDescription,
             type: 'PAYMENT_DUE',
             date: start.toISOString(),
             propertyId,
           }),
         })
-      } else if (action === 'visit') {
+      } else if (modalAction === 'visit') {
         await fetch('/api/crm/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'VISITA',
-            title: 'Visita agendada',
-            description: 'Visita creada desde la agenda',
+            title: formTitle,
+            description: formDescription,
             scheduledAt: start.toISOString(),
             isDone: false,
           }),
         })
-      } else if (action === 'contact') {
+      } else if (modalAction === 'contact') {
         await fetch('/api/crm/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'LLAMADA',
-            title: 'Contacto registrado',
-            description: 'Llamada registrada desde la agenda',
+            title: formTitle,
+            description: formDescription || `Contacto ${formContact || 'asociado'}`,
             scheduledAt: start.toISOString(),
             isDone: false,
           }),
@@ -266,20 +295,63 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'Evento de agenda',
-            description: 'Evento creado desde la agenda',
-            type: 'OTHER',
+            title: formTitle,
+            description: formDescription,
+            type: formType as any,
             date: start.toISOString(),
             propertyId,
           }),
         })
       }
 
+      setModalOpen(false)
       await loadAgendaData()
       toast.success('Registro creado correctamente')
     } catch (error) {
       console.error(error)
       toast.error('No se pudo crear el registro')
+    }
+  }
+
+  const moveEvent = async (event: TimelineEvent, deltaMinutes: number, dayDelta: number) => {
+    const nextStart = new Date(event.start)
+    nextStart.setMinutes(nextStart.getMinutes() + deltaMinutes)
+    nextStart.setDate(nextStart.getDate() + dayDelta)
+    const nextEnd = new Date(nextStart.getTime() + (event.end.getTime() - event.start.getTime()))
+
+    try {
+      const id = event.id.replace(/^(activity|task|calendar)-/, '')
+      if (event.kind === 'calendar') {
+        await fetch(`/api/calendar/events/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: event.title,
+            description: event.subtitle,
+            type: 'OTHER',
+            date: nextStart.toISOString(),
+          }),
+        })
+      } else if (event.kind === 'activity') {
+        await fetch(`/api/crm/activities/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduledAt: nextStart.toISOString() }),
+        })
+      } else {
+        await fetch(`/api/crm/tasks/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dueDate: nextStart.toISOString() }),
+        })
+      }
+
+      setSelectedDate(nextStart)
+      await loadAgendaData()
+      toast.success('Evento reprogramado')
+    } catch (error) {
+      console.error(error)
+      toast.error('No se pudo reprogramar el evento')
     }
   }
 
@@ -389,6 +461,12 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
                             <Clock3 className="h-3 w-3" />
                             {event.start.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
                           </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, -30, 0) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]">-30m</button>
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 30, 0) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]">+30m</button>
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, -1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ArrowLeft className="h-3 w-3" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, 1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ArrowRight className="h-3 w-3" /></button>
+                          </div>
                         </div>
                       )
                     })}
@@ -400,11 +478,93 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
         </div>
       </div>
 
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="border-[#2D3C3C] bg-[#1a2a2a] text-[#FAF6F2] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{modalAction === 'task' ? 'Nueva tarea' : modalAction === 'payment' ? 'Cobro programado' : modalAction === 'visit' ? 'Visita agendada' : modalAction === 'contact' ? 'Contacto registrado' : 'Nuevo evento'}</DialogTitle>
+            <DialogDescription className="text-[#D5C3B6]">
+              Completa los datos antes de guardar el registro.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="text-sm text-[#D5C3B6]">Título</label>
+              <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-[#D5C3B6]">Descripción</label>
+              <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm text-[#D5C3B6]">Fecha y hora</label>
+                <Input type="datetime-local" value={formDate} onChange={(e) => setFormDate(e.target.value)} className="border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]" />
+              </div>
+              {modalAction === 'task' && (
+                <div className="space-y-2">
+                  <label className="text-sm text-[#D5C3B6]">Prioridad</label>
+                  <Select value={formPriority} onValueChange={setFormPriority}>
+                    <SelectTrigger className="w-full border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Alta</SelectItem>
+                      <SelectItem value="2">Media</SelectItem>
+                      <SelectItem value="3">Baja</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            {(modalAction === 'payment' || modalAction === 'event') && (
+              <div className="space-y-2">
+                <label className="text-sm text-[#D5C3B6]">Propiedad</label>
+                <Select value={formPropertyId} onValueChange={setFormPropertyId}>
+                  <SelectTrigger className="w-full border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]">
+                    <SelectValue placeholder="Selecciona una propiedad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((property) => (
+                      <SelectItem key={property.id} value={property.id}>{property.address || property.name || property.id}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {modalAction === 'event' && (
+              <div className="space-y-2">
+                <label className="text-sm text-[#D5C3B6]">Tipo</label>
+                <Select value={formType} onValueChange={setFormType}>
+                  <SelectTrigger className="w-full border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OTHER">Otro</SelectItem>
+                    <SelectItem value="INSPECTION">Inspección</SelectItem>
+                    <SelectItem value="MAINTENANCE">Mantención</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {modalAction === 'contact' && (
+              <div className="space-y-2">
+                <label className="text-sm text-[#D5C3B6]">Contacto asociado</label>
+                <Input value={formContact} onChange={(e) => setFormContact(e.target.value)} className="border-[#2D3C3C] bg-[#162121] text-[#FAF6F2]" placeholder="Opcional" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setModalOpen(false)} className="text-[#D5C3B6]">Cancelar</Button>
+            <Button onClick={() => void submitQuickAction()} className="bg-[#5E8B8C] text-white">Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="fixed bottom-6 right-6 z-20 flex flex-col items-end gap-2">
         {fabOpen && (
           <div className="flex flex-col items-end gap-2 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-2 shadow-xl">
             {quickActions.map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => void createQuickAction(key)} className="flex items-center gap-2 rounded-full border border-[#2D3C3C] bg-[#162121] px-3 py-2 text-sm text-[#D5C3B6]">
+              <button key={key} onClick={() => openQuickActionForm(key)} className="flex items-center gap-2 rounded-full border border-[#2D3C3C] bg-[#162121] px-3 py-2 text-sm text-[#D5C3B6]">
                 <Icon className="h-4 w-4" />
                 {label}
               </button>

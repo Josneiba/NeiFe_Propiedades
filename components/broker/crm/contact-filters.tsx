@@ -18,6 +18,8 @@ interface ContactFiltersProps {
   onTypeChange: (value: string) => void
   status: string
   onStatusChange: (value: string) => void
+  source: string
+  onSourceChange: (value: string) => void
   priority: string
   onPriorityChange: (value: string) => void
   onReset: () => void
@@ -30,12 +32,14 @@ export function ContactFilters({
   onTypeChange,
   status,
   onStatusChange,
+  source,
+  onSourceChange,
   priority,
   onPriorityChange,
   onReset,
 }: ContactFiltersProps) {
   const hasActiveFilters =
-    search !== '' || type !== 'all' || status !== 'all' || priority !== 'all'
+    search !== '' || type !== 'all' || status !== 'all' || source !== 'all' || priority !== 'all'
 
   return (
     <div className="space-y-4 p-4 bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg">
@@ -76,6 +80,22 @@ export function ContactFilters({
             <SelectItem value="CONVERTED">Convertido</SelectItem>
             <SelectItem value="LOST">Perdido</SelectItem>
             <SelectItem value="INACTIVE">Inactivo</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Source Filter */}
+        <Select value={source} onValueChange={onSourceChange}>
+          <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
+            <SelectValue placeholder="Fuente" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
+            <SelectItem value="all">Todas las fuentes</SelectItem>
+            <SelectItem value="PORTAL">Portal</SelectItem>
+            <SelectItem value="REFERIDO">Referido</SelectItem>
+            <SelectItem value="RRSS">RRSS</SelectItem>
+            <SelectItem value="LLAMADA_DIRECTA">Llamada directa</SelectItem>
+            <SelectItem value="LETRERO">Letrero</SelectItem>
+            <SelectItem value="OTRO">Otro</SelectItem>
           </SelectContent>
         </Select>
 
