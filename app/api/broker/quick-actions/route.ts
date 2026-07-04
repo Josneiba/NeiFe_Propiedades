@@ -9,61 +9,40 @@ export async function GET() {
   }
 
   const brokerId = session.user.id
-  const brokerProperties = await prisma.property.findMany({
-    where: { managedBy: brokerId },
-    select: { id: true },
-  })
-  const propertyIds = brokerProperties.map((property) => property.id)
+  const now = new Date()
 
-  const [activeDeals, activeMandates, pendingMaintenance, activeContacts] = await Promise.all([
+  const [visitsCount, referralsCount, tasksCount, withoutReportCount, followUpsCount, loyaltyCount, templatesCount] = await Promise.all([
     prisma.crmDeal.count({
-      where: { brokerId, status: 'ACTIVE' },
-    }),
-    prisma.mandate.count({
-      where: {
-        brokerId,
-        status: { in: ['PENDING', 'ACTIVE'] },
-      },
-    }),
-    prisma.maintenanceRequest.count({
-      where: {
-        propertyId: { in: propertyIds },
-        status: { in: ['REQUESTED', 'REVIEWING', 'APPROVED', 'IN_PROGRESS'] },
-      },
+      where: { brokerId, status: 'ACTIVE', stage: 'VISITA_AGENDADA' },
     }),
     prisma.crmContact.count({
-      where: { brokerId, status: 'ACTIVE' },
+      where: { brokerId, status: 'ACTIVE', source: 'REFERIDO' },
+    }),
+    prisma.crmTask.count({
+      where: { brokerId, isCompleted: false },
+    }),
+    prisma.crmActivity.count({
+      where: { brokerId, type: 'VISITA', isDone: true, outcome: null },
+    }),
+    prisma.crmTask.count({
+      where: { brokerId, type: 'SEGUIMIENTO', isCompleted: false, dueDate: { lt: now } },
+    }),
+    prisma.crmContact.count({
+      where: { brokerId, status: 'INACTIVE' },
+    }),
+    prisma.crmMessageTemplate.count({
+      where: { brokerId, isActive: true },
     }),
   ])
 
   return NextResponse.json([
-    {
-      id: 'deals',
-      label: 'Oportunidades abiertas',
-      href: '/broker/crm/workspace',
-      count: activeDeals,
-      description: 'Seguimiento de ventas y arriendos',
-    },
-    {
-      id: 'mandates',
-      label: 'Mandatos vigentes',
-      href: '/broker/mandatos',
-      count: activeMandates,
-      description: 'Documentos y contratos activos',
-    },
-    {
-      id: 'maintenance',
-      label: 'Avisos pendientes',
-      href: '/broker/servicios',
-      count: pendingMaintenance,
-      description: 'Solicitudes por revisar',
-    },
-    {
-      id: 'contacts',
-      label: 'Contactos activos',
-      href: '/broker/crm/contactos',
-      count: activeContacts,
-      description: 'Propietarios, arrendatarios y leads',
-    },
+    { id: 'visits', label: 'Visitas Agendadas', href: '/broker/crm/workspace?stage=VISITA_AGENDADA', count: visitsCount },
+    { id: 'referrals', label: 'Referidos', href: '/broker/crm/contactos?source=REFERIDO', count: referralsCount },
+    { id: 'tasks', label: 'Tareas', href: '/broker/crm/mi-dia', count: tasksCount },
+    { id: 'withoutReport', label: 'Sin Reportar', href: '/broker/crm/workspace', count: withoutReportCount },
+    { id: 'notes', label: 'Notas Rápidas', href: '/broker/crm/workspace?quickNote=1', count: 0 },
+    { id: 'followUps', label: 'Seguimientos', href: '/broker/crm/contactos?status=ACTIVE', count: followUpsCount },
+    { id: 'loyalty', label: 'Fidelización', href: '/broker/crm/contactos?status=INACTIVE', count: loyaltyCount },
+    { id: 'templates', label: 'Guías y Plantillas', href: '/broker/crm/plantillas', count: templatesCount },
   ])
 }

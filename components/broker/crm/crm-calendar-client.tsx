@@ -1,634 +1,420 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { STAGE_COLUMNS } from "@/lib/crm-stage-utils";
-import { EventCreationModal } from "./event-creation-modal";
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Filter, ListChecks, Plus, Repeat2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ScheduledDeal {
-  id: string;
-  code: string;
-  title: string;
-  stage: string;
-  value: number | null;
-  dueDate: Date;
-  property?: { address: string };
+  id: string
+  code: string
+  title: string
+  stage: string
+  value: number | null
+  dueDate: Date
+  property?: { address: string }
 }
 
-interface Contact {
-  id: string;
-  name: string;
-  code: string;
+interface TimelineEvent {
+  id: string
+  title: string
+  subtitle: string
+  start: Date
+  end: Date
+  category: 'Visitas' | 'Pagos' | 'Mantenciones' | 'Vencimientos de Contrato' | 'Tareas'
+  color: string
+  kind: 'activity' | 'task' | 'calendar'
+  recurring?: boolean
 }
 
-interface Deal {
-  id: string;
-  title: string;
-  code: string;
+const CATEGORY_OPTIONS = [
+  { key: 'Visitas', label: 'Visitas' },
+  { key: 'Pagos', label: 'Pagos' },
+  { key: 'Mantenciones', label: 'Mantenciones' },
+  { key: 'Vencimientos de Contrato', label: 'Vencimientos' },
+  { key: 'Tareas', label: 'Tareas' },
+] as const
+
+const CATEGORY_COLORS: Record<TimelineEvent['category'], string> = {
+  Visitas: '#5E8B8C',
+  Pagos: '#C27F79',
+  Mantenciones: '#B8965A',
+  'Vencimientos de Contrato': '#F2C94C',
+  Tareas: '#2D3C3C',
 }
 
-export function CrmCalendarClient({
-  initialDeals,
-}: {
-  initialDeals: ScheduledDeal[];
-}) {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [deals, setDeals] = useState<ScheduledDeal[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [dealsList, setDealsList] = useState<Deal[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loadingActivities, setLoadingActivities] = useState(false);
+export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDeal[] }) {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [deals, setDeals] = useState<ScheduledDeal[]>([])
+  const [activities, setActivities] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([])
+  const [properties, setProperties] = useState<any[]>([])
+  const [activeFilters, setActiveFilters] = useState<Record<TimelineEvent['category'], boolean>>({
+    Visitas: true,
+    Pagos: true,
+    Mantenciones: true,
+    'Vencimientos de Contrato': true,
+    Tareas: true,
+  })
+  const [fabOpen, setFabOpen] = useState(false)
+  const [now, setNow] = useState(new Date())
 
+  useEffect(() => { setDeals(initialDeals) }, [initialDeals])
   useEffect(() => {
-    setDeals(initialDeals);
-  }, [initialDeals]);
+    const interval = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(interval)
+  }, [])
+  useEffect(() => { void loadAgendaData() }, [])
 
-  useEffect(() => {
-    const fetchContactsAndDeals = async () => {
-      try {
-        const [contactsRes, dealsRes] = await Promise.all([
-          fetch("/api/crm/contacts"),
-          fetch("/api/crm/deals"),
-        ]);
-        const contactsData = await contactsRes.json();
-        const dealsData = await dealsRes.json();
-        setContacts(contactsData);
-        setDealsList(dealsData);
-      } catch (error) {
-        console.error("Error fetching contacts or deals:", error);
-      }
-    };
-
-    fetchContactsAndDeals();
-  }, []);
-
-  async function loadScheduledActivities() {
-    setLoadingActivities(true);
+  async function loadAgendaData() {
     try {
-      const response = await fetch("/api/crm/activities");
-      if (!response.ok) {
-        throw new Error("Error fetching activities");
+      const [activitiesRes, tasksRes, eventsRes, propertiesRes] = await Promise.all([
+        fetch('/api/crm/activities'),
+        fetch('/api/crm/tasks'),
+        fetch('/api/calendar/events'),
+        fetch('/api/broker/properties'),
+      ])
+
+      if (activitiesRes.ok) setActivities(await activitiesRes.json())
+      if (tasksRes.ok) {
+        const taskPayload = await tasksRes.json()
+        setTasks(Array.isArray(taskPayload?.manualTasks) ? taskPayload.manualTasks : [])
       }
-      const data = await response.json();
-      setActivities(data);
+      if (eventsRes.ok) {
+        const eventPayload = await eventsRes.json()
+        setCalendarEvents(Array.isArray(eventPayload?.events) ? eventPayload.events : [])
+      }
+      if (propertiesRes.ok) {
+        const propertyPayload = await propertiesRes.json()
+        setProperties(Array.isArray(propertyPayload?.properties) ? propertyPayload.properties : [])
+      }
     } catch (error) {
-      console.error("Error fetching scheduled activities:", error);
-    } finally {
-      setLoadingActivities(false);
+      console.error(error)
+      toast.error('No se pudo cargar la agenda')
     }
   }
 
-  useEffect(() => {
-    loadScheduledActivities();
-  }, []);
+  const weekDays = useMemo(() => {
+    const start = new Date(selectedDate)
+    const day = start.getDay()
+    start.setDate(start.getDate() - day)
+    return Array.from({ length: 7 }, (_, index) => {
+      const value = new Date(start)
+      value.setDate(start.getDate() + index)
+      return value
+    })
+  }, [selectedDate])
 
-  function getDaysInMonth(date: Date): number {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  }
+  const timelineEvents = useMemo<TimelineEvent[]>(() => {
+    const mapped: TimelineEvent[] = []
 
-  function getFirstDayOfMonth(date: Date): number {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  }
-
-  function getDealsForDate(date: Date): ScheduledDeal[] {
-    return deals.filter((deal) => {
-      const dueDate = new Date(deal.dueDate);
-      return (
-        dueDate.getDate() === date.getDate() &&
-        dueDate.getMonth() === date.getMonth() &&
-        dueDate.getFullYear() === date.getFullYear()
-      );
-    });
-  }
-
-  function getUrgencyColor(dueDate: Date): string {
-    const days = Math.ceil(
-      (new Date(dueDate).getTime() - new Date().getTime()) /
-        (1000 * 60 * 60 * 24),
-    );
-    if (days < 0) return "bg-red-900/50 border-red-600";
-    if (days <= 3) return "bg-red-900/30 border-red-500";
-    if (days <= 7) return "bg-yellow-900/30 border-yellow-500";
-    return "bg-[#2D3C3C] border-[#5E8B8C]";
-  }
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
-
-  const monthName = currentDate.toLocaleDateString('es-CL', {
-    month: 'long',
-    year: 'numeric',
-  });
-  const daysInMonth = getDaysInMonth(currentDate);
-  const firstDay = getFirstDayOfMonth(currentDate);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  const getWeekDates = (): Date[] => {
-    const start = new Date(currentDate);
-    start.setDate(currentDate.getDate() - currentDate.getDay());
-    return Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
-  };
-
-  const weekDates = getWeekDates();
-  const currentDay = selectedDate || currentDate;
-  const dayEvents = getDealsForDate(currentDay);
-
-  const getActivitiesForDate = (date: Date) => {
-    return activities.filter((activity) => {
-      if (!activity.scheduledAt) return false;
-      const scheduledDate = new Date(activity.scheduledAt);
-      return (
-        scheduledDate.getFullYear() === date.getFullYear() &&
-        scheduledDate.getMonth() === date.getMonth() &&
-        scheduledDate.getDate() === date.getDate()
-      );
-    });
-  };
-
-  const weekEvents = weekDates.map((date) => ({
-    date,
-    dealEvents: getDealsForDate(date),
-    activities: getActivitiesForDate(date),
-  }));
-
-  const dayActivities = getActivitiesForDate(currentDay);
-
-  const viewLabel = () => {
-    if (calendarView === 'day') {
-      return currentDay.toLocaleDateString('es-CL', {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      });
+    for (const activity of activities) {
+      if (!activity.scheduledAt) continue
+      const start = new Date(activity.scheduledAt)
+      const end = new Date(start.getTime() + 60 * 60_000)
+      const category = activity.type === 'VISITA' ? 'Visitas' : 'Tareas'
+      mapped.push({
+        id: `activity-${activity.id}`,
+        title: activity.title,
+        subtitle: activity.description ?? 'Actividad CRM',
+        start,
+        end,
+        category,
+        color: CATEGORY_COLORS[category],
+        kind: 'activity',
+      })
     }
 
-    if (calendarView === 'week') {
-      const first = weekDates[0];
-      const last = weekDates[6];
-      return `${first.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} - ${last.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+    for (const task of tasks) {
+      if (!task.dueDate) continue
+      const start = new Date(task.dueDate)
+      const end = new Date(start.getTime() + 45 * 60_000)
+      mapped.push({
+        id: `task-${task.id}`,
+        title: task.title,
+        subtitle: task.description ?? 'Tarea pendiente',
+        start,
+        end,
+        category: 'Tareas',
+        color: CATEGORY_COLORS.Tareas,
+        kind: 'task',
+        recurring: task.title.toLowerCase().includes('cobro') || task.title.toLowerCase().includes('mant') || task.title.toLowerCase().includes('mensual'),
+      })
     }
 
-    return monthName;
-  };
-
-  const moveDate = (direction: 'prev' | 'next') => {
-    const amount = direction === 'prev' ? -1 : 1;
-    if (calendarView === 'month') {
-      setCurrentDate(
-        new Date(currentDate.getFullYear(), currentDate.getMonth() + amount, 1),
-      );
-      return;
+    for (const event of calendarEvents) {
+      if (!event.date) continue
+      const start = new Date(event.date)
+      const end = new Date(start.getTime() + 60 * 60_000)
+      const category = event.type === 'PAYMENT_DUE'
+        ? 'Pagos'
+        : event.type === 'MAINTENANCE'
+          ? 'Mantenciones'
+          : event.type === 'CONTRACT_RENEWAL'
+            ? 'Vencimientos de Contrato'
+            : 'Visitas'
+      mapped.push({
+        id: `calendar-${event.id}`,
+        title: event.title,
+        subtitle: event.description ?? 'Evento del calendario',
+        start,
+        end,
+        category,
+        color: CATEGORY_COLORS[category],
+        kind: 'calendar',
+        recurring: event.type === 'PAYMENT_DUE' || event.type === 'MAINTENANCE',
+      })
     }
 
-    if (calendarView === 'week') {
-      const nextWeek = new Date(currentDate);
-      nextWeek.setDate(currentDate.getDate() + amount * 7);
-      setCurrentDate(nextWeek);
-      return;
+    for (const deal of deals) {
+      const start = new Date(deal.dueDate)
+      const end = new Date(start.getTime() + 60 * 60_000)
+      mapped.push({
+        id: `deal-${deal.id}`,
+        title: deal.code,
+        subtitle: deal.title,
+        start,
+        end,
+        category: 'Vencimientos de Contrato',
+        color: CATEGORY_COLORS['Vencimientos de Contrato'],
+        kind: 'calendar',
+      })
     }
 
-    const nextDay = new Date(currentDay);
-    nextDay.setDate(currentDay.getDate() + amount);
-    setSelectedDate(nextDay);
-    setCurrentDate(nextDay);
-  };
+    return mapped
+  }, [activities, tasks, calendarEvents, deals])
 
-  const prevMonth = () => moveDate('prev');
-  const nextMonth = () => moveDate('next');
+  const visibleEvents = useMemo(() => {
+    const sameDate = (value: Date) => value.toDateString() === selectedDate.toDateString()
+    return timelineEvents.filter((item) => sameDate(item.start) && activeFilters[item.category])
+  }, [activeFilters, selectedDate, timelineEvents])
 
-  const openModal = (date: Date) => {
-    setSelectedDate(date);
-    setIsModalOpen(true);
-  };
+  const hours = Array.from({ length: 17 }, (_, index) => 6 + index)
+  const currentLineTop = ((now.getHours() - 6) * 60 + now.getMinutes()) / 60 * 60
+  const currentDayIsSelected = now.toDateString() === selectedDate.toDateString()
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedDate(null);
-  };
+  const moveDay = (direction: 'prev' | 'next') => {
+    const next = new Date(selectedDate)
+    next.setDate(selectedDate.getDate() + (direction === 'prev' ? -1 : 1))
+    setSelectedDate(next)
+  }
 
-  const handleEventSubmit = async (eventData: {
-    title: string;
-    type: string;
-    description?: string;
-    scheduledAt: Date;
-    dealId?: string;
-    contactId?: string;
-  }) => {
+  const toggleFilter = (category: TimelineEvent['category']) => {
+    setActiveFilters((value) => ({ ...value, [category]: !value[category] }))
+  }
+
+  const createQuickAction = async (action: 'task' | 'payment' | 'visit' | 'contact' | 'event') => {
+    setFabOpen(false)
     try {
-      // Crear evento en NeiFe
-      const response = await fetch("/api/crm/activities", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: eventData.type,
-          title: eventData.title,
-          description: eventData.description,
-          scheduledAt: eventData.scheduledAt.toISOString(),
-          dealId: eventData.dealId,
-          contactId: eventData.contactId,
-        }),
-      });
+      const start = new Date(selectedDate)
+      start.setHours(9, 0, 0, 0)
+      const propertyId = properties[0]?.id
 
-      if (!response.ok) {
-        throw new Error("Error al crear el evento");
+      if (action === 'task') {
+        await fetch('/api/crm/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'SEGUIMIENTO',
+            title: 'Tarea creada desde el calendario',
+            description: 'Registro rápido desde agenda',
+            dueDate: start.toISOString(),
+            priority: 1,
+          }),
+        })
+      } else if (action === 'payment') {
+        if (!propertyId) throw new Error('No hay propiedad disponible')
+        await fetch('/api/calendar/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Cobro programado',
+            description: 'Cobro creado desde la agenda',
+            type: 'PAYMENT_DUE',
+            date: start.toISOString(),
+            propertyId,
+          }),
+        })
+      } else if (action === 'visit') {
+        await fetch('/api/crm/activities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'VISITA',
+            title: 'Visita agendada',
+            description: 'Visita creada desde la agenda',
+            scheduledAt: start.toISOString(),
+            isDone: false,
+          }),
+        })
+      } else if (action === 'contact') {
+        await fetch('/api/crm/activities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'LLAMADA',
+            title: 'Contacto registrado',
+            description: 'Llamada registrada desde la agenda',
+            scheduledAt: start.toISOString(),
+            isDone: false,
+          }),
+        })
+      } else {
+        if (!propertyId) throw new Error('No hay propiedad disponible')
+        await fetch('/api/calendar/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Evento de agenda',
+            description: 'Evento creado desde la agenda',
+            type: 'OTHER',
+            date: start.toISOString(),
+            propertyId,
+          }),
+        })
       }
 
-      const result = await response.json();
-      
-      // Si hay un deal, sincronizar con Google Calendar automáticamente
-      if (eventData.dealId) {
-        const deal = dealsList.find(d => d.id === eventData.dealId);
-        if (deal) {
-          try {
-            await fetch("/api/calendar/google-sync", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                dealId: eventData.dealId,
-                title: `NeiFe: ${deal.title}`,
-                description: eventData.description || `Evento: ${eventData.title}`,
-                startDate: eventData.scheduledAt.toISOString(),
-              }),
-            });
-          } catch (error) {
-            console.error("Error sincronizando con Google Calendar:", error);
-            // No fallas, el evento se creó en NeiFe
-          }
-        }
-      }
-
-      await loadScheduledActivities();
-      console.log("Evento creado:", result);
+      await loadAgendaData()
+      toast.success('Registro creado correctamente')
     } catch (error) {
-      console.error("Error submitting event:", error);
-      throw error;
+      console.error(error)
+      toast.error('No se pudo crear el registro')
     }
-  };
+  }
+
+  const quickActions = [
+    { key: 'task', label: 'Tarea', icon: ListChecks },
+    { key: 'payment', label: 'Cobro Programado', icon: CalendarDays },
+    { key: 'visit', label: 'Visita', icon: CalendarDays },
+    { key: 'contact', label: 'Contacto', icon: CalendarDays },
+    { key: 'event', label: 'Evento', icon: Plus },
+  ] as const
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#5E8B8C]" />
-              <h2 className="text-lg font-semibold text-[#FAF6F2]">Calendario</h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {(['month', 'week', 'day'] as const).map((view) => (
-                <button
-                  key={view}
-                  onClick={() => {
-                    setCalendarView(view);
-                    if (view === 'day' && !selectedDate) {
-                      setSelectedDate(currentDate);
-                    }
-                  }}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    calendarView === view
-                      ? 'bg-[#5E8B8C] text-[#FAF6F2]'
-                      : 'bg-[#2D3C3C] text-[#9C8578] hover:bg-[#3C4B4B]'
-                  }`}
-                >
-                  {view === 'month' ? 'Mes' : view === 'week' ? 'Semana' : 'Día'}
-                </button>
-              ))}
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-[#5E8B8C]" />
+          <h2 className="text-lg font-semibold text-[#FAF6F2]">Agenda</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => moveDay('prev')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button onClick={() => setSelectedDate(new Date())} className="rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
+            Hoy
+          </button>
+          <button onClick={() => moveDay('next')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-[#FAF6F2] min-w-[200px] text-center capitalize">
-              {viewLabel()}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={prevMonth}
-                className="p-1.5 hover:bg-[#D5C3B6]/10 rounded-lg text-[#9C8578] transition-colors"
-                title="Anterior"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={nextMonth}
-                className="p-1.5 hover:bg-[#D5C3B6]/10 rounded-lg text-[#9C8578] transition-colors"
-                title="Siguiente"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
+        <div className="flex items-center gap-2 text-[#FAF6F2]">
+          <Filter className="h-4 w-4 text-[#5E8B8C]" />
+          <span className="text-sm font-semibold">Filtrar</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORY_OPTIONS.map((option) => (
+            <button
+              key={option.key}
+              onClick={() => toggleFilter(option.key as TimelineEvent['category'])}
+              className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${activeFilters[option.key as TimelineEvent['category']] ? 'bg-[#5E8B8C] text-[#FAF6F2]' : 'bg-[#2D3C3C] text-[#9C8578]'}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <Link href="/broker/crm/mi-dia" className="flex items-center gap-2 rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
+          <ListChecks className="h-3.5 w-3.5" />
+          Tareas
+        </Link>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {weekDays.map((day) => {
+          const isSelected = day.toDateString() === selectedDate.toDateString()
+          return (
+            <button
+              key={day.toISOString()}
+              onClick={() => setSelectedDate(day)}
+              className={`min-w-[58px] rounded-2xl border px-2 py-2 text-center ${isSelected ? 'border-[#C27F79] bg-[#243535] text-[#FAF6F2]' : 'border-[#2D3C3C] bg-[#1a2a2a] text-[#9C8578]'}`}
+            >
+              <p className="text-[10px] uppercase tracking-[0.2em]">{day.toLocaleDateString('es-CL', { weekday: 'short' })}</p>
+              <p className="mt-1 text-lg font-semibold">{day.getDate()}</p>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="rounded-3xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Timeline</p>
+            <p className="text-sm font-semibold text-[#FAF6F2]">{selectedDate.toLocaleDateString('es-CL', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
           </div>
+          <div className="rounded-full border border-[#2D3C3C] px-3 py-1 text-[11px] text-[#D5C3B6]">{visibleEvents.length} bloques</div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-4">
-          {calendarView === 'month' ? (
-            <>
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sab"].map((day) => (
-                  <div
-                    key={day}
-                    className="text-xs font-semibold text-[#9C8578] text-center py-2"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: firstDay }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
-                ))}
-                {days.map((day) => {
-                  const date = new Date(
-                    currentDate.getFullYear(),
-                    currentDate.getMonth(),
-                    day,
-                  );
-                  const dayDeals = getDealsForDate(date);
-                  const dayActivities = getActivitiesForDate(date);
-                  const totalItems = dayDeals.length + dayActivities.length;
-                  const isToday = new Date().toDateString() === date.toDateString();
-
-                  return (
-                    <div
-                      key={day}
-                      className={`aspect-square p-2 rounded-lg border transition-colors ${
-                        isToday
-                          ? "bg-[#5E8B8C]/20 border-[#5E8B8C]"
-                          : "bg-[#2D3C3C] border-[#D5C3B6]/10 hover:border-[#D5C3B6]/30"
-                      }`}
-                      onClick={() => openModal(date)}
-                    >
-                      <div
-                        className={`text-xs font-semibold mb-1 ${isToday ? "text-[#5E8B8C]" : "text-[#9C8578]"}`}
-                      >
-                        {day}
-                      </div>
-                      <div className="space-y-0.5 overflow-y-auto max-h-16">
-                        {dayDeals.slice(0, 2).map((deal) => (
-                          <div
-                            key={deal.id}
-                            className={`text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition-opacity ${getUrgencyColor(deal.dueDate)}`}
-                            title={`${deal.code}: ${deal.title}`}
-                          >
-                            {deal.code}
-                          </div>
-                        ))}
-                        {dayActivities.slice(0, 2).map((activity) => (
-                          <div
-                            key={activity.id}
-                            className="text-[10px] px-1.5 py-0.5 rounded border border-[#B8965A]/20 bg-[#B8965A]/5 truncate"
-                            title={activity.title}
-                          >
-                            📅 {activity.title}
-                          </div>
-                        ))}
-                        {totalItems > 2 && (
-                          <div className="text-[10px] text-[#9C8578] px-1.5 font-medium">
-                            +{totalItems - 2} más
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          ) : calendarView === 'week' ? (
-            <div className="grid grid-cols-7 gap-2">
-              {weekEvents.map(({ date, dealEvents, activities: dayActivities }) => {
-                const isToday = new Date().toDateString() === date.toDateString();
-                return (
-                  <div
-                    key={date.toISOString()}
-                    className={`rounded-2xl border p-3 transition-colors ${
-                      isToday
-                        ? "bg-[#5E8B8C]/15 border-[#5E8B8C]"
-                        : "bg-[#2D3C3C] border-[#D5C3B6]/10"
-                    }`}
-                  >
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-[#9C8578] mb-2">
-                      {date.toLocaleDateString('es-CL', { weekday: 'short' })}
-                    </div>
-                    <div className="text-sm font-semibold text-[#FAF6F2] mb-2">
-                      {date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
-                    </div>
-                    <div className="space-y-2">
-                      {dealEvents.length > 0 ? (
-                        dealEvents.slice(0, 3).map((deal) => (
-                          <div
-                            key={deal.id}
-                            className={`text-[10px] px-2 py-1 rounded border truncate ${getUrgencyColor(deal.dueDate)}`}
-                            title={`${deal.code}: ${deal.title}`}
-                          >
-                            {deal.code}
-                          </div>
-                        ))
-                      ) : null}
-
-                      {dayActivities.length > 0 ? (
-                        dayActivities.slice(0, 2).map((activity) => (
-                          <div
-                            key={activity.id}
-                            className="text-[10px] px-2 py-1 rounded border border-[#B8965A]/20 bg-[#B8965A]/5 truncate"
-                            title={activity.title}
-                          >
-                            📅 {activity.title}
-                          </div>
-                        ))
-                      ) : dealEvents.length === 0 ? (
-                        <div className="text-[10px] text-[#9C8578]">Sin eventos</div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
+        <div className="relative overflow-hidden rounded-2xl border border-[#2D3C3C] bg-[#121b1b]">
+          <div className="grid grid-cols-[58px_1fr]">
+            <div className="border-r border-[#2D3C3C] bg-[#162121]">
+              {hours.map((hour) => (
+                <div key={hour} className="flex h-[60px] items-start justify-center border-b border-[#2D3C3C] px-2 py-1 text-[10px] text-[#9C8578]">{hour}:00</div>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#2D3C3C] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Agenda diaria</p>
-                <h3 className="mt-2 text-sm font-semibold text-[#FAF6F2]">
-                  {currentDay.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </h3>
-              </div>
-              <div className="space-y-3">
-                {dayActivities.length > 0 && (
-                  <div className="space-y-3">
-                    {dayActivities.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="rounded-2xl border border-[#B8965A]/20 bg-[#2A392C] p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-xs font-mono text-[#B8965A]">{new Date(activity.scheduledAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
-                            <p className="mt-2 text-sm font-semibold text-[#FAF6F2]">{activity.title}</p>
+            <div className="relative">
+              {hours.map((hour) => (
+                <div key={hour} className="h-[60px] border-b border-[#2D3C3C]" />
+              ))}
+              {currentDayIsSelected && <div className="pointer-events-none absolute left-0 right-0 border-t border-dashed border-[#C27F79]" style={{ top: `${Math.max(0, Math.min(currentLineTop, 60 * 16))}px` }} />}
+              <div className="absolute inset-0 p-2">
+                {visibleEvents.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-[#9C8578]">No hay eventos programados para este día.</div>
+                ) : (
+                  <div className="relative">
+                    {visibleEvents.map((event) => {
+                      const top = ((event.start.getHours() - 6) * 60 + event.start.getMinutes()) / 60 * 60
+                      const height = Math.max(48, ((event.end.getTime() - event.start.getTime()) / 60_000) * 60 / 60)
+                      return (
+                        <div key={event.id} className="absolute left-0 right-0 rounded-xl border border-[#2D3C3C] p-2 text-left shadow-sm" style={{ top: `${top}px`, minHeight: `${height}px`, backgroundColor: `${event.color}22` }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-semibold text-[#FAF6F2]">{event.title}</p>
+                            {event.recurring && <Repeat2 className="h-3.5 w-3.5 text-[#F2C94C]" />}
                           </div>
-                          <Badge className="text-[10px] shrink-0 border-[#B8965A]/20 text-[#B8965A]">
-                            {activity.type}
-                          </Badge>
+                          <p className="mt-1 text-[10px] text-[#D5C3B6]">{event.subtitle}</p>
+                          <div className="mt-2 flex items-center gap-1 text-[10px] text-[#9C8578]">
+                            <Clock3 className="h-3 w-3" />
+                            {event.start.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
-                        {activity.description && (
-                          <p className="mt-3 text-xs text-[#9C8578]">{activity.description}</p>
-                        )}
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
-
-                {dayEvents.length > 0 ? (
-                  dayEvents.map((deal) => (
-                    <div
-                      key={deal.id}
-                      className="rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-mono text-[#B8965A]">{deal.code}</p>
-                          <p className="mt-2 text-sm font-semibold text-[#FAF6F2]">{deal.title}</p>
-                        </div>
-                        <Badge
-                          className="text-[10px] shrink-0"
-                          style={{
-                            backgroundColor:
-                              STAGE_COLUMNS.find((s) => s.stage === deal.stage)
-                                ?.color + '33',
-                            color: STAGE_COLUMNS.find((s) => s.stage === deal.stage)
-                              ?.color,
-                          }}
-                        >
-                          {STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.label}
-                        </Badge>
-                      </div>
-                      <p className="mt-3 text-xs text-[#9C8578]">
-                        {new Date(deal.dueDate).toLocaleString('es-CL')}
-                      </p>
-                    </div>
-                  ))
-                ) : dayActivities.length === 0 ? (
-                  <div className="rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-6 text-sm text-[#9C8578]">
-                    No hay eventos programados para este día.
-                  </div>
-                ) : null}
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Events Panel */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-[#FAF6F2] mb-3">
-          Próximas fechas objetivo
-        </h3>
-        {deals.length > 0 ? (
-          <div className="space-y-2">
-            {deals
-              .filter((d) => new Date(d.dueDate) >= new Date())
-              .sort(
-                (a, b) =>
-                  new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-              )
-              .slice(0, 5)
-              .map((deal) => (
-                <Card
-                  key={deal.id}
-                  className="bg-[#1C2828] border-[#D5C3B6]/10 p-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono text-[#B8965A]">
-                        {deal.code}
-                      </p>
-                      <p className="text-sm text-[#FAF6F2] truncate font-medium">
-                        {deal.title}
-                      </p>
-                    </div>
-                    <Badge
-                      className="text-[10px] shrink-0"
-                      style={{
-                        backgroundColor:
-                          STAGE_COLUMNS.find((s) => s.stage === deal.stage)
-                            ?.color + "33",
-                        color: STAGE_COLUMNS.find((s) => s.stage === deal.stage)
-                          ?.color,
-                      }}
-                    >
-                      {STAGE_COLUMNS.find((s) => s.stage === deal.stage)?.label}
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
+      <div className="fixed bottom-6 right-6 z-20 flex flex-col items-end gap-2">
+        {fabOpen && (
+          <div className="flex flex-col items-end gap-2 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-2 shadow-xl">
+            {quickActions.map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => void createQuickAction(key)} className="flex items-center gap-2 rounded-full border border-[#2D3C3C] bg-[#162121] px-3 py-2 text-sm text-[#D5C3B6]">
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <p className="text-xs text-[#9C8578]">No hay próximos eventos.</p>
         )}
+        <button onClick={() => setFabOpen((value) => !value)} className="flex h-14 w-14 items-center justify-center rounded-full bg-[#C27F79] text-2xl font-semibold text-white shadow-lg">
+          {fabOpen ? '×' : '+'}
+        </button>
       </div>
-
-      {/* Existing Events Table */}
-      <div className="lg:col-span-1">
-        <h3 className="text-lg font-semibold text-[#FAF6F2] mb-4">
-          Eventos Existentes
-        </h3>
-        <div className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg p-4 max-h-[500px] overflow-y-auto">
-          <div className="space-y-3">
-            {deals
-              .filter((deal) => deal.dueDate)
-              .map((deal) => (
-                <div
-                  key={deal.id}
-                  className="p-3 border border-[#D5C3B6]/20 rounded-md bg-[#2A3A3A]"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-mono text-[#B8965A]">
-                        {deal.code}
-                      </p>
-                      <p className="text-sm font-medium text-[#FAF6F2]">
-                        {deal.title}
-                      </p>
-                      <p className="text-xs text-[#9C8578]">
-                        {new Date(deal.dueDate).toLocaleString()}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Modal */}
-      {isModalOpen && contacts.length > 0 && dealsList.length > 0 && (
-        <EventCreationModal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          onSubmit={handleEventSubmit}
-          initialDate={selectedDate || undefined}
-          contacts={contacts}
-          deals={dealsList}
-        />
-      )}
     </div>
-  );
+  )
 }

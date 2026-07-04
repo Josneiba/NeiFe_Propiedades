@@ -2,22 +2,34 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Building2, Handshake, Users, Wrench } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import {
+  CalendarClock,
+  CircleEllipsis,
+  ClipboardList,
+  FileQuestion,
+  FileText,
+  NotebookPen,
+  Repeat2,
+  Sparkles,
+  Users,
+} from 'lucide-react'
 
 interface QuickAction {
   id: string
   label: string
   href: string
   count: number
-  description: string
 }
 
-const ICONS: Record<string, typeof Building2> = {
-  deals: Building2,
-  mandates: Handshake,
-  maintenance: Wrench,
-  contacts: Users,
+const ICONS: Record<string, typeof CalendarClock> = {
+  visits: CalendarClock,
+  referrals: Users,
+  tasks: ClipboardList,
+  withoutReport: FileQuestion,
+  notes: NotebookPen,
+  followUps: Repeat2,
+  loyalty: Sparkles,
+  templates: FileText,
 }
 
 export function ActionItemsGrid() {
@@ -46,39 +58,34 @@ export function ActionItemsGrid() {
     <section className="space-y-2.5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-[#FAF6F2]">Acciones rápidas</p>
-        <span className="text-[11px] text-[#9C8578]">Vista de seguimiento</span>
+        <span className="text-[11px] text-[#9C8578]">Accesos clave</span>
       </div>
 
       {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] animate-pulse" />
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="aspect-square rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           {items.map((item) => {
-            const Icon = ICONS[item.id] ?? Building2
+            const Icon = ICONS[item.id] ?? CircleEllipsis
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className="group rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] p-3.5 transition hover:border-[#5E8B8C]/40 hover:bg-[#1b2f2d]"
+                className="group relative flex aspect-square flex-col items-center justify-center rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] p-2 text-center transition hover:border-[#5E8B8C]/40 hover:bg-[#1b2f2d]"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="rounded-lg bg-[#243535] p-2 text-[#5E8B8C]">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="rounded-full bg-[#2D3C3C] px-2 py-0.5 text-[10px] font-medium text-[#D5C3B6]">
-                    {item.count}
+                <div className="rounded-lg bg-[#243535] p-2 text-[#5E8B8C]">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <p className="mt-2 text-[11px] font-semibold leading-tight text-[#FAF6F2]">{item.label}</p>
+                {item.count > 0 && (
+                  <span className="absolute right-1.5 top-1.5 min-w-[18px] rounded-full bg-[#C27F79] px-1 py-0.5 text-[9px] font-bold text-white">
+                    {item.count > 99 ? '99+' : item.count}
                   </span>
-                </div>
-                <p className="mt-3 text-sm font-semibold text-[#FAF6F2]">{item.label}</p>
-                <p className="mt-1 text-xs text-[#9C8578]">{item.description}</p>
-                <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-[#C27F79]">
-                  <span>Ver detalle</span>
-                  <ArrowRight className={cn('h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5')} />
-                </div>
+                )}
               </Link>
             )
           })}
