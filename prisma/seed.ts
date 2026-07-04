@@ -282,6 +282,78 @@ async function main() {
       })
     }
 
+    // WORKFLOWS GLOBALES — Arriendo, Venta, Administración
+    const arriendo = await prisma.crmWorkflow.upsert({
+      where: { id: 'workflow-arriendo' },
+      update: {},
+      create: {
+        id: 'workflow-arriendo',
+        name: 'Flujo estándar - Arriendo',
+        type: 'ARRIENDO',
+        description: 'Workflow global por defecto para arriendos',
+        isDefault: true,
+        brokerId: null,
+        stages: {
+          create: [
+            { id: 'ar-stage-1', name: 'Primer contacto', order: 1 },
+            { id: 'ar-stage-2', name: 'Calificación', order: 2 },
+            { id: 'ar-stage-3', name: 'Visita', order: 3 },
+            { id: 'ar-stage-4', name: 'Documentos', order: 4 },
+            { id: 'ar-stage-5', name: 'Aval', order: 5 },
+            { id: 'ar-stage-6', name: 'Contrato', order: 6 },
+            { id: 'ar-stage-7', name: 'Entrega', order: 7 },
+          ],
+        },
+      },
+    })
+
+    const venta = await prisma.crmWorkflow.upsert({
+      where: { id: 'workflow-venta' },
+      update: {},
+      create: {
+        id: 'workflow-venta',
+        name: 'Flujo estándar - Venta',
+        type: 'VENTA',
+        description: 'Workflow global por defecto para ventas',
+        isDefault: true,
+        brokerId: null,
+        stages: {
+          create: [
+            { id: 've-stage-1', name: 'Captación', order: 1 },
+            { id: 've-stage-2', name: 'Fotografías', order: 2 },
+            { id: 've-stage-3', name: 'Publicación', order: 3 },
+            { id: 've-stage-4', name: 'Visitas', order: 4 },
+            { id: 've-stage-5', name: 'Oferta', order: 5 },
+            { id: 've-stage-6', name: 'Promesa', order: 6 },
+            { id: 've-stage-7', name: 'Escritura', order: 7 },
+          ],
+        },
+      },
+    })
+
+    const administracion = await prisma.crmWorkflow.upsert({
+      where: { id: 'workflow-admin' },
+      update: {},
+      create: {
+        id: 'workflow-admin',
+        name: 'Flujo estándar - Administración',
+        type: 'ADMINISTRACION',
+        description: 'Workflow global por defecto para administración',
+        isDefault: true,
+        brokerId: null,
+        stages: {
+          create: [
+            { id: 'ad-stage-1', name: 'Captación', order: 1 },
+            { id: 'ad-stage-2', name: 'Inspección', order: 2 },
+            { id: 'ad-stage-3', name: 'Publicación', order: 3 },
+            { id: 'ad-stage-4', name: 'Selección', order: 4 },
+            { id: 'ad-stage-5', name: 'Contrato', order: 5 },
+            { id: 'ad-stage-6', name: 'Cobranza mensual', order: 6 },
+          ],
+        },
+      },
+    })
+
     // NOTIFICACIONES de ejemplo
     await prisma.notification.createMany({
       data: [

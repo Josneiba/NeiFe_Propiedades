@@ -220,6 +220,46 @@ export async function getBrokerWeekPlan(brokerId: string) {
   })
 }
 
+// --- New: Goal insights with pipeline breakdown and simple prediction ---
+export async function getBrokerGoalInsights(brokerId: string) {
+  const now = new Date()
+  const { start, end } = getISOWeekRange(getCurrentWeekNumber(now), getCurrentYear(now))
+
+  // KPI 1 — Nuevos Leads: breakdown by source
+  const contactsBySource = await prisma.$queryRaw<Record<string, any>>`
+    SELECT source, COUNT(*) as count FROM "CrmContact"
+    WHERE "brokerId" = ${brokerId} AND "createdAt" >= ${start} AND "createdAt" < ${end}
+    GROUP BY source
+  `
+
+  // KPI 2 — Visitas Agendadas: counts for scheduled visits, leads sin visita, clientes sin seguimiento
+  const visitsScheduled = await prisma.crmActivity.count({ where: { brokerId, type: 'VISITA', scheduledAt: { gte: start, lt: end } } })
+  const leadsWithoutVisit = await prisma.crmContact.count({ where: { brokerId, activities: { none: { type: 'VISITA' } } } })
+  const clientsNoRecent = await prisma.crmContact.count({ where: { brokerId, activities: { none: { createdAt: { gte: new Date(Date.now() - 14 * 86_400_000) } } } } })
+
+  // KPI 3 — Contratos Cerrados: breakdown by deal stage proximity
+  const readyForSignature = await prisma.crmDeal.count({ where: { brokerId, stage: 'FIRMA_CONTRATO', status: 'ACTIVE' } })
+  const waitingDocs = await prisma.crmDeal.count({ where: { brokerId, stage: 'DOCS_REVISION' } })
+  const negotiating = await prisma.crmDeal.count({ where: { brokerId, stage: 'NEGOCIANDO' } })
+  const closedThisWeek = await prisma.crmDeal.count({ where: { brokerId, status: 'WON', wonAt: { gte: start, lt: end } } })
+
+  // Simple heuristic weights (documented): readyForSignature=0.9, waitingDocs=0.6, negotiating=0.3
+  const pipelineWeighted = readyForSignature * 0.9 + waitingDocs * 0.6 + negotiating * 0.3
+
+  return {
+    period: { start, end },
+    contacts: { breakdown: contactsBySource, total: contactsBySource.reduce((s: number, r: any) => s + Number(r.count), 0) },
+    visits: { visitsScheduled, leadsWithoutVisit, clientsNoRecent },
+    deals: { readyForSignature, waitingDocs, negotiating, closedThisWeek, pipelineWeighted },
+    prediction: (meta: number) => {
+      if (!meta || meta <= 0) return { probability: 0, needed: null }
+      const prob = Math.min(100, Math.round((pipelineWeighted / meta) * 100))
+      const needed = pipelineWeighted < meta ? Math.ceil(meta - pipelineWeighted) : 0
+      return { probability: prob, needed }
+    },
+  }
+}
+
 export async function upsertBrokerWeekPlan(
   brokerId: string,
   payload: Partial<BrokerWeekPlanPayload>,

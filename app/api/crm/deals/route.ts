@@ -127,6 +127,37 @@ export async function POST(request: NextRequest) {
       })
     })
 
+    // After creating the deal, if there is a default workflow for this operationType, create an instance
+    try {
+      if (deal && deal.operationType && deal.operationType !== 'AMBOS') {
+        await prisma.$transaction(async (tx) => {
+          const wf = await tx.crmWorkflow.findFirst({
+            where: {
+              type: deal.operationType as any,
+              isActive: true,
+              OR: [{ brokerId }, { brokerId: null }],
+            },
+            orderBy: [{ isDefault: 'desc' }, { brokerId: 'desc' }],
+          })
+
+          if (!wf) return
+
+          const stages = await tx.crmWorkflowStage.findMany({ where: { workflowId: wf.id }, orderBy: { order: 'asc' } })
+
+          const instance = await tx.crmWorkflowInstance.create({
+            data: {
+              workflowId: wf.id,
+              dealId: deal.id,
+              currentStageId: stages[0]?.id ?? null,
+              stages: { create: stages.map((s) => ({ stageId: s.id })) },
+            },
+          })
+        })
+      }
+    } catch (err) {
+      console.error('Error creating workflow instance for deal:', err)
+    }
+
     return NextResponse.json(deal, { status: 201 })
   } catch (error) {
     console.error('Error creating deal:', error)

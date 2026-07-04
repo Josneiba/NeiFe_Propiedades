@@ -25,12 +25,45 @@ interface StageChecklistProps {
 
 export function StageChecklist({ dealId, onCanAdvanceChange }: StageChecklistProps) {
   const [steps, setSteps] = useState<PlaybookStepResult[]>([])
+  const [instanceId, setInstanceId] = useState<string | null>(null)
   const [canAdvance, setCanAdvance] = useState(false)
   const [expanded, setExpanded] = useState(true)
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState<string | null>(null)
 
   async function load() {
+    // Try workflow-instance first (configurable workflows)
+    try {
+      const wfRes = await fetch(`/api/crm/workflow-instances/by-deal/${dealId}`)
+      if (wfRes.ok) {
+        const wfData = await wfRes.json()
+        if (wfData.found && wfData.instance) {
+          const inst = wfData.instance
+          const mapped = inst.stages.map((s: any, idx: number) => ({
+            stepId: s.id,
+            order: idx + 1,
+            title: s.stage?.name ?? 'Etapa',
+            description: s.stage?.description ?? null,
+            taskType: 'WORKFLOW',
+            isRequired: s.stage?.isRequired ?? true,
+            isCompleted: s.isCompleted,
+            completedAt: s.completedAt,
+          }))
+          setSteps(mapped)
+          setInstanceId(inst.id)
+          const requiredDone = mapped.filter((m: any) => m.isRequired && m.isCompleted).length
+          const requiredCount = mapped.filter((m: any) => m.isRequired).length
+          const can = requiredCount === 0 ? true : requiredDone >= requiredCount
+          setCanAdvance(can)
+          onCanAdvanceChange?.(can)
+          setLoading(false)
+          return
+        }
+      }
+    } catch (e) {
+      // ignore and fallback to playbook
+    }
+
     const res = await fetch(`/api/crm/deals/${dealId}/playbook`)
     if (!res.ok) return
     const data = await res.json()
@@ -47,14 +80,25 @@ export function StageChecklist({ dealId, onCanAdvanceChange }: StageChecklistPro
   async function complete(stepId: string) {
     setCompleting(stepId)
     try {
-      const res = await fetch(`/api/crm/deals/${dealId}/playbook`, {
+      // Try marking workflow-instance stage first
+      const wfComplete = instanceId ? await fetch(`/api/crm/workflow-instances/${instanceId}/stages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stepId }),
-      })
-      if (!res.ok) throw new Error()
-      await load()
-      toast.success('Paso completado')
+        body: JSON.stringify({ stageId: stepId }),
+      }) : { ok: false as const }
+      if (wfComplete.ok) {
+        await load()
+        toast.success('Paso completado (workflow)')
+      } else {
+        const res = await fetch(`/api/crm/deals/${dealId}/playbook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stepId }),
+        })
+        if (!res.ok) throw new Error()
+        await load()
+        toast.success('Paso completado')
+      }
     } catch {
       toast.error('Error al completar el paso')
     } finally {

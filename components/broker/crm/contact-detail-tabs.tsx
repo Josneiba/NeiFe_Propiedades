@@ -176,6 +176,11 @@ function buildWhatsAppUrl(phone?: string | null) {
   return `https://wa.me/${withCountry}`
 }
 
+function capitalize(str?: string | null) {
+  if (!str) return ''
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
   const [activities, setActivities] = useState<ContactActivity[]>(contact.activities)
   const [loadingTimeline, setLoadingTimeline] = useState(false)
@@ -198,6 +203,32 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
     if (!lastContactDate) return null
     return Math.floor((new Date().getTime() - new Date(lastContactDate).getTime()) / (1000 * 60 * 60 * 24))
   }, [lastContactDate])
+
+  const preferredTimes = useMemo(() => {
+    const items = activities || []
+    if (!items || items.length < 3) return null
+
+    const counts: Record<string, number> = {}
+    items.forEach((a) => {
+      const raw = a.scheduledAt ? new Date(a.scheduledAt as string) : new Date(a.createdAt as string)
+      if (isNaN(raw.getTime())) return
+      const day = raw.toLocaleDateString('es-CL', { weekday: 'long' })
+      const hour = raw.getHours()
+      let block = ''
+      if (hour >= 6 && hour < 12) block = 'Mañana'
+      else if (hour >= 12 && hour < 18) block = 'Tarde'
+      else block = 'Noche'
+      const key = `${day}|${block}`
+      counts[key] = (counts[key] ?? 0) + 1
+    })
+
+    const arr = Object.entries(counts).map(([k, v]) => ({ key: k, count: v }))
+    arr.sort((a, b) => b.count - a.count)
+    return arr.slice(0, 3).map((it) => {
+      const [day, block] = it.key.split('|')
+      return { day: capitalize(day), block, count: it.count }
+    })
+  }, [activities])
 
   const dealStage = contact.deals.find(({ deal }) => deal.stage)?.deal.stage ?? 'NUEVO_LEAD'
   const currentPipelineIndex = pipelineSteps.findIndex((step) => step.key === dealStage)
@@ -429,6 +460,23 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
                       <a href={buildMapUrl(contact.deals.find(({ deal }) => deal.property?.address)?.deal.property?.address)} target="_blank" rel="noreferrer" className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]">📍 Ver ubicación</a>
                     </div>
                   )}
+                  {/* Horarios preferidos: muestra las 2-3 combinaciones día+franja con más actividad histórica */}
+                  {preferredTimes ? (
+                    <div className="mt-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">Horarios preferidos</p>
+                      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {preferredTimes.map((pt) => (
+                          <div key={`${pt.day}-${pt.block}`} className="rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-3 text-sm text-[#D5C3B6]">
+                            <p className="text-xs text-[#9C8578]">{pt.day}</p>
+                            <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">{pt.block}</p>
+                            <p className="mt-1 text-xs text-[#9C8578]">{pt.count} interacciones</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : activities.length < 3 ? (
+                    <div className="mt-3 text-sm text-[#9C8578]">Aún no hay suficientes interacciones para calcular horarios preferidos.</div>
+                  ) : null}
                 </div>
               </section>
 
