@@ -85,6 +85,7 @@ model User {
   brokerTasks        CrmTask[]            @relation("BrokerTasks")
   brokerPlaybook     CrmPlaybookStep[]    @relation("BrokerPlaybook")
   messageTemplates   CrmMessageTemplate[] @relation("BrokerMessageTemplates")
+  crmSavedViews      CrmSavedView[]
 
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
@@ -887,6 +888,30 @@ enum ChecklistType {
 // ─────────────────────────────────────────────────────────────
 // CRM MODULE — Agregado en Fase CRM (Junio 2026)
 // ─────────────────────────────────────────────────────────────
+
+enum CrmSavedViewEntity {
+  CONTACTS
+  PROPERTIES
+  MANDATES
+  PAYMENTS
+  MAINTENANCE
+}
+
+model CrmSavedView {
+  id          String               @id @default(cuid())
+  brokerId    String
+  broker      User                 @relation(fields: [brokerId], references: [id])
+  name        String
+  entity      CrmSavedViewEntity
+  filters     Json
+  sortBy      String?
+  sortOrder   String?              @default("asc")
+  isStandard  Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([brokerId, entity])
+}
 
 model CrmContact {
   id        String           @id @default(cuid())

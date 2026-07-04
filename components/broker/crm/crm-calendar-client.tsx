@@ -322,13 +322,21 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
     try {
       const id = event.id.replace(/^(activity|task|calendar)-/, '')
       if (event.kind === 'calendar') {
+        const calendarType = event.category === 'Pagos'
+          ? 'PAYMENT_DUE'
+          : event.category === 'Mantenciones'
+            ? 'MAINTENANCE'
+            : event.category === 'Vencimientos de Contrato'
+              ? 'CONTRACT_RENEWAL'
+              : 'OTHER'
+
         await fetch(`/api/calendar/events/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             title: event.title,
             description: event.subtitle,
-            type: 'OTHER',
+            type: calendarType,
             date: nextStart.toISOString(),
           }),
         })

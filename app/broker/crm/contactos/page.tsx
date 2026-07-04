@@ -39,6 +39,13 @@ const typeLabels: Record<string, string> = {
   LEAD: 'Lead',
 }
 
+const stallReasonMeta: Record<string, { label: string; className: string }> = {
+  NO_INTERESADO: { label: 'No interesado', className: 'bg-[#9C8578]/15 text-[#9C8578]' },
+  SIN_CONTACTO_RECIENTE: { label: 'Sin contacto reciente', className: 'bg-[#B8965A]/15 text-[#B8965A]' },
+  NO_CONTACTABLE: { label: 'No contactable', className: 'bg-[#5E8B8C]/15 text-[#5E8B8C]' },
+  MUY_OCUPADO: { label: 'Muy ocupado', className: 'bg-[#C27F79]/15 text-[#C27F79]' },
+}
+
 const sourceLabels: Record<string, string> = {
   PORTAL: 'Portal',
   REFERIDO: 'Referido',
@@ -170,22 +177,60 @@ export default function ContactosPage() {
   const groupedContacts = useMemo(() => {
     const groups = [
       {
-        key: 'high-priority',
-        title: 'Prioridad alta',
-        description: 'Requieren seguimiento inmediato',
-        predicate: (contact: Contact) => contact.priority === 'HIGH',
+        key: 'prospects',
+        title: 'Prospectos',
+        description: 'Contactos con intención temprana',
+        icon: '🟡',
+        accent: 'text-[#B8965A]',
+        predicate: (contact: Contact) => contact.type === 'LEAD' && contact.status === 'ACTIVE' && contact.priority !== 'HIGH',
       },
       {
-        key: 'active',
-        title: 'En seguimiento',
-        description: 'Contactos activos con oportunidad',
-        predicate: (contact: Contact) => contact.status === 'ACTIVE' && contact.priority !== 'HIGH' && !contact.stallReason,
+        key: 'scheduled-visits',
+        title: 'Visitas Programadas',
+        description: 'Clientes con visita agendada',
+        icon: '🟠',
+        accent: 'text-[#C27F79]',
+        predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.stage === 'VISITA_AGENDADA'),
       },
       {
-        key: 'stalled',
-        title: 'Sin contacto reciente',
-        description: 'Necesitan reactivación',
-        predicate: (contact: Contact) => contact.status !== 'ACTIVE' || Boolean(contact.stallReason),
+        key: 'documentation-pending',
+        title: 'Documentación Pendiente',
+        description: 'Faltan documentos para avanzar',
+        icon: '🔵',
+        accent: 'text-[#5E8B8C]',
+        predicate: (contact: Contact) => contact.deals.some((deal) => ['DOCS_REVISION', 'CONTACTO_INICIADO'].includes(deal.deal.stage)),
+      },
+      {
+        key: 'contracts-pending',
+        title: 'Contratos por Firmar',
+        description: 'Interés con contrato listo para firmar',
+        icon: '🟣',
+        accent: 'text-[#8B5CF6]',
+        predicate: (contact: Contact) => contact.deals.some((deal) => ['FIRMA_CONTRATO', 'NEGOCIANDO'].includes(deal.deal.stage)),
+      },
+      {
+        key: 'active-tenants',
+        title: 'Arrendatarios Activos',
+        description: 'Clientes con contrato vigente',
+        icon: '🟢',
+        accent: 'text-[#22c55e]',
+        predicate: (contact: Contact) => contact.type === 'ARRENDATARIO' && contact.status === 'ACTIVE',
+      },
+      {
+        key: 'owners',
+        title: 'Propietarios',
+        description: 'Propietarios o dueños de cartera',
+        icon: '⭐',
+        accent: 'text-[#F2C94C]',
+        predicate: (contact: Contact) => contact.type === 'PROPIETARIO',
+      },
+      {
+        key: 'inactive',
+        title: 'Clientes Inactivos',
+        description: 'Requieren reactivación',
+        icon: '⚪',
+        accent: 'text-[#9C8578]',
+        predicate: (contact: Contact) => Boolean(contact.stallReason) || contact.status === 'INACTIVE',
       },
     ]
 
@@ -239,7 +284,7 @@ export default function ContactosPage() {
           <section key={group.key} className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C2828] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[#FAF6F2]">{group.title}</h2>
+                <h2 className={`text-lg font-semibold ${group.accent}`}>{group.icon} {group.title}</h2>
                 <p className="text-sm text-[#9C8578]">{group.description}</p>
               </div>
               <span className="rounded-full border border-[#D5C3B6]/10 bg-[#2D3C3C] px-3 py-1 text-sm text-[#FAF6F2]">{group.contacts.length}</span>
@@ -257,7 +302,11 @@ export default function ContactosPage() {
                         <span className="rounded-full bg-[#5E8B8C]/15 px-2.5 py-1 text-[#5E8B8C]">{typeLabels[contact.type] ?? contact.type}</span>
                         <span className="rounded-full bg-[#B8965A]/15 px-2.5 py-1 text-[#B8965A]">{sourceLabels[contact.source] ?? contact.source}</span>
                         {contact.priority === 'HIGH' && <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-400">Alta prioridad</span>}
-                        {contact.stallReason && <span className="rounded-full bg-[#9C8578]/15 px-2.5 py-1 text-[#9C8578]">Sin contacto reciente</span>}
+                        {contact.stallReason && (
+                          <span className={`rounded-full px-2.5 py-1 ${stallReasonMeta[contact.stallReason]?.className ?? 'bg-[#9C8578]/15 text-[#9C8578]'}`}>
+                            {stallReasonMeta[contact.stallReason]?.label ?? contact.stallReason}
+                          </span>
+                        )}
                       </div>
                       <p className="mt-2 text-sm text-[#9C8578]">
                         {contact.email || contact.phone || `${contact.deals.length} negociación${contact.deals.length === 1 ? '' : 'es'}`}

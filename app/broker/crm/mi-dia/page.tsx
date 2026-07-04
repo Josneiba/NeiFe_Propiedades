@@ -8,7 +8,7 @@ import { OpenTasksBadges } from '@/components/broker/crm/open-tasks-badges'
 import { ContactsWithProgress } from '@/components/broker/crm/contacts-with-progress'
 import { ActionItemsGrid } from '@/components/broker/crm/action-items-grid'
 import { ResourcesSection } from '@/components/broker/crm/resources-section'
-import { QuickFiltersSection } from '@/components/broker/crm/quick-filters-section'
+import { SavedViewsWidget } from '@/components/broker/crm/saved-views-widget'
 import { GroupsSection } from '@/components/broker/crm/groups-section'
 import { UrgentActionsSection } from '@/components/broker/crm/urgent-actions-section'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
@@ -148,7 +148,7 @@ export default function MiDiaPage() {
 
           <div className="space-y-5">
             <ResourcesSection />
-            <QuickFiltersSection />
+            <SavedViewsWidget />
             <GroupsSection />
           </div>
         </div>
