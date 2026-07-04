@@ -30,6 +30,12 @@ export default async function ContactDetailPage({
               dueDate: true,
               propertyId: true,
               property: { select: { code: true, address: true, type: true } },
+              workflowInstance: {
+                select: {
+                  id: true,
+                  stages: { select: { id: true, isCompleted: true } },
+                },
+              },
             },
           },
         },

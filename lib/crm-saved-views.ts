@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client'
 
-export type CrmSavedViewEntity = 'CONTACTS' | 'PROPERTIES' | 'MANDATES' | 'PAYMENTS' | 'MAINTENANCE'
+export type CrmSavedViewEntity = 'CONTACTS' | 'DEALS' | 'PROPERTIES' | 'MANDATES' | 'PAYMENTS' | 'MAINTENANCE'
 
 export interface SavedViewFilters {
   [key: string]: unknown
@@ -29,19 +29,25 @@ function sortDirection(sortOrder?: string | null) {
 }
 
 export async function ensureStandardSavedViews(prisma: PrismaClient, brokerId: string) {
-  const existing = await prisma.crmSavedView.count({ where: { brokerId, isStandard: true } })
-  if (existing > 0) return []
-
   const standardViews = [
     { name: 'Todos los clientes', entity: 'CONTACTS', filters: {}, sortBy: 'updatedAt', sortOrder: 'desc' },
+    { name: 'Todas las oportunidades', entity: 'DEALS', filters: {}, sortBy: 'updatedAt', sortOrder: 'desc' },
     { name: 'Todas las propiedades', entity: 'PROPERTIES', filters: {}, sortBy: 'updatedAt', sortOrder: 'desc' },
     { name: 'Todos los contratos', entity: 'MANDATES', filters: {}, sortBy: 'expiresAt', sortOrder: 'asc' },
     { name: 'Todos los pagos', entity: 'PAYMENTS', filters: {}, sortBy: 'createdAt', sortOrder: 'desc' },
     { name: 'Todas las mantenciones', entity: 'MAINTENANCE', filters: {}, sortBy: 'createdAt', sortOrder: 'desc' },
   ] as const
 
+  const existing = await prisma.crmSavedView.findMany({
+    where: { brokerId, isStandard: true },
+    select: { entity: true, name: true },
+  })
+  const existingKeys = new Set(existing.map((view) => `${view.entity}:${view.name}`))
+  const missingViews = standardViews.filter((view) => !existingKeys.has(`${view.entity}:${view.name}`))
+  if (missingViews.length === 0) return []
+
   await prisma.crmSavedView.createMany({
-    data: standardViews.map((view) => ({
+    data: missingViews.map((view) => ({
       brokerId,
       name: view.name,
       entity: view.entity,
@@ -94,6 +100,14 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
       // Contacts with no recent activity in the last 30 days (includes contacts with no activities)
       where.activities = { none: { createdAt: { gte: thirtyDaysAgo } } }
     }
+    if (filters.createdAt && typeof filters.createdAt === 'object') {
+      const range = filters.createdAt as { gte?: string | Date; lt?: string | Date; lte?: string | Date }
+      where.createdAt = {
+        ...(range.gte ? { gte: new Date(range.gte) } : {}),
+        ...(range.lt ? { lt: new Date(range.lt) } : {}),
+        ...(range.lte ? { lte: new Date(range.lte) } : {}),
+      }
+    }
 
     const contacts = await prisma.crmContact.findMany({
       where,
@@ -112,6 +126,123 @@ export async function executeSavedView(prisma: PrismaClient, brokerId: string, p
           ? null
           : 'SIN_CONTACTO_RECIENTE',
     }))
+
+    return { results, count: results.length }
+  }
+
+  if (entity === 'DEALS') {
+    const where: Record<string, unknown> = { brokerId }
+
+    if (filters.stage) where.stage = filters.stage
+    if (filters.operationType) where.operationType = filters.operationType
+    if (filters.status) where.status = filters.status
+    if (filters.brokerId) where.brokerId = filters.brokerId
+    if (filters.workflowStageId) {
+      where.AND = [
+        ...((where.AND as unknown[]) ?? []),
+        { workflowInstance: { currentStageId: filters.workflowStageId } },
+      ]
+    }
+    if (filters.currentStageId) {
+      where.AND = [
+        ...((where.AND as unknown[]) ?? []),
+        { workflowInstance: { currentStageId: filters.currentStageId } },
+      ]
+    }
+    if (filters.wonAt && typeof filters.wonAt === 'object') {
+      const range = filters.wonAt as { gte?: string | Date; lt?: string | Date; lte?: string | Date }
+      where.wonAt = {
+        ...(range.gte ? { gte: new Date(range.gte) } : {}),
+        ...(range.lt ? { lt: new Date(range.lt) } : {}),
+        ...(range.lte ? { lte: new Date(range.lte) } : {}),
+      }
+    }
+    if (filters.createdAt && typeof filters.createdAt === 'object') {
+      const range = filters.createdAt as { gte?: string | Date; lt?: string | Date; lte?: string | Date }
+      where.createdAt = {
+        ...(range.gte ? { gte: new Date(range.gte) } : {}),
+        ...(range.lt ? { lt: new Date(range.lt) } : {}),
+        ...(range.lte ? { lte: new Date(range.lte) } : {}),
+      }
+    }
+
+    const deals = await prisma.crmDeal.findMany({
+      where,
+      include: {
+        broker: { select: { id: true, name: true, email: true } },
+        property: { select: { id: true, code: true, address: true, type: true } },
+        contacts: { include: { contact: { select: { id: true, code: true, name: true, priority: true } } }, take: 3 },
+        activities: {
+          where: { isDone: false },
+          orderBy: [{ scheduledAt: 'asc' }, { createdAt: 'desc' }],
+          take: 1,
+          select: { id: true, title: true, type: true, scheduledAt: true, createdAt: true },
+        },
+        tasks: {
+          where: { isCompleted: false },
+          orderBy: [{ dueDate: 'asc' }, { priority: 'desc' }],
+          take: 1,
+          select: { id: true, title: true, dueDate: true, priority: true },
+        },
+        workflowInstance: {
+          include: {
+            stages: { include: { stage: true }, orderBy: { stage: { order: 'asc' } } },
+          },
+        },
+      },
+      orderBy: sortBy === 'dueDate'
+        ? { dueDate: direction }
+        : sortBy === 'createdAt'
+          ? { createdAt: direction }
+          : { updatedAt: direction },
+    } as any)
+
+    const fixedStageOrder = [
+      'NUEVO_LEAD',
+      'CONTACTO_INICIADO',
+      'VISITA_AGENDADA',
+      'PROPIEDAD_CAPTADA',
+      'PUBLICADA',
+      'MOSTRANDO',
+      'OFERTA_RECIBIDA',
+      'DOCS_REVISION',
+      'NEGOCIANDO',
+      'FIRMA_CONTRATO',
+      'ENTREGA_LLAVES',
+      'ADMINISTRAR',
+    ]
+
+    const results = deals.map((deal: any) => {
+      const workflowStages = deal.workflowInstance?.stages ?? []
+      const completedWorkflowStages = workflowStages.filter((stage: any) => stage.isCompleted).length
+      const completionPercentage = workflowStages.length > 0
+        ? Math.round((completedWorkflowStages / workflowStages.length) * 100)
+        : Math.round(((fixedStageOrder.indexOf(deal.stage) + 1) / fixedStageOrder.length) * 100)
+      const currentWorkflowStage = workflowStages.find((stage: any) => stage.stageId === deal.workflowInstance?.currentStageId)
+        ?? workflowStages.find((stage: any) => !stage.isCompleted)
+      const nextTask = deal.tasks[0]
+      const nextActivity = deal.activities[0]
+      const nextAction = nextTask?.title ?? nextActivity?.title ?? 'Sin próxima acción definida'
+      const daysToDueDate = deal.dueDate
+        ? Math.ceil((new Date(deal.dueDate).getTime() - now.getTime()) / 86_400_000)
+        : null
+      const hasRecentActivity = deal.updatedAt && new Date(deal.updatedAt).getTime() >= thirtyDaysAgo.getTime()
+      const riskScore = daysToDueDate === null
+        ? (hasRecentActivity ? 35 : 55)
+        : Math.max(0, Math.min(100, (daysToDueDate < 0 ? 60 : daysToDueDate <= 3 ? 35 : 10) + (hasRecentActivity ? 0 : 30)))
+      const priority = riskScore >= 70 ? 'HIGH' : riskScore >= 40 ? 'MEDIUM' : 'LOW'
+
+      return {
+        ...deal,
+        client: deal.contacts[0]?.contact ?? null,
+        assignedAgent: deal.broker,
+        workflowStageLabel: currentWorkflowStage?.stage?.name ?? deal.stage,
+        nextAction,
+        priority,
+        riskScore,
+        completionPercentage,
+      }
+    })
 
     return { results, count: results.length }
   }

@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { generateCrmCode } from '@/lib/crm-codes'
 import { NextRequest, NextResponse } from 'next/server'
-import { CrmOperationType } from '@prisma/client'
+import { CrmOperationType, Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -101,31 +101,52 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const deal = await prisma.$transaction(async (tx) => {
-      const code = await generateCrmCode('OPE', tx)
+    // Retry loop to handle rare race conditions when generating unique `code` (P2002)
+    let deal = null
+    const maxAttempts = 8
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        deal = await prisma.$transaction(async (tx) => {
+          const code = await generateCrmCode('OPE', tx)
 
-      return tx.crmDeal.create({
-        data: {
-          code,
-          title,
-          operationType: operationType as CrmOperationType,
-          stage: 'NUEVO_LEAD',
-          phase: 'PRE_VENTA',
-          status: 'ACTIVE',
-          propertyId: propertyId || null,
-          value: value ? parseFloat(value) : null,
-          commission: commission ? parseFloat(commission) : null,
-          dueDate: dueDate ? new Date(dueDate) : null,
-          brokerId,
-          notes: notes || null,
-        },
-        include: {
-          property: true,
-          contacts: { include: { contact: true } },
-          activities: true,
-        },
-      })
-    })
+          return tx.crmDeal.create({
+            data: {
+              code,
+              title,
+              operationType: operationType as CrmOperationType,
+              stage: 'NUEVO_LEAD',
+              phase: 'PRE_VENTA',
+              status: 'ACTIVE',
+              propertyId: propertyId || null,
+              value: value ? parseFloat(value) : null,
+              commission: commission ? parseFloat(commission) : null,
+              dueDate: dueDate ? new Date(dueDate) : null,
+              brokerId,
+              notes: notes || null,
+            },
+            include: {
+              property: true,
+              contacts: { include: { contact: true } },
+              activities: true,
+            },
+          })
+        })
+        // success -> break out
+        break
+      } catch (err: any) {
+        // if unique constraint on code -> retry; otherwise rethrow
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          const target = (err.meta as any)?.target
+          if (Array.isArray(target) && target.includes('code')) {
+            // collision on code; retry after a small backoff
+            if (attempt === maxAttempts) throw err
+            await new Promise((res) => setTimeout(res, 60 * attempt))
+            continue
+          }
+        }
+        throw err
+      }
+    }
 
     // After creating the deal, if there is a default workflow for this operationType, create an instance
     try {
@@ -159,8 +180,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(deal, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating deal:', error)
-    return NextResponse.json({ error: 'Error al crear operación' }, { status: 500 })
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ error: 'Error al crear operación', code: error.code, meta: error.meta?.target ?? null, message: error.message }, { status: 500 })
+    }
+    return NextResponse.json({ error: 'Error al crear operación', message: String(error) }, { status: 500 })
   }
 }

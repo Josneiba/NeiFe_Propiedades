@@ -44,6 +44,14 @@ const parseSetCookieHeader = (raw) => {
 
 const saveCookies = (res) => {
   const raw = res.headers.get('set-cookie');
+  // Debug: log raw set-cookie header when present
+  if (raw) {
+    // eslint-disable-next-line no-console
+    console.log('[saveCookies] raw set-cookie header:', raw);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('[saveCookies] no set-cookie header on response');
+  }
   if (!raw) return;
   const headers = parseSetCookieHeader(raw);
   headers.forEach((header) => {
@@ -53,6 +61,9 @@ const saveCookies = (res) => {
       cookieJar.set(name.trim(), value.trim());
     }
   });
+  // Debug: show current cookie jar
+  // eslint-disable-next-line no-console
+  console.log('[saveCookies] cookieJar now:', Array.from(cookieJar.entries()));
 };
 
 const getJson = async (url, options = {}) => {

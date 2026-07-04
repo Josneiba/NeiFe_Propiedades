@@ -87,6 +87,8 @@ model User {
   brokerWorkflows    CrmWorkflow[]        @relation("BrokerWorkflows")
   messageTemplates   CrmMessageTemplate[] @relation("BrokerMessageTemplates")
   crmSavedViews      CrmSavedView[]
+  brokerStrategies   CrmStrategy[]        @relation("BrokerStrategies")
+  strategyActivities CrmStrategyActivity[] @relation("StrategyActivityOwner")
 
   @@unique([documentCountry, documentType, documentNumberNormalized])
 }
@@ -444,6 +446,7 @@ model CrmWorkflowInstance {
   workflowId     String
   workflow       CrmWorkflow  @relation(fields: [workflowId], references: [id])
   dealId         String?      @unique
+  deal           CrmDeal?     @relation("DealWorkflowInstance", fields: [dealId], references: [id])
   currentStageId String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -957,6 +960,7 @@ enum ChecklistType {
 
 enum CrmSavedViewEntity {
   CONTACTS
+  DEALS
   PROPERTIES
   MANDATES
   PAYMENTS
@@ -1076,6 +1080,7 @@ model CrmDeal {
   // FASE VIXIEES — Task Engine + Playbook
   tasks              CrmTask[]            @relation("DealTasks")
   playbookSteps      CrmPlaybookCompletion[] @relation("DealPlaybook")
+  workflowInstance   CrmWorkflowInstance? @relation("DealWorkflowInstance")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1292,6 +1297,51 @@ model CrmTask {
 
   @@index([brokerId, isCompleted, dueDate])
   @@index([dealId])
+}
+
+enum CrmStrategyType {
+  CAPTACION_PROPIEDADES
+  GENERACION_LEADS
+  MARKETING
+  REFERIDOS
+  REACTIVACION
+  INVERSIONISTAS
+  OPEN_HOUSE
+  ALIANZAS
+}
+
+model CrmStrategy {
+  id                 String                @id @default(cuid())
+  brokerId           String
+  broker             User                  @relation("BrokerStrategies", fields: [brokerId], references: [id])
+  type               CrmStrategyType
+  name               String
+  goalDescription    String?
+  targetNumber       Int?
+  expectedConversion Float?
+  week               Int
+  year               Int
+  activities         CrmStrategyActivity[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([brokerId, week, year])
+}
+
+model CrmStrategyActivity {
+  id          String       @id @default(cuid())
+  strategyId  String
+  strategy    CrmStrategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  title       String
+  ownerId     String?
+  owner       User?        @relation("StrategyActivityOwner", fields: [ownerId], references: [id])
+  dueDate     DateTime?
+  taskId      String?      @unique
+  isCompleted Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  @@index([strategyId])
+  @@index([ownerId])
 }
 
 model CrmPlaybookStep {

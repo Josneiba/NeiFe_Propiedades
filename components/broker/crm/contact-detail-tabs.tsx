@@ -31,6 +31,7 @@ interface ContactDealReference {
     title: string
     stage: string
     property?: { address: string } | null
+    workflowInstance?: { id: string; stages: Array<{ id: string; isCompleted: boolean }> } | null
   }
 }
 
@@ -233,6 +234,19 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
   const dealStage = contact.deals.find(({ deal }) => deal.stage)?.deal.stage ?? 'NUEVO_LEAD'
   const currentPipelineIndex = pipelineSteps.findIndex((step) => step.key === dealStage)
   const currentStageLabel = pipelineSteps[Math.max(0, currentPipelineIndex)].label
+  const workflowProgress = useMemo(() => {
+    const deal = contact.deals.find(({ deal }) => deal.workflowInstance?.stages?.length)
+    if (!deal?.deal.workflowInstance?.stages?.length) return null
+    const stages = deal.deal.workflowInstance.stages
+    const completed = stages.filter((stage) => stage.isCompleted).length
+    return {
+      dealId: deal.deal.id,
+      title: deal.deal.title,
+      completed,
+      total: stages.length,
+      percent: Math.round((completed / stages.length) * 100),
+    }
+  }, [contact.deals])
 
   const taskItems = useMemo(() => {
     const items = (contact.tasks ?? []).map((task) => {
@@ -558,6 +572,19 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
                   return <div key={step.key} className={`rounded-2xl border px-3 py-2 text-center text-sm ${active ? 'border-[#5E8B8C]/40 bg-[#5E8B8C]/10 text-[#FAF6F2]' : 'border-[#D5C3B6]/10 bg-[#212E2E] text-[#9C8578]'}`}>{step.label}</div>
                 })}
               </div>
+              {workflowProgress ? (
+                <Link href="/broker/crm/workspace" className="mt-5 block rounded-2xl border border-[#5E8B8C]/30 bg-[#5E8B8C]/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Workflow configurable</p>
+                      <p className="mt-1 text-sm font-semibold text-[#FAF6F2]">{workflowProgress.title}</p>
+                    </div>
+                    <Badge variant="outline" className="border-[#5E8B8C]/30 text-[#D8F0EE]">
+                      {workflowProgress.percent}% · {workflowProgress.completed}/{workflowProgress.total}
+                    </Badge>
+                  </div>
+                </Link>
+              ) : null}
             </section>
 
             <section className="bg-[#1C2828] border border-[#D5C3B6]/10 rounded-3xl p-6">

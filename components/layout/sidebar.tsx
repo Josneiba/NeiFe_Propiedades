@@ -199,6 +199,12 @@ const brokerNavGroups = [
         icon: Calendar,
         id: undefined,
       },
+      {
+        href: "/broker/crm/planning-center",
+        label: "Centro de Planificación",
+        icon: TrendingUp,
+        id: undefined,
+      },
     ],
   },
   {

@@ -220,42 +220,161 @@ export async function getBrokerWeekPlan(brokerId: string) {
   })
 }
 
-// --- New: Goal insights with pipeline breakdown and simple prediction ---
-export async function getBrokerGoalInsights(brokerId: string) {
+type InsightCount = {
+  count: number
+  savedViewQuery: {
+    entity: 'CONTACTS' | 'DEALS'
+    filters: Record<string, unknown>
+    sortBy?: string
+    sortOrder?: string
+  }
+}
+
+export type GoalInsightInput = {
+  metric: GoalMetric | string
+  target: number
+  current: number
+  insufficientHistory?: boolean
+  message?: string
+  probability?: number
+  pipelineWeighted?: number
+  breakdown?: Record<string, InsightCount>
+}
+
+// Insight priority is deterministic: insufficient data first, then already-covered
+// pipeline, then actionable gap from active negotiations/visits, then an honest gap.
+export function generateGoalInsight(kpi: GoalMetric | string, data: GoalInsightInput) {
+  if (data.insufficientHistory) {
+    return data.message ?? 'Se necesita más historial antes de predecir de forma confiable.'
+  }
+
+  const target = Number(data.target || 0)
+  const current = Number(data.current || 0)
+  const probability = Number(data.probability ?? 0)
+  const pipelineWeighted = Number(data.pipelineWeighted ?? 0)
+
+  if (target > 0 && pipelineWeighted >= target) {
+    return `Con el pipeline actual tienes ${probability}% de probabilidad de alcanzar la meta.`
+  }
+
+  if (kpi === 'DEALS_CLOSED') {
+    const negotiating = data.breakdown?.negotiating?.count ?? 0
+    const gap = Math.max(0, Math.ceil(target - current - pipelineWeighted))
+    if (gap > 0 && negotiating > 0 && gap <= negotiating) {
+      return `Si conviertes ${gap} de las ${negotiating} negociaciones activas, alcanzarás la meta.`
+    }
+  }
+
+  if (kpi === 'VISITS') {
+    const gap = Math.max(0, Math.ceil(target - current))
+    if (gap > 0) return `Necesitas generar aproximadamente ${gap} visitas más esta semana para alcanzar la meta.`
+  }
+
+  if (target <= 0) return 'Define una meta para calcular forecast e insight accionable.'
+  return `Faltan ${Math.max(0, Math.ceil(target - current))} unidades para alcanzar la meta con datos actuales.`
+}
+
+async function countWeeksWithGoalHistory(brokerId: string) {
+  const rows = await prisma.$queryRaw<Array<{ week_key: string; total: bigint }>>`
+    SELECT week_key, SUM(total)::bigint AS total
+    FROM (
+      SELECT DATE_TRUNC('week', "createdAt") AS week_key, COUNT(*)::bigint AS total
+      FROM "CrmActivity"
+      WHERE "brokerId" = ${brokerId}
+      GROUP BY week_key
+      UNION ALL
+      SELECT DATE_TRUNC('week', "wonAt") AS week_key, COUNT(*)::bigint AS total
+      FROM "CrmDeal"
+      WHERE "brokerId" = ${brokerId} AND "wonAt" IS NOT NULL
+      GROUP BY week_key
+    ) history
+    GROUP BY week_key
+    HAVING SUM(total) > 0
+  `
+  return rows.length
+}
+
+// Forecast weights: readyForSignature=0.9, waitingDocs=0.6, waitingApproval=0.5,
+// negotiating=0.3, visits=0.12, plannedStrategyActivity=0.1. Two historical
+// weeks are required so one anomalous week does not masquerade as a trend.
+export async function getBrokerGoalInsights(brokerId: string, targets: Partial<Record<GoalMetric, number>> = {}) {
   const now = new Date()
   const { start, end } = getISOWeekRange(getCurrentWeekNumber(now), getCurrentYear(now))
+  const startIso = start.toISOString()
+  const endIso = end.toISOString()
+  const historyWeeks = await countWeeksWithGoalHistory(brokerId)
+  const insufficientForecast = historyWeeks < 2
+  const insufficientMessage = 'Se necesita más historial (mínimo 2 semanas) antes de predecir de forma confiable.'
 
-  // KPI 1 — Nuevos Leads: breakdown by source
-  const contactsBySource = await prisma.$queryRaw<Record<string, any>>`
+  const contactsBySource = await prisma.$queryRaw<Array<{ source: string | null; count: bigint }>>`
     SELECT source, COUNT(*) as count FROM "CrmContact"
     WHERE "brokerId" = ${brokerId} AND "createdAt" >= ${start} AND "createdAt" < ${end}
     GROUP BY source
   `
 
-  // KPI 2 — Visitas Agendadas: counts for scheduled visits, leads sin visita, clientes sin seguimiento
   const visitsScheduled = await prisma.crmActivity.count({ where: { brokerId, type: 'VISITA', scheduledAt: { gte: start, lt: end } } })
   const leadsWithoutVisit = await prisma.crmContact.count({ where: { brokerId, activities: { none: { type: 'VISITA' } } } })
   const clientsNoRecent = await prisma.crmContact.count({ where: { brokerId, activities: { none: { createdAt: { gte: new Date(Date.now() - 14 * 86_400_000) } } } } })
 
-  // KPI 3 — Contratos Cerrados: breakdown by deal stage proximity
   const readyForSignature = await prisma.crmDeal.count({ where: { brokerId, stage: 'FIRMA_CONTRATO', status: 'ACTIVE' } })
   const waitingDocs = await prisma.crmDeal.count({ where: { brokerId, stage: 'DOCS_REVISION' } })
+  const waitingApproval = await prisma.crmDeal.count({ where: { brokerId, stage: 'OFERTA_RECIBIDA', status: 'ACTIVE' } })
   const negotiating = await prisma.crmDeal.count({ where: { brokerId, stage: 'NEGOCIANDO' } })
   const closedThisWeek = await prisma.crmDeal.count({ where: { brokerId, status: 'WON', wonAt: { gte: start, lt: end } } })
 
-  // Simple heuristic weights (documented): readyForSignature=0.9, waitingDocs=0.6, negotiating=0.3
-  const pipelineWeighted = readyForSignature * 0.9 + waitingDocs * 0.6 + negotiating * 0.3
+  const pipelineWeighted = readyForSignature * 0.9 + waitingDocs * 0.6 + waitingApproval * 0.5 + negotiating * 0.3 + visitsScheduled * 0.12
+  const contactTotal = contactsBySource.reduce((sum, row) => sum + Number(row.count), 0)
+
+  const buildForecast = (metric: GoalMetric, current: number, weighted = current) => {
+    const target = Number(targets[metric] ?? 0)
+    if (insufficientForecast) return { insufficientHistory: true, message: insufficientMessage, probability: null, target }
+    if (target <= 0) return { insufficientHistory: false, message: 'Define una meta para calcular forecast e insight accionable.', probability: 0, target }
+    return { insufficientHistory: false, probability: Math.min(100, Math.round((weighted / target) * 100)), target }
+  }
+
+  const contactsBreakdown = contactsBySource.reduce<Record<string, InsightCount>>((acc, row) => {
+    const source = row.source ?? 'OTRO'
+    acc[source] = {
+      count: Number(row.count),
+      savedViewQuery: {
+        entity: 'CONTACTS',
+        filters: { source, brokerId, createdAt: { gte: startIso, lt: endIso } },
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    }
+    return acc
+  }, {})
+
+  const visitsBreakdown: Record<string, InsightCount> = {
+    scheduled: { count: visitsScheduled, savedViewQuery: { entity: 'CONTACTS', filters: { futureVisitsOnly: true, brokerId }, sortBy: 'updatedAt', sortOrder: 'desc' } },
+    leadsWithoutVisit: { count: leadsWithoutVisit, savedViewQuery: { entity: 'CONTACTS', filters: { noFutureVisits: true, brokerId }, sortBy: 'updatedAt', sortOrder: 'desc' } },
+    clientsNoRecent: { count: clientsNoRecent, savedViewQuery: { entity: 'CONTACTS', filters: { lastContactIsNull: true, brokerId }, sortBy: 'updatedAt', sortOrder: 'desc' } },
+  }
+
+  const dealsBreakdown: Record<string, InsightCount> = {
+    readyForSignature: { count: readyForSignature, savedViewQuery: { entity: 'DEALS', filters: { stage: 'FIRMA_CONTRATO', status: 'ACTIVE', brokerId }, sortBy: 'dueDate', sortOrder: 'asc' } },
+    waitingDocs: { count: waitingDocs, savedViewQuery: { entity: 'DEALS', filters: { stage: 'DOCS_REVISION', brokerId }, sortBy: 'dueDate', sortOrder: 'asc' } },
+    waitingApproval: { count: waitingApproval, savedViewQuery: { entity: 'DEALS', filters: { stage: 'OFERTA_RECIBIDA', status: 'ACTIVE', brokerId }, sortBy: 'dueDate', sortOrder: 'asc' } },
+    negotiating: { count: negotiating, savedViewQuery: { entity: 'DEALS', filters: { stage: 'NEGOCIANDO', brokerId }, sortBy: 'updatedAt', sortOrder: 'desc' } },
+    closedThisWeek: { count: closedThisWeek, savedViewQuery: { entity: 'DEALS', filters: { status: 'WON', wonAt: { gte: startIso, lt: endIso }, brokerId }, sortBy: 'updatedAt', sortOrder: 'desc' } },
+  }
+
+  const contactsForecast = buildForecast('CONTACTS', contactTotal)
+  const visitsForecast = buildForecast('VISITS', visitsScheduled)
+  const dealsForecast = buildForecast('DEALS_CLOSED', closedThisWeek, closedThisWeek + pipelineWeighted)
+
+  const contactsInput = { metric: 'CONTACTS', current: contactTotal, ...contactsForecast, breakdown: contactsBreakdown }
+  const visitsInput = { metric: 'VISITS', current: visitsScheduled, ...visitsForecast, breakdown: visitsBreakdown }
+  const dealsInput = { metric: 'DEALS_CLOSED', current: closedThisWeek, ...dealsForecast, pipelineWeighted, breakdown: dealsBreakdown }
 
   return {
     period: { start, end },
-    contacts: { breakdown: contactsBySource, total: contactsBySource.reduce((s: number, r: any) => s + Number(r.count), 0) },
-    visits: { visitsScheduled, leadsWithoutVisit, clientsNoRecent },
-    deals: { readyForSignature, waitingDocs, negotiating, closedThisWeek, pipelineWeighted },
-    prediction: (meta: number) => {
-      if (!meta || meta <= 0) return { probability: 0, needed: null }
-      const prob = Math.min(100, Math.round((pipelineWeighted / meta) * 100))
-      const needed = pipelineWeighted < meta ? Math.ceil(meta - pipelineWeighted) : 0
-      return { probability: prob, needed }
+    historyWeeks,
+    insights: {
+      CONTACTS: { ...contactsInput, insight: generateGoalInsight('CONTACTS', contactsInput as GoalInsightInput) },
+      VISITS: { ...visitsInput, insight: generateGoalInsight('VISITS', visitsInput as GoalInsightInput) },
+      DEALS_CLOSED: { ...dealsInput, insight: generateGoalInsight('DEALS_CLOSED', dealsInput as GoalInsightInput) },
     },
   }
 }

@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 interface SavedView {
   id: string
   name: string
-  entity: 'CONTACTS' | 'PROPERTIES' | 'MANDATES' | 'PAYMENTS' | 'MAINTENANCE'
+  entity: 'CONTACTS' | 'DEALS' | 'PROPERTIES' | 'MANDATES' | 'PAYMENTS' | 'MAINTENANCE'
   filters: Record<string, unknown>
   sortBy?: string | null
   sortOrder?: string | null
@@ -25,6 +25,7 @@ interface SavedView {
 
 const ENTITY_LABELS: Record<string, string> = {
   CONTACTS: 'Clientes',
+  DEALS: 'Oportunidades',
   PROPERTIES: 'Propiedades',
   MANDATES: 'Contratos',
   PAYMENTS: 'Pagos',
@@ -33,6 +34,7 @@ const ENTITY_LABELS: Record<string, string> = {
 
 const DEFAULT_SORTS: Record<string, Array<{ value: string; label: string }>> = {
   CONTACTS: [{ value: 'updatedAt', label: 'Última actualización' }, { value: 'name', label: 'Nombre' }],
+  DEALS: [{ value: 'updatedAt', label: 'Última actualización' }, { value: 'dueDate', label: 'Fecha objetivo' }, { value: 'createdAt', label: 'Fecha de creación' }],
   PROPERTIES: [{ value: 'updatedAt', label: 'Última actualización' }, { value: 'price', label: 'Precio' }, { value: 'name', label: 'Nombre' }],
   MANDATES: [{ value: 'expiresAt', label: 'Fecha de vencimiento' }, { value: 'createdAt', label: 'Fecha de creación' }],
   PAYMENTS: [{ value: 'createdAt', label: 'Fecha de creación' }, { value: 'amountCLP', label: 'Monto' }],
@@ -112,7 +114,7 @@ export default function SavedViewsPage() {
     })
     if (!res.ok) return toast.error('No se pudo aplicar la vista')
     const result = await res.json()
-    const entityPath = view.entity === 'CONTACTS' ? '/broker/crm/contactos' : view.entity === 'PROPERTIES' ? '/broker/propiedades' : view.entity === 'MANDATES' ? '/broker/mandatos' : view.entity === 'PAYMENTS' ? '/broker/pagos' : '/broker/mantenciones'
+    const entityPath = view.entity === 'CONTACTS' ? '/broker/crm/contactos' : view.entity === 'DEALS' ? '/broker/crm/workspace' : view.entity === 'PROPERTIES' ? '/broker/propiedades' : view.entity === 'MANDATES' ? '/broker/mandatos' : view.entity === 'PAYMENTS' ? '/broker/pagos' : '/broker/mantenciones'
     const query = new URLSearchParams({ view: view.id, entity: view.entity })
     router.push(`${entityPath}?${query.toString()}`)
     toast.success(`Se aplicó ${view.name}`)
@@ -216,6 +218,7 @@ export default function SavedViewsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CONTACTS">Clientes</SelectItem>
+                  <SelectItem value="DEALS">Oportunidades</SelectItem>
                   <SelectItem value="PROPERTIES">Propiedades</SelectItem>
                   <SelectItem value="MANDATES">Contratos</SelectItem>
                   <SelectItem value="PAYMENTS">Pagos</SelectItem>

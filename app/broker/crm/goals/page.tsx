@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { GoalDashboard } from '@/components/broker/crm/goal-dashboard'
 import { WeeklyPlanCard } from '@/components/broker/crm/weekly-plan-card'
+import { PipelineTab } from '@/components/broker/crm/planning/pipeline-tab'
+import { StrategiesTab } from '@/components/broker/crm/planning/strategies-tab'
 import { VerlaufChart } from '@/components/broker/goals/verlauf-chart'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import type { BrokerGoalProgress } from '@/lib/goal-engine'
@@ -75,25 +78,43 @@ export default function GoalsPage() {
           <h1 className="text-xl font-bold">Metas e Indicadores</h1>
         </div>
 
-        {!loading && progress.length > 0 && <GoalDashboard progress={progress} />}
+        <Tabs defaultValue="pipeline" className="space-y-5">
+          <TabsList className="grid w-full grid-cols-3 rounded-lg border border-[#2D3C3C] bg-[#1a2a2a] p-1">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-[#9C8578]">Pipeline</TabsTrigger>
+            <TabsTrigger value="strategies" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-[#9C8578]">Estrategias</TabsTrigger>
+            <TabsTrigger value="kpis" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] text-[#9C8578]">KPIs</TabsTrigger>
+          </TabsList>
 
-        {weeklyMetrics.length > 0 && (
-          <section className="space-y-3">
-            <p className="text-sm font-semibold text-[#FAF6F2]">Historial semanal</p>
-            {weeklyMetrics.map((g) => (
-              <VerlaufChart key={g.metric} metric={g.metric} metricLabel={METRIC_LABELS[g.metric] ?? g.metric} />
-            ))}
-          </section>
-        )}
+          <TabsContent value="pipeline">
+            <PipelineTab />
+          </TabsContent>
 
-        {weekPlan !== null && (
-          <WeeklyPlanCard
-            initialPlanText={weekPlan?.planText ?? null}
-            initialWorkDays={weekPlan?.workDays ?? {}}
-            initialDailyCommitments={weekPlan?.dailyCommitments ?? {}}
-            onSave={handleSaveWeekPlan}
-          />
-        )}
+          <TabsContent value="strategies">
+            <StrategiesTab />
+          </TabsContent>
+
+          <TabsContent value="kpis" className="space-y-5">
+            {!loading && progress.length > 0 && <GoalDashboard progress={progress} />}
+
+            {weeklyMetrics.length > 0 && (
+              <section className="space-y-3">
+                <p className="text-sm font-semibold text-[#FAF6F2]">Historial semanal</p>
+                {weeklyMetrics.map((g) => (
+                  <VerlaufChart key={g.metric} metric={g.metric} metricLabel={METRIC_LABELS[g.metric] ?? g.metric} />
+                ))}
+              </section>
+            )}
+
+            {weekPlan !== null && (
+              <WeeklyPlanCard
+                initialPlanText={weekPlan?.planText ?? null}
+                initialWorkDays={weekPlan?.workDays ?? {}}
+                initialDailyCommitments={weekPlan?.dailyCommitments ?? {}}
+                onSave={handleSaveWeekPlan}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

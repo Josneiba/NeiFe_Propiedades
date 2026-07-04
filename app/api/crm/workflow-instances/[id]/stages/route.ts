@@ -10,9 +10,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!stageId) return NextResponse.json({ error: 'stageId required' }, { status: 400 })
 
   try {
-    // stageId is the instance-stage id (primary key on CrmWorkflowInstanceStage)
+    // stageId is the instance-stage id (primary key on CrmWorkflowInstanceStage).
     const updated = await prisma.crmWorkflowInstanceStage.updateMany({ where: { instanceId, id: stageId }, data: { isCompleted: true, completedAt: new Date() } })
-    return NextResponse.json({ ok: true, updated: updated.count })
+    const nextStage = await prisma.crmWorkflowInstanceStage.findFirst({
+      where: { instanceId, isCompleted: false },
+      include: { stage: true },
+      orderBy: { stage: { order: 'asc' } },
+    })
+    await prisma.crmWorkflowInstance.update({
+      where: { id: instanceId },
+      data: { currentStageId: nextStage?.stageId ?? null },
+    })
+    return NextResponse.json({ ok: true, updated: updated.count, currentStageId: nextStage?.stageId ?? null })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Error updating stage' }, { status: 500 })

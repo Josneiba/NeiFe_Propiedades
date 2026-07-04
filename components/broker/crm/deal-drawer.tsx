@@ -14,6 +14,7 @@ import { ActivityLogModal } from './activity-log-modal'
 import { LinkContactModal } from './link-contact-modal'
 import { AttachmentsSection } from './attachments-section'
 import { StageChecklist } from './stage-checklist'
+import { WorkflowInstanceChecklist } from './workflow-instance-checklist'
 import { AdminRequirements } from './admin-requirements'
 import { RecommendationsPanel } from './recommendations-panel'
 import { toast } from 'sonner'
@@ -425,7 +426,11 @@ export function DealDrawer({ deal, open, onClose, onUpdate }: DealDrawerProps) {
                   </div>
                 </section>
 
-                <StageChecklist dealId={deal.id} onCanAdvanceChange={setCanAdvance} />
+                <WorkflowInstanceChecklist
+                  dealId={deal.id}
+                  onCanAdvanceChange={setCanAdvance}
+                  fallback={<StageChecklist dealId={deal.id} onCanAdvanceChange={setCanAdvance} />}
+                />
               </TabsContent>
 
               <TabsContent value="timeline" className="space-y-4">
