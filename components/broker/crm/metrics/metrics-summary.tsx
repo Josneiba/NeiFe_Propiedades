@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { DollarSign, Check, X, Clock } from 'lucide-react'
 
 interface MetricsSummaryProps {
   totalPipelineValue: number
@@ -28,25 +29,25 @@ export function MetricsSummary({
     {
       label: 'Pipeline total',
       value: formatCLP(totalPipelineValue),
-      icon: '💰',
+      icon: <DollarSign className="h-5 w-5" />,
       color: '#B8965A',
     },
     {
       label: 'Tasa de ganancia',
       value: `${winRate}%`,
-      icon: '✓',
+      icon: <Check className="h-5 w-5" />,
       color: '#5E8B8C',
     },
     {
       label: 'Tasa de pérdida',
       value: `${lossRate}%`,
-      icon: '✗',
+      icon: <X className="h-5 w-5" />,
       color: '#C27F79',
     },
     {
       label: 'Tiempo promedio de cierre',
       value: `${avgClosingTime}d`,
-      icon: '⏱',
+      icon: <Clock className="h-5 w-5" />,
       color: '#D5C3B6',
     },
   ]

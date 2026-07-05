@@ -14,7 +14,7 @@ export function TopContactsTable({ data }: TopContactsTableProps) {
     return (
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-[#FAF6F2] text-lg">👥 Contactos principales</CardTitle>
+          <CardTitle className="text-[#FAF6F2] text-lg">Contactos principales</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[#9C8578]">Sin contactos con deals activos</p>
@@ -40,7 +40,7 @@ export function TopContactsTable({ data }: TopContactsTableProps) {
   return (
     <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
       <CardHeader>
-        <CardTitle className="text-[#FAF6F2] text-lg">👥 Contactos principales</CardTitle>
+        <CardTitle className="text-[#FAF6F2] text-lg">Contactos principales</CardTitle>
         <p className="text-xs text-[#9C8578] mt-1">Top contactos por valor de deals ganados</p>
       </CardHeader>
       <CardContent>

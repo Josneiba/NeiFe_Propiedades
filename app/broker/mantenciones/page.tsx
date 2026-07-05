@@ -18,6 +18,9 @@ import {
   X,
   Clock,
   Image as ImageIcon,
+  Home,
+  FileText,
+  Zap,
 } from "lucide-react"
 import { formatDateCompact } from "@/lib/utils"
 
@@ -65,13 +68,13 @@ const statusIcons = {
   REJECTED: X,
 } as const
 
-const categoryConfig: Record<string, { icon: string; label: string }> = {
-  PLUMBING: { icon: "🔧", label: "Plomería" },
-  ELECTRICAL: { icon: "⚡", label: "Electricidad" },
-  STRUCTURAL: { icon: "🏠", label: "Estructura" },
-  APPLIANCES: { icon: "🧺", label: "Electrodomésticos" },
-  CLEANING: { icon: "🧼", label: "Limpieza" },
-  OTHER: { icon: "📋", label: "Otro" },
+const categoryConfig: Record<string, { icon: JSX.Element; label: string }> = {
+  PLUMBING: { icon: <Wrench />, label: "Plomería" },
+  ELECTRICAL: { icon: <Zap />, label: "Electricidad" },
+  STRUCTURAL: { icon: <Home />, label: "Estructura" },
+  APPLIANCES: { icon: <ImageIcon />, label: "Electrodomésticos" },
+  CLEANING: { icon: <FileText />, label: "Limpieza" },
+  OTHER: { icon: <FileText />, label: "Otro" },
 }
 
 function mantencionesQueryHref(status: string, propertyId?: string, qParam?: string) {

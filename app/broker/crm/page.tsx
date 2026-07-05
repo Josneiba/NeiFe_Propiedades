@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, TrendingUp, AlertCircle, Users, Kanban } from 'lucide-react'
+import { ArrowRight, TrendingUp, AlertCircle, Users, Kanban, Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +86,7 @@ export default async function CrmDashboardPage() {
           <div className="flex gap-3 justify-center pt-2">
             <Button asChild size="sm" className="bg-[#5E8B8C] hover:bg-[#5E8B8C]/80">
               <Link href="/broker/crm/workspace">
-                ＋ Crear primera oportunidad
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Crear primera oportunidad
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline" className="border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6]">
@@ -136,7 +136,7 @@ export default async function CrmDashboardPage() {
           {dealsPreVenta > dealsVenta && (
             <div className="bg-[#5E8B8C]/10 border border-[#5E8B8C]/30 rounded-lg p-3">
               <p className="text-xs text-[#5E8B8C]">
-                💡 Tienes {dealsPreVenta - dealsVenta} deals en Pre-Venta que aún no han pasado a Venta — revísalos en el Workspace
+                Tienes {dealsPreVenta - dealsVenta} deals en Pre-Venta que aún no han pasado a Venta — revísalos en el Workspace
               </p>
             </div>
           )}

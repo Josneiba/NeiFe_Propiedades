@@ -204,11 +204,73 @@ export async function getBrokerGoals(brokerId: string) {
   })
 }
 
+export type BrokerGoalUpsertPayload = {
+  metric: GoalMetric
+  period: GoalPeriod
+  target: number
+  year: number
+  week?: number | null
+  month?: number | null
+  commitment?: string | null
+  unit?: string
+}
+
+export async function upsertBrokerGoal(brokerId: string, payload: BrokerGoalUpsertPayload) {
+  const { metric, period, target, year, week, month, commitment, unit } = payload
+
+  if (target < 0) {
+    throw new Error('El target debe ser mayor o igual a 0')
+  }
+
+  if (period === 'WEEKLY' && (typeof week !== 'number' || Number.isNaN(week))) {
+    throw new Error('La semana es obligatoria para period WEEKLY')
+  }
+
+  if (period === 'MONTHLY' && (typeof month !== 'number' || Number.isNaN(month))) {
+    throw new Error('El mes es obligatorio para period MONTHLY')
+  }
+
+  const normalizedWeek = period === 'WEEKLY' ? (week as number) : null
+  const normalizedMonth = period === 'MONTHLY' ? (month as number) : null
+
+  return prisma.brokerGoal.upsert({
+    where: {
+      brokerId_period_metric_week_month_year: {
+        brokerId,
+        period,
+        metric,
+        week: normalizedWeek as any,
+        month: normalizedMonth as any,
+        year,
+      },
+    },
+    create: {
+      brokerId,
+      period,
+      metric,
+      target,
+      year,
+      week: normalizedWeek as any,
+      month: normalizedMonth as any,
+      commitment: commitment ?? null,
+      unit: unit ?? 'count',
+    },
+    update: {
+      target,
+      year,
+      week: normalizedWeek as any,
+      month: normalizedMonth as any,
+      commitment: commitment ?? undefined,
+      unit: unit ?? undefined,
+    },
+  })
+}
+
 export async function getBrokerGoalHistory(brokerId: string) {
-  return prisma.brokerGoal.findMany({
-    where: { brokerId },
-    orderBy: [{ year: 'desc' }, { period: 'asc' }, { metric: 'asc' }],
-    take: 30,
+  const week = getCurrentWeekNumber()
+  const year = getCurrentYear()
+  return prisma.brokerWeekPlan.findUnique({
+    where: { brokerId_week_year: { brokerId, week, year } },
   })
 }
 

@@ -36,8 +36,8 @@ export function SavedViewsWidget() {
         <Link href="/broker/crm/vistas" className="text-xs text-[#C27F79] hover:underline">Ver todas</Link>
       </div>
       <div className="space-y-2">
-        {views.map((view) => (
-          <Link key={view.id} href={`/broker/crm/vistas`} className="flex items-center justify-between rounded-xl border border-[#2D3C3C] bg-[#162121] px-3 py-2 text-sm text-[#D5C3B6]">
+        {views.map((view, index) => (
+          <Link key={`${view.id}-${index}`} href={`/broker/crm/vistas`} className="flex items-center justify-between rounded-xl border border-[#2D3C3C] bg-[#162121] px-3 py-2 text-sm text-[#D5C3B6]">
             <span className="flex items-center gap-2">
               <FolderOpen className="h-3.5 w-3.5 text-[#5E8B8C]" />
               {view.name}

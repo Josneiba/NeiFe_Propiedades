@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Badge } from "@/components/ui/badge";
-import { Copy } from "lucide-react";
+import { Copy, User, Home } from "lucide-react";
 import { CrmDealStage } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +108,7 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
       <div className="space-y-1.5 flex-1 mb-2">
         {primaryContact && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[9px] text-[#9C8578] flex-shrink-0">👤</span>
+            <User className="text-[9px] text-[#9C8578] flex-shrink-0 h-4 w-4" />
             <span className="text-[9px] text-[#D5C3B6] truncate">
               {primaryContact.contact.name}
             </span>
@@ -116,7 +116,7 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
         )}
         {deal.property && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[9px] text-[#9C8578] flex-shrink-0">🏠</span>
+            <Home className="text-[9px] text-[#9C8578] flex-shrink-0 h-4 w-4" />
             <span className="text-[9px] text-[#D5C3B6] truncate">
               {deal.property.code} • {deal.property.address.split(",")[0]}
             </span>

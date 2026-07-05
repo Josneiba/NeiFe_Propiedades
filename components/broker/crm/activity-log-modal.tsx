@@ -8,13 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 
 const ACTIVITY_TYPES = [
-  { value: 'LLAMADA', label: '📞 Llamada' },
-  { value: 'VISITA', label: '🏠 Visita' },
-  { value: 'EMAIL', label: '✉️ Email' },
-  { value: 'WHATSAPP', label: '💬 WhatsApp' },
-  { value: 'REUNION', label: '🤝 Reunión' },
+  { value: 'LLAMADA', label: 'Llamada' },
+  { value: 'VISITA', label: 'Visita' },
+  { value: 'EMAIL', label: 'Email' },
+  { value: 'WHATSAPP', label: 'WhatsApp' },
+  { value: 'REUNION', label: 'Reunión' },
   { value: 'NOTA', label: 'Nota' },
-  { value: 'TAREA', label: '✅ Tarea' },
+  { value: 'TAREA', label: 'Tarea' },
 ]
 
 const ACTIVITY_OUTCOMES = [

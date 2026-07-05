@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Phone, MessageCircle, Mail, Users, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { TaskSuggestion } from '@/lib/task-engine'
-import { buildWhatsAppUrl } from '@/lib/template-engine'
 import { cn } from '@/lib/utils'
 
 const CHANNEL_ICON: Record<string, React.ReactNode> = {
@@ -24,7 +23,7 @@ function urgencyColor(score: number) {
 
 interface TaskQueueProps {
   suggestions: TaskSuggestion[]
-  onComplete: (dealId: string, taskType: string) => Promise<void>
+  onComplete: (suggestion: TaskSuggestion) => Promise<void>
   onOpenDeal: (dealId: string) => void
 }
 
@@ -34,7 +33,7 @@ export function TaskQueue({ suggestions, onComplete, onOpenDeal }: TaskQueueProp
   async function handleComplete(s: TaskSuggestion) {
     setCompleting(s.dealId)
     try {
-      await onComplete(s.dealId, s.taskType)
+      await onComplete(s)
       toast.success(`Tarea completada: ${s.title}`)
     } catch {
       toast.error('Error al completar la tarea')

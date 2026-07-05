@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
             dealId,
             brokerId: session.user.id,
             type: "NOTA",
-            title: `📅 Google Calendar: ${title}`,
+            title: `Google Calendar: ${title}`,
             description: `Evento Google Calendar creado: ${title}\nID: ${googleEvent.id}\nURL: ${googleEvent.htmlLink}`,
             isDone: true,
             completedAt: new Date(),

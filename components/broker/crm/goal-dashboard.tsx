@@ -111,50 +111,66 @@ export function GoalDashboard({ progress }: GoalDashboardProps) {
 
   return (
     <>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         {Object.entries(grouped).map(([period, items]) => (
           <section key={period} className="bg-[#1a2a2a] border border-[#2D3C3C] rounded-lg p-4">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <p className="text-xs text-[#D5C3B6]/70 uppercase tracking-[0.18em]">{periodLabel(period)}</p>
-              <p className="text-lg font-semibold text-[#FAF6F2]">Progreso</p>
-            </div>
-            <div className="rounded-full bg-[#253336] p-2">
-              <BarChart3 className="w-5 h-5 text-[#5E8B8C]" />
-            </div>
-          </div>
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.id} className="rounded-lg bg-[#152022] p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[#FAF6F2]">{metricLabel(item.metric)}</p>
-                    <p className="text-xs text-[#D5C3B6]/70">{item.rangeLabel}</p>
-                  </div>
-                  <Badge variant={item.completed ? 'secondary' : 'default'}>
-                    {item.completed ? 'Alcanzado' : `${item.progressPercent}%`}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between gap-3 mb-2 text-sm text-[#D5C3B6]/80">
-                  <span>{item.current} / {item.target} {item.unit}</span>
-                  {item.commitment && <span className="truncate">{item.commitment}</span>}
-                </div>
-                <Progress value={item.progressPercent} className="h-2 rounded-full bg-[#0f1b1b]" />
-                {['CONTACTS', 'VISITS', 'DEALS_CLOSED'].includes(String(item.metric)) && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSelectedMetric(String(item.metric))}
-                    className="mt-3 h-8 px-0 text-[#5E8B8C] hover:bg-transparent hover:text-[#D8F0EE]"
-                  >
-                    Ver desglose
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                )}
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs text-[#D5C3B6]/70 uppercase tracking-[0.18em]">{periodLabel(period)}</p>
+                <p className="text-lg font-semibold text-[#FAF6F2]">Progreso</p>
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="rounded-full bg-[#253336] p-2">
+                <BarChart3 className="w-5 h-5 text-[#5E8B8C]" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div key={item.id} className="rounded-3xl bg-[#152022] p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-[#FAF6F2]">{metricLabel(item.metric)}</p>
+                      <p className="text-xs text-[#9C8578]">{item.rangeLabel}</p>
+                    </div>
+                    <Badge variant={item.completed ? 'secondary' : 'default'}>
+                      {item.completed ? 'Alcanzado' : `${item.progressPercent}%`}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3 mt-4 text-sm text-[#D5C3B6]">
+                    <div className="rounded-2xl bg-[#1A2929] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-[#9C8578]">Actual</p>
+                      <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">{item.current}</p>
+                    </div>
+                    <div className="rounded-2xl bg-[#1A2929] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-[#9C8578]">Meta</p>
+                      <p className="mt-2 text-lg font-semibold text-[#5E8B8C]">{item.target}</p>
+                    </div>
+                    <div className="rounded-2xl bg-[#1A2929] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-[#9C8578]">Compromiso</p>
+                      <p className="mt-2 text-lg font-semibold text-[#D5C3B6]">{item.commitment ?? 'Sin datos'}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 border-t border-[#2D3C3C] pt-4">
+                    <div className="flex items-center justify-between gap-3 text-sm text-[#D5C3B6]">
+                      <span>Progreso</span>
+                      <span>{item.progressPercent}%</span>
+                    </div>
+                    <Progress value={item.progressPercent} className="mt-3 h-2 rounded-full bg-[#0f1b1b]" />
+                    {['CONTACTS', 'VISITS', 'DEALS_CLOSED'].includes(String(item.metric)) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedMetric(String(item.metric))}
+                        className="mt-4 h-9 rounded-full border border-[#2D3C3C] text-[#5E8B8C] hover:bg-[#223333] hover:text-[#D8F0EE]"
+                      >
+                        Ver desglose
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
 

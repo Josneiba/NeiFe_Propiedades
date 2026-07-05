@@ -69,7 +69,12 @@ export function ActionItemsGrid() {
         </div>
       ) : (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-          {items.map((item) => {
+          {items.length === 0 ? (
+            <div className="col-span-full rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] p-6 text-center text-[#D5C3B6]">
+              <p className="font-semibold text-[#FAF6F2]">Sin accesos rápidos</p>
+              <p className="mt-2 text-sm text-[#9C8578]">No hay elementos destacados todavía. Usa el workspace CRM para explorar oportunidades, contactos y plantillas que aparecen aquí.</p>
+            </div>
+          ) : items.map((item) => {
             const Icon = ICONS[item.id] ?? CircleEllipsis
             return (
               <Link

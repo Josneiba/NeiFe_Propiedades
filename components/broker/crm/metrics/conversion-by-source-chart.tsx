@@ -13,7 +13,7 @@ export function ConversionBySourceChart({ data }: ConversionBySouuceProps) {
     return (
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-[#FAF6F2] text-lg">📊 Conversión por fuente</CardTitle>
+        <CardTitle className="text-[#FAF6F2] text-lg">Conversión por fuente</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[#9C8578]">Sin datos de conversión</p>
@@ -25,7 +25,7 @@ export function ConversionBySourceChart({ data }: ConversionBySouuceProps) {
   return (
     <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
       <CardHeader>
-        <CardTitle className="text-[#FAF6F2] text-lg">📊 Conversión por fuente</CardTitle>
+          <CardTitle className="text-[#FAF6F2] text-lg">Conversión por fuente</CardTitle>
         <p className="text-xs text-[#9C8578] mt-1">Tasa de conversión por canal de adquisición</p>
       </CardHeader>
       <CardContent>

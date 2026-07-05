@@ -75,7 +75,7 @@ export function GoogleCalendarButton({
       title={!session ? "Conecta con Google para usar esta función" : "Crear evento en Google Calendar"}
     >
       <Calendar className="h-3.5 w-3.5" />
-      <span className="text-[10px]">{loading ? "..." : "📅"}</span>
+      <span className="text-[10px]">{loading ? "..." : "Calendario"}</span>
     </Button>
   );
 }

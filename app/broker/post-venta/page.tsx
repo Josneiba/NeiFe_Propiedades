@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
+import { ArrowRight, AlertCircle, CheckCircle2, Clock, MapPin, Users, Calendar, Phone, Mail, FileText, MessageSquare, Home } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,9 +59,7 @@ export default async function PostVentaDashboard() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-semibold text-[#FAF6F2]">
-          📋 Dashboard Post-Venta
-        </h1>
+        <h1 className="text-3xl font-serif font-semibold text-[#FAF6F2]">Dashboard Post-Venta</h1>
         <p className="text-sm text-[#9C8578] mt-1">
           Seguimiento de negocios después del cierre y gestión de post-venta
         </p>
@@ -155,11 +153,11 @@ export default async function PostVentaDashboard() {
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-[#9C8578]">
-                        <span>📍 {deal.property?.address || 'Sin propiedad'}</span>
-                        <span>👥 {deal.contacts.length} contacto(s)</span>
-                        {deal.dueDate && (
-                          <span>📅 Vence: {deal.dueDate.toLocaleDateString('es-CL')}</span>
-                        )}
+                          <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-[#9C8578]" /> {deal.property?.address || 'Sin propiedad'}</span>
+                          <span className="flex items-center gap-1"><Users className="w-4 h-4 text-[#9C8578]" /> {deal.contacts.length} contacto(s)</span>
+                          {deal.dueDate && (
+                            <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-[#9C8578]" /> Vence: {deal.dueDate.toLocaleDateString('es-CL')}</span>
+                          )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -288,11 +286,11 @@ export default async function PostVentaDashboard() {
                 .map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3 text-sm">
                     <div className="text-lg mt-0.5">
-                      {activity.type === 'LLAMADA' && '📞'}
-                      {activity.type === 'EMAIL' && '📧'}
-                      {activity.type === 'NOTA' && '📝'}
-                      {activity.type === 'WHATSAPP' && '💬'}
-                      {activity.type === 'VISITA' && '🏠'}
+                      {activity.type === 'LLAMADA' && <Phone />}
+                      {activity.type === 'EMAIL' && <Mail />}
+                      {activity.type === 'NOTA' && <FileText />}
+                      {activity.type === 'WHATSAPP' && <MessageSquare />}
+                      {activity.type === 'VISITA' && <Home />}
                     </div>
                     <div className="flex-1">
                       <p className="text-[#D5C3B6]">

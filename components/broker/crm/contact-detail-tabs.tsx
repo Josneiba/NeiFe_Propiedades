@@ -453,13 +453,13 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
                   {contact.phone && (
                     <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-3">
                       <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-[#5E8B8C]" /><span>{contact.phone}</span></div>
-                      <a href={`tel:${contact.phone}`} className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]">📞 Llamar</a>
+                      <a href={`tel:${contact.phone}`} className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]"> <Phone className="h-3.5 w-3.5 mr-1 inline" /> Llamar</a>
                     </div>
                   )}
                   {contact.phone && (
                     <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-3">
                       <div className="flex items-center gap-3"><MessageSquare className="h-4 w-4 text-[#25D366]" /><span>WhatsApp</span></div>
-                      <a href={buildWhatsAppUrl(contact.phone) ?? '#'} target="_blank" rel="noreferrer" className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]">💬 WhatsApp</a>
+                      <a href={buildWhatsAppUrl(contact.phone) ?? '#'} target="_blank" rel="noreferrer" className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]"> <MessageSquare className="h-3.5 w-3.5 mr-1 inline" /> WhatsApp</a>
                     </div>
                   )}
                   {contact.email && (
@@ -471,7 +471,7 @@ export function ContactDetailTabs({ contact }: ContactDetailTabsProps) {
                   {(contact.deals.find(({ deal }) => deal.property?.address)?.deal.property?.address || contact.notes) && (
                     <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#D5C3B6]/10 bg-[#212E2E] p-3">
                       <div className="flex items-center gap-3"><MapPin className="h-4 w-4 text-[#B8965A]" /><span>{contact.deals.find(({ deal }) => deal.property?.address)?.deal.property?.address ?? 'Sin ubicación disponible'}</span></div>
-                      <a href={buildMapUrl(contact.deals.find(({ deal }) => deal.property?.address)?.deal.property?.address)} target="_blank" rel="noreferrer" className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]">📍 Ver ubicación</a>
+                      <a href={buildMapUrl(contact.deals.find(({ deal }) => deal.property?.address)?.deal.property?.address)} target="_blank" rel="noreferrer" className="rounded-full border border-[#D5C3B6]/10 px-3 py-1 text-xs text-[#FAF6F2]"> <MapPin className="h-3.5 w-3.5 mr-1 inline" /> Ver ubicación</a>
                     </div>
                   )}
                   {/* Horarios preferidos: muestra las 2-3 combinaciones día+franja con más actividad histórica */}

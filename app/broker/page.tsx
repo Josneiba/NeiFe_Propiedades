@@ -8,6 +8,7 @@ import { Building2, DollarSign, Wrench, AlertTriangle, Plus, Eye, FileText, Bell
 import { getErrorMessage } from '@/lib/error-handler'
 import { paymentStatus } from '@/lib/broker-design'
 import { LocalizedDateGreeting } from '@/components/layout/localized-date-greeting'
+import { ActionItemsGrid } from '@/components/broker/crm/action-items-grid'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { RecommendationsPanel } from '@/components/broker/crm/recommendations-panel'
@@ -543,7 +544,7 @@ export default async function BrokerDashboardPage() {
             </Link>
             <Link
               href="/broker/servicios"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B6]/5 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#9C8578] hover:text-[#D5C3B6] hover:bg-[#D5C3B8]/5 transition-colors"
             >
               Servicios
             </Link>
@@ -556,6 +557,8 @@ export default async function BrokerDashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Accesos rápidos removed from main broker dashboard — reserved for Mi Día only */}
 
         <Suspense fallback={
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -579,7 +582,7 @@ export default async function BrokerDashboardPage() {
 
         <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
           <CardHeader>
-            <CardTitle className="text-[#FAF6F2] text-lg">💡 Recomendaciones inteligentes</CardTitle>
+            <CardTitle className="text-[#FAF6F2] text-lg">Recomendaciones inteligentes</CardTitle>
             <p className="text-sm text-[#9C8578] mt-1">Basadas en análisis de tus deals y actividades recientes</p>
           </CardHeader>
           <CardContent>

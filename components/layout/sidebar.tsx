@@ -166,47 +166,35 @@ const tenantNavItems = [
 ];
 
 const brokerNavGroups = [
-  {
-    label: "CRM",
-    items: [
       {
-        href: "/broker/crm/mi-dia",
-        label: "Mi Día",
-        icon: Target,
-        id: undefined,
+        label: "CRM",
+        items: [
+          {
+            href: "/broker/crm/mi-dia",
+            label: "Mi Día",
+            icon: Target,
+            id: undefined,
+          },
+          {
+            href: "/broker/crm/contactos",
+            label: "Contactos",
+            icon: Users,
+            id: undefined,
+          },
+          {
+            href: "/broker/crm/workspace",
+            label: "Workspace",
+            icon: Kanban,
+            id: undefined,
+          },
+          {
+            href: "/broker/crm/calendario",
+            label: "Calendario",
+            icon: Calendar,
+            id: undefined,
+          },
+        ],
       },
-      {
-        href: "/broker/crm",
-        label: "Centro CRM",
-        icon: LayoutDashboard,
-        id: undefined,
-      },
-      {
-        href: "/broker/crm/contactos",
-        label: "Contactos",
-        icon: Users,
-        id: undefined,
-      },
-      {
-        href: "/broker/crm/workspace",
-        label: "Workspace",
-        icon: Kanban,
-        id: undefined,
-      },
-      {
-        href: "/broker/crm/calendario",
-        label: "Calendario",
-        icon: Calendar,
-        id: undefined,
-      },
-      {
-        href: "/broker/crm/planning-center",
-        label: "Centro de Planificación",
-        icon: TrendingUp,
-        id: undefined,
-      },
-    ],
-  },
   {
     label: "General",
     items: [

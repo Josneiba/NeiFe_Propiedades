@@ -13,7 +13,7 @@ export function RevenueProjectionsChart({ data }: RevenueProjectionsProps) {
     return (
       <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
         <CardHeader>
-          <CardTitle className="text-[#FAF6F2] text-lg">💰 Proyecciones de ingresos</CardTitle>
+              <CardTitle className="text-[#FAF6F2] text-lg">Proyecciones de ingresos</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[#9C8578]">Sin datos de pipeline</p>
@@ -33,7 +33,7 @@ export function RevenueProjectionsChart({ data }: RevenueProjectionsProps) {
   return (
     <Card className="bg-[#2D3C3C] border-[#D5C3B6]/10">
       <CardHeader>
-        <CardTitle className="text-[#FAF6F2] text-lg">💰 Proyecciones de ingresos</CardTitle>
+            <CardTitle className="text-[#FAF6F2] text-lg">Proyecciones de ingresos</CardTitle>
         <p className="text-xs text-[#9C8578] mt-1">Estimaciones por fase del pipeline</p>
       </CardHeader>
       <CardContent>

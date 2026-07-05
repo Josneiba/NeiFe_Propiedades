@@ -2,19 +2,26 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, TrendingDown, TrendingUp, Minus } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Plus, Phone, Home, Handshake, DollarSign, FileText, Megaphone, BarChart3 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 
-const METRIC_ICONS: Record<string, string> = {
-  CONTACTS: '📞',
-  VISITS: '🏠',
-  DEALS_CLOSED: '🤝',
-  COMMISSION_CLP: '💰',
-  MANDATES: '📋',
-  PROPERTIES_PUBLISHED: '📢',
+const METRIC_ICONS: Record<string, JSX.Element> = {
+  CONTACTS: <Phone />,
+  VISITS: <Home />,
+  DEALS_CLOSED: <Handshake />,
+  COMMISSION_CLP: <DollarSign />,
+  MANDATES: <FileText />,
+  PROPERTIES_PUBLISHED: <Megaphone />,
 }
+
+const CORE_METRICS = [
+  'CONTACTS',
+  'VISITS',
+  'PROPERTIES_PUBLISHED',
+  'COMMISSION_CLP',
+  'MANDATES',
+  'DEALS_CLOSED',
+] as const
 
 interface WeeklyCompareItem {
   metric: string
@@ -30,6 +37,25 @@ interface WeeklyCompareResponse {
   week: number
   year: number
   weeklyCompare: WeeklyCompareItem[]
+}
+
+function metricLabel(metric: string) {
+  switch (metric) {
+    case 'CONTACTS':
+      return 'Nuevos leads'
+    case 'VISITS':
+      return 'Visitas realizadas'
+    case 'PROPERTIES_PUBLISHED':
+      return 'Propiedades captadas'
+    case 'COMMISSION_CLP':
+      return 'Negociaciones activas'
+    case 'MANDATES':
+      return 'Contratos firmados'
+    case 'DEALS_CLOSED':
+      return 'Cierres'
+    default:
+      return metric
+  }
 }
 
 export function KpiWeeklyPanel() {
@@ -52,103 +78,67 @@ export function KpiWeeklyPanel() {
 
     load()
   }, [])
+  // compute items and summaries
+  const items = (data?.weeklyCompare ?? []).filter((it) => CORE_METRICS.includes(it.metric as any))
+  const itemsByMetric = Object.fromEntries(items.map((it) => [it.metric, it])) as Record<string, WeeklyCompareItem | undefined>
+  const totalCurrent = items.reduce((sum, item) => sum + (item.currentValue ?? 0), 0)
+  const totalTarget = items.reduce((sum, item) => sum + (item.target ?? 0), 0)
 
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="h-24 rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] animate-pulse" />
-        ))}
-      </div>
-    )
-  }
-
-  const items = data?.weeklyCompare ?? []
-  const activeMetrics = items.filter((item) => item.target > 0)
-
-  if (activeMetrics.length === 0) {
-    return (
-      <Link
-        href="/broker/crm/goals"
-        className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#2D3C3C] bg-[#1a2a2a] px-4 py-8 text-center text-sm text-[#9C8578] transition hover:border-[#5E8B8C]/50 hover:text-[#D5C3B6]"
-      >
-        <Plus className="w-6 h-6" />
-        <p className="font-semibold">Define tus indicadores semanales</p>
-        <p className="text-xs opacity-70">Toca para configurar metas</p>
-      </Link>
-    )
-  }
-
-  const totalCurrent = activeMetrics.reduce((sum, item) => sum + item.currentValue, 0)
-  const totalTarget = activeMetrics.reduce((sum, item) => sum + item.target, 0)
+  const metrics = CORE_METRICS
 
   return (
-    <div className="space-y-4">
-      {activeMetrics.map((item) => {
-        const trend =
-          item.currentValue > item.previousValue
-            ? 'up'
-            : item.currentValue < item.previousValue
-            ? 'down'
-            : 'same'
-        const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
-        const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-[#9C8578]'
-
-        return (
-          <div key={item.metric} className="rounded-3xl border border-[#2D3C3C] bg-[#152022] overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-[#2D3C3C] px-4 py-3">
-              <span>{METRIC_ICONS[item.metric] ?? '📊'}</span>
-              <span className="text-sm font-semibold text-[#FAF6F2]">{item.label}</span>
-              <TrendIcon className={cn('w-4 h-4', trendColor)} />
-            </div>
-
-            <div className="grid grid-cols-3 divide-x divide-[#2D3C3C] text-center text-xs uppercase text-[#D5C3B6]">
-              <div className="px-4 py-3">
-                <p className="text-[#9C8578]">Semana pasada</p>
-                <p className="mt-2 text-2xl font-semibold text-[#9C8578]/80">
-                  {item.previousValue}
-                  <span className="ml-1 text-sm font-normal">/{item.previousTarget || item.target}</span>
-                </p>
-              </div>
-              <div className="bg-[#1e322f] px-4 py-3">
-                <p className="text-[#5E8B8C]">Esta semana</p>
-                <p className="mt-2 text-2xl font-semibold text-[#FAF6F2]">
-                  {item.currentValue}
-                  <span className="ml-1 text-sm font-normal text-[#9C8578]">/{item.target}</span>
-                </p>
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-[#9C8578]">Próxima</p>
-                <p className="mt-2 text-2xl font-semibold text-[#9C8578]/80">
-                  0<span className="ml-1 text-sm font-normal">/{item.target}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between text-xs text-[#D5C3B6]">
-                <span>Progreso</span>
-                <span>{item.progress}%</span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#0f1b1b]">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${item.progress}%`,
-                    backgroundColor: item.progress >= 100 ? '#22c55e' : item.progress >= 60 ? '#5E8B8C' : '#C27F79',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      })}
-
-      <div className="rounded-3xl border border-[#2D3C3C] bg-[#152022] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-[#9C8578] uppercase tracking-[0.18em]">Total semanal</p>
-          <p className="text-lg font-semibold text-[#FAF6F2]">{totalCurrent} / {totalTarget}</p>
+    <div className="rounded-3xl border border-[#2D3C3C] bg-[#152022] p-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores Clave</p>
+          <p className="text-xs text-[#9C8578]">Seguimiento semanal de las metas del equipo</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/broker/crm/goals/new"
+            className="inline-flex items-center gap-2 rounded-full border border-[#2D3C3C] bg-[#223333] px-3 py-2 text-sm text-[#FAF6F2] hover:bg-[#2D3C3C]"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva meta
+          </Link>
+          <Link
+            href="/broker/crm/planning-week"
+            className="inline-flex items-center rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-2 text-sm text-[#D5C3B6] hover:bg-[#223333]"
+          >
+            Planificación semanal
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {metrics.map((metric) => {
+          const item = itemsByMetric[metric] ?? { metric, currentValue: 0, target: 0, progress: 0 }
+          return (
+            <Link
+              key={metric}
+              href={`/broker/crm/goals/${metric}`}
+              className="group block rounded-3xl border border-[#2D3C3C] bg-[#1E2E2E] p-4 transition hover:border-[#5E8B8C]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f1b1b] text-xl text-[#FAF6F2]">
+                    {METRIC_ICONS[metric] ?? <BarChart3 />}
+                  </span>
+                  <div>
+                    <p className="text-sm text-[#9C8578]">{metricLabel(metric)}</p>
+                    <p className="mt-2 text-2xl font-semibold text-[#FAF6F2]">{item.currentValue}/{item.target}</p>
+                  </div>
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">
+                  {item.progress}%
+                </div>
+              </div>
+              <div className="mt-4">
+                <Progress value={Math.min(100, item.progress)} className="h-2 rounded-full bg-[#152022]" />
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

@@ -60,21 +60,24 @@ export default function MiDiaPage() {
     }
   }
 
-  async function handleComplete(dealId: string, taskType: string) {
+  async function handleComplete(suggestion: TaskSuggestion) {
     try {
+      const type = suggestion.channel === 'WHATSAPP' ? 'WHATSAPP' : suggestion.taskType || 'SEGUIMIENTO'
       await fetch('/api/crm/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: taskType === 'SEGUIMIENTO' ? 'NOTA' : taskType,
-          title: 'Tarea completada desde Mi Día',
-          dealId,
+          type,
+          title: suggestion.title,
+          description: suggestion.description,
+          dealId: suggestion.dealId,
           isDone: true,
         }),
       })
       toast.success('Tarea completada')
       await loadAll()
-    } catch {
+    } catch (error) {
+      console.error('Error completing task suggestion:', error)
       toast.error('Error al completar tarea')
     }
   }
@@ -93,12 +96,6 @@ export default function MiDiaPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/broker/crm/goals">
-              <Button variant="ghost" size="sm" className="text-[#9C8578] hover:text-[#FAF6F2] gap-1.5">
-                <Settings2 className="w-4 h-4" />
-                <span className="text-xs hidden sm:inline">Metas</span>
-              </Button>
-            </Link>
             <Link href="/broker/crm/workspace">
               <Button size="sm" className="bg-[#C27F79] hover:bg-[#C27F79]/80 text-white rounded-full h-9 w-9 p-0 flex items-center justify-center">
                 <Plus className="w-4 h-4" />
@@ -112,30 +109,36 @@ export default function MiDiaPage() {
 
         <UrgentActionsSection />
 
-        <section>
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores Clave</p>
-            <Link href="/broker/crm/goals" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
-          </div>
+        <section id="indicadores-clave">
           <KpiWeeklyPanel />
         </section>
 
-        <Link
-          href="/broker/crm/goals"
-          className="flex items-center justify-center gap-2 w-full rounded-xl border border-[#2D3C3C] bg-[#1a2a2a] py-3 text-sm font-medium text-[#D5C3B6] transition hover:border-[#5E8B8C]/50 hover:bg-[#1b2f2d] hover:text-[#FAF6F2]"
-        >
-          <Calendar className="w-4 h-4 text-[#5E8B8C]" />
-          Planificación semanal
-        </Link>
 
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
           <div className="space-y-5">
-            <section>
+            <section id="seguimiento-clientes">
               <div className="flex items-center justify-between mb-2.5">
                 <p className="text-sm font-semibold text-[#FAF6F2]">Seguimiento de Clientes</p>
                 <Link href="/broker/crm/contactos" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
               </div>
               <ContactsWithProgress />
+            </section>
+
+            <section id="captacion" className="rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-[#FAF6F2]">Captación</p>
+                <Link href="/broker/crm/workspace" className="text-xs text-[#C27F79] hover:underline">Abrir workspace</Link>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-[#2D3C3C] bg-[#152022] p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">Oportunidades</p>
+                  <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">Prioriza los próximos avances</p>
+                </div>
+                <div className="rounded-xl border border-[#2D3C3C] bg-[#152022] p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">Seguimiento</p>
+                  <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">Mantén el foco semanal limpio</p>
+                </div>
+              </div>
             </section>
 
             <section>

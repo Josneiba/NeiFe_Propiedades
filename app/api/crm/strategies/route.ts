@@ -15,40 +15,45 @@ const STRATEGY_TYPES = new Set([
 ])
 
 export async function GET(request: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  if (session.user.role !== 'BROKER' && session.user.role !== 'OWNER') {
-    return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
-  }
-
-  const week = Number(request.nextUrl.searchParams.get('week') ?? getCurrentWeekNumber())
-  const year = Number(request.nextUrl.searchParams.get('year') ?? getCurrentYear())
-  const { start, end } = getISOWeekRange(week, year)
-  const strategies = await prisma.crmStrategy.findMany({
-    where: { brokerId: session.user.id, week, year },
-    include: { activities: { include: { owner: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: 'desc' } } },
-    orderBy: { createdAt: 'desc' },
-  } as any)
-  const [newContacts, newDeals] = await Promise.all([
-    prisma.crmContact.count({ where: { brokerId: session.user.id, createdAt: { gte: start, lt: end } } }),
-    prisma.crmDeal.count({ where: { brokerId: session.user.id, createdAt: { gte: start, lt: end } } }),
-  ])
-  const enriched = strategies.map((strategy: any) => {
-    const completed = strategy.activities.filter((activity: any) => activity.isCompleted).length
-    const actualConversion = strategy.activities.length > 0 ? completed / strategy.activities.length : 0
-    return {
-      ...strategy,
-      actualConversion,
-      pipelineContribution: {
-        count: strategy.type === 'GENERACION_LEADS' ? newContacts : strategy.type === 'CAPTACION_PROPIEDADES' ? newDeals : 0,
-        attribution: strategy.type === 'GENERACION_LEADS' || strategy.type === 'CAPTACION_PROPIEDADES'
-          ? 'Contribución por período: registros nuevos del broker en la semana, sin atribución individual porque el modelo actual no guarda strategyId en contactos/deals.'
-          : 'Sin atribución directa disponible en el modelo actual.',
-      },
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    if (session.user.role !== 'BROKER' && session.user.role !== 'OWNER') {
+      return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
     }
-  })
 
-  return NextResponse.json({ strategies: enriched, week, year })
+    const week = Number(request.nextUrl.searchParams.get('week') ?? getCurrentWeekNumber())
+    const year = Number(request.nextUrl.searchParams.get('year') ?? getCurrentYear())
+    const { start, end } = getISOWeekRange(week, year)
+    const strategies = await prisma.crmStrategy.findMany({
+      where: { brokerId: session.user.id, week, year },
+      include: { activities: { include: { owner: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: 'desc' } } },
+      orderBy: { createdAt: 'desc' },
+    } as any)
+    const [newContacts, newDeals] = await Promise.all([
+      prisma.crmContact.count({ where: { brokerId: session.user.id, createdAt: { gte: start, lt: end } } }),
+      prisma.crmDeal.count({ where: { brokerId: session.user.id, createdAt: { gte: start, lt: end } } }),
+    ])
+    const enriched = strategies.map((strategy: any) => {
+      const completed = strategy.activities.filter((activity: any) => activity.isCompleted).length
+      const actualConversion = strategy.activities.length > 0 ? completed / strategy.activities.length : 0
+      return {
+        ...strategy,
+        actualConversion,
+        pipelineContribution: {
+          count: strategy.type === 'GENERACION_LEADS' ? newContacts : strategy.type === 'CAPTACION_PROPIEDADES' ? newDeals : 0,
+          attribution: strategy.type === 'GENERACION_LEADS' || strategy.type === 'CAPTACION_PROPIEDADES'
+            ? 'Contribución por período: registros nuevos del broker en la semana, sin atribución individual porque el modelo actual no guarda strategyId en contactos/deals.'
+            : 'Sin atribución directa disponible en el modelo actual.',
+        },
+      }
+    })
+
+    return NextResponse.json({ strategies: enriched, week, year })
+  } catch (error) {
+    console.error('crm/strategies route error:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {

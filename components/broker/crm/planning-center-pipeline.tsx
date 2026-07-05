@@ -23,6 +23,14 @@ interface Deal {
     currentStageIndex?: number
     stages?: Array<{ id: string; isCompleted: boolean }>
   } | null
+  // optional enriched fields provided by the saved-views helper or API
+  assignedAgent?: { id?: string; name?: string } | null
+  nextAction?: string | null
+  priority?: string | null
+  riskScore?: number | null
+  completionPercentage?: number | null
+  activities?: Array<{ id?: string; title?: string }>
+  tasks?: Array<{ id?: string; title?: string }>
 }
 
 const stageLabels: Record<string, string> = {
@@ -147,16 +155,20 @@ export function PipelineTab() {
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Propiedad</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Etapa</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Estado</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Próxima Acción</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Agente Asignado</th>
                 <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Valor</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Vencimiento</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Workflow</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Prioridad</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">Riesgo</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium">% Completitud</th>
                 <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.1em] text-[#9C8578] font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D5C3B6]/10">
               {deals.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-[#9C8578]">No hay deals en el pipeline</td>
+                  <td colSpan={13} className="px-4 py-6 text-center text-[#9C8578]">No hay deals en el pipeline</td>
                 </tr>
               ) : (
                 deals.map((deal) => (
@@ -174,19 +186,17 @@ export function PipelineTab() {
                         {statusLabels[deal.status] ?? deal.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right text-[#5E8B8C] font-medium">
-                      ${(deal.value ?? 0).toLocaleString('es-CL')}
-                    </td>
-                    <td className="px-4 py-3 text-[#D5C3B6]">
-                      {deal.dueDate ? formatDateCompact(deal.dueDate, { day: '2-digit', month: 'short' }) : '—'}
-                    </td>
+                    <td className="px-4 py-3 text-[#D5C3B6]">{deal.nextAction ?? deal.activities?.[0]?.title ?? deal.tasks?.[0]?.title ?? '—'}</td>
+                    <td className="px-4 py-3 text-[#D5C3B6]">{deal.assignedAgent?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-right text-[#5E8B8C] font-medium">${(deal.value ?? 0).toLocaleString('es-CL')}</td>
+                    <td className="px-4 py-3 text-[#D5C3B6]">{deal.dueDate ? formatDateCompact(deal.dueDate, { day: '2-digit', month: 'short' }) : '—'}</td>
+                    <td className="px-4 py-3 text-[#D5C3B6]">{deal.priority ?? '—'}</td>
+                    <td className="px-4 py-3 text-[#D5C3B6]">{deal.riskScore !== undefined && deal.riskScore !== null ? `${deal.riskScore}` : '—'}</td>
                     <td className="px-4 py-3">
-                      {deal.workflowInstance?.stages ? (
-                        <div className="text-[11px]">
-                          <span className="text-[#5E8B8C]">
-                            {deal.workflowInstance.stages.filter(s => s.isCompleted).length}/{deal.workflowInstance.stages.length}
-                          </span>
-                        </div>
+                      {typeof deal.completionPercentage === 'number' ? (
+                        <div className="text-[11px] text-[#5E8B8C]">{deal.completionPercentage}%</div>
+                      ) : deal.workflowInstance?.stages ? (
+                        <div className="text-[11px] text-[#5E8B8C]">{deal.workflowInstance.stages.filter(s => s.isCompleted).length}/{deal.workflowInstance.stages.length}</div>
                       ) : (
                         <span className="text-[#9C8578]">—</span>
                       )}

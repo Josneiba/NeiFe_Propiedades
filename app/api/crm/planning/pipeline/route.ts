@@ -5,18 +5,19 @@ import { executeSavedView } from '@/lib/crm-saved-views'
 import { getISOWeekRange, getCurrentWeekNumber, getCurrentYear } from '@/lib/goal-engine'
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  if (session.user.role !== 'BROKER' && session.user.role !== 'OWNER') {
-    return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
-  }
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    if (session.user.role !== 'BROKER' && session.user.role !== 'OWNER') {
+      return NextResponse.json({ error: 'Sin permiso' }, { status: 403 })
+    }
 
-  const brokerId = session.user.id
-  const now = new Date()
-  const { start, end } = getISOWeekRange(getCurrentWeekNumber(now), getCurrentYear(now))
+    const brokerId = session.user.id
+    const now = new Date()
+    const { start, end } = getISOWeekRange(getCurrentWeekNumber(now), getCurrentYear(now))
 
-  // Category definitions: map to saved-view filters (entity = DEALS or CONTACTS)
-  const categories: Array<{ key: string; label: string; savedViewQuery: any; mapping: { model: string; plannedRule: string } }> = [
+    // Category definitions: map to saved-view filters (entity = DEALS or CONTACTS)
+    const categories: Array<{ key: string; label: string; savedViewQuery: any; mapping: { model: string; plannedRule: string } }> = [
     { key: 'new_leads', label: 'New Leads', savedViewQuery: { entity: 'CONTACTS', filters: { brokerId } }, mapping: { model: 'CrmContact', plannedRule: 'contacts with activities this week' } },
     { key: 'visitas_programadas', label: 'Visitas Programadas', savedViewQuery: { entity: 'CONTACTS', filters: { futureVisitsOnly: true, brokerId } }, mapping: { model: 'CrmContact', plannedRule: 'contacts with scheduled visits' } },
     { key: 'negociaciones', label: 'Negociaciones', savedViewQuery: { entity: 'DEALS', filters: { stage: 'NEGOCIANDO', brokerId } }, mapping: { model: 'CrmDeal', plannedRule: 'deals with activities/tasks this week' } },
@@ -94,7 +95,10 @@ export async function GET() {
       rows.push({ key: cat.key, category: cat.label, plannedThisWeek: 0, activeItems: 0, savedViewQuery: cat.savedViewQuery, mapping: cat.mapping, items: [] })
     }
   }
-
-  return NextResponse.json({ rows })
+    return NextResponse.json({ rows })
+  } catch (error) {
+    console.error('crm/planning/pipeline route error:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
 }
 
