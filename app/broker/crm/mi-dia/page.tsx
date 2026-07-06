@@ -13,7 +13,9 @@ import { GroupsSection } from '@/components/broker/crm/groups-section'
 import { UrgentActionsSection } from '@/components/broker/crm/urgent-actions-section'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Plus, AlertTriangle, Calendar, Settings2 } from 'lucide-react'
+import { RefreshCw, AlertTriangle, Calendar, Users, ClipboardList, Building2, Handshake, NotebookPen } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { FabSpeedDial } from '@/components/broker/crm/fab-speed-dial'
 import { toast } from 'sonner'
 import type { TaskSuggestion } from '@/lib/task-engine'
 import type { DealCardData } from '@/components/broker/crm/kanban-card'
@@ -28,6 +30,7 @@ export default function MiDiaPage() {
   const [dayData, setDayData] = useState<DayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
+  const router = useRouter()
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -96,11 +99,6 @@ export default function MiDiaPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/broker/crm/workspace">
-              <Button size="sm" className="bg-[#C27F79] hover:bg-[#C27F79]/80 text-white rounded-full h-9 w-9 p-0 flex items-center justify-center">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </Link>
             <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
@@ -117,8 +115,8 @@ export default function MiDiaPage() {
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
           <div className="space-y-5">
             <section id="seguimiento-clientes">
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-sm font-semibold text-[#FAF6F2]">Seguimiento de Clientes</p>
+              <div className="flex items-center justify-between border-b border-[#2D3C3C] pb-2 mb-2.5">
+                <h2 className="text-base font-semibold text-[#FAF6F2]">Seguimiento de Clientes</h2>
                 <Link href="/broker/crm/contactos" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
               </div>
               <ContactsWithProgress />
@@ -142,7 +140,9 @@ export default function MiDiaPage() {
             </section>
 
             <section>
-              <p className="text-sm font-semibold text-[#FAF6F2] mb-2.5">Tareas y pagos vencidos</p>
+              <div className="border-b border-[#2D3C3C] pb-2 mb-2.5">
+                <h2 className="text-base font-semibold text-[#FAF6F2]">Tareas y Pagos Vencidos</h2>
+              </div>
               <OpenTasksBadges />
             </section>
 
@@ -186,6 +186,16 @@ export default function MiDiaPage() {
       {selectedDeal && (
         <DealDrawer deal={selectedDeal} open={!!selectedDeal} onClose={() => setSelectedDeal(null)} onUpdate={loadAll} />
       )}
+
+      <FabSpeedDial
+        actions={[
+          { key: 'contact', label: 'Nuevo contacto', icon: Users, onClick: () => router.push('/broker/crm/contactos?new=1'), colorClass: 'bg-[#5E8B8C]' },
+          { key: 'task', label: 'Nueva tarea', icon: ClipboardList, onClick: () => router.push('/broker/crm/mi-dia?newTask=1'), colorClass: 'bg-[#C27F79]' },
+          { key: 'deal', label: 'Nuevo lead', icon: Handshake, onClick: () => router.push('/broker/crm/workspace?new=1'), colorClass: 'bg-[#E8A559]' },
+          { key: 'property', label: 'Nueva propiedad', icon: Building2, onClick: () => router.push('/broker/propiedades/nueva'), colorClass: 'bg-[#7FB8B9]' },
+          { key: 'note', label: 'Nota rápida', icon: NotebookPen, onClick: () => router.push('/broker/crm/workspace?quickNote=1'), colorClass: 'bg-[#8FBF8A]' },
+        ]}
+      />
     </div>
   )
 }
