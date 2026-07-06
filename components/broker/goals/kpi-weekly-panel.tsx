@@ -6,12 +6,12 @@ import { Plus, Phone, Home, Handshake, DollarSign, FileText, Megaphone, BarChart
 import { Progress } from '@/components/ui/progress'
 
 const METRIC_ICONS: Record<string, JSX.Element> = {
-  CONTACTS: <Phone />,
-  VISITS: <Home />,
-  DEALS_CLOSED: <Handshake />,
-  COMMISSION_CLP: <DollarSign />,
-  MANDATES: <FileText />,
-  PROPERTIES_PUBLISHED: <Megaphone />,
+  CONTACTS: <Phone className="h-4 w-4" />,
+  VISITS: <Home className="h-4 w-4" />,
+  DEALS_CLOSED: <Handshake className="h-4 w-4" />,
+  COMMISSION_CLP: <DollarSign className="h-4 w-4" />,
+  MANDATES: <FileText className="h-4 w-4" />,
+  PROPERTIES_PUBLISHED: <Megaphone className="h-4 w-4" />,
 }
 
 const CORE_METRICS = [
@@ -58,6 +58,51 @@ function metricLabel(metric: string) {
   }
 }
 
+// Card compacta tipo PME: ícono pequeño + label + número grande + barra fina.
+// span='full' ocupa las 2 columnas, span='half' ocupa 1 de 2.
+function KpiCard({
+  metric,
+  item,
+  span,
+}: {
+  metric: string
+  item: WeeklyCompareItem | undefined
+  span: 'full' | 'half'
+}) {
+  const current = item?.currentValue ?? 0
+  const target = item?.target ?? 0
+  const progress = item?.progress ?? 0
+
+  return (
+    <Link
+      href={`/broker/crm/goals/${metric}`}
+      className={`group block rounded-xl border border-[#2D3C3C] bg-[#1E2E2E] p-3 transition hover:border-[#5E8B8C] ${
+        span === 'full' ? 'col-span-2' : ''
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0f1b1b] text-[#FAF6F2]">
+            {METRIC_ICONS[metric] ?? <BarChart3 className="h-4 w-4" />}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-[#9C8578]">{metricLabel(metric)}</p>
+            <p className="mt-0.5 text-lg font-semibold leading-none text-[#FAF6F2]">
+              {current}/{target}
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9C8578]">
+          {progress}%
+        </span>
+      </div>
+      <div className="mt-2.5">
+        <Progress value={Math.min(100, progress)} className="h-1.5 rounded-full bg-[#152022]" />
+      </div>
+    </Link>
+  )
+}
+
 export function KpiWeeklyPanel() {
   const [data, setData] = useState<WeeklyCompareResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,17 +123,14 @@ export function KpiWeeklyPanel() {
 
     load()
   }, [])
-  // compute items and summaries
+
   const items = (data?.weeklyCompare ?? []).filter((it) => CORE_METRICS.includes(it.metric as any))
   const itemsByMetric = Object.fromEntries(items.map((it) => [it.metric, it])) as Record<string, WeeklyCompareItem | undefined>
-  const totalCurrent = items.reduce((sum, item) => sum + (item.currentValue ?? 0), 0)
-  const totalTarget = items.reduce((sum, item) => sum + (item.target ?? 0), 0)
-
   const metrics = CORE_METRICS
 
   return (
-    <div className="rounded-3xl border border-[#2D3C3C] bg-[#152022] p-5">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
+      <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores Clave</p>
           <p className="text-xs text-[#9C8578]">Seguimiento semanal de las metas del equipo</p>
@@ -96,50 +138,41 @@ export function KpiWeeklyPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/broker/crm/goals/new"
-            className="inline-flex items-center gap-2 rounded-full border border-[#2D3C3C] bg-[#223333] px-3 py-2 text-sm text-[#FAF6F2] hover:bg-[#2D3C3C]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#2D3C3C] bg-[#223333] px-3 py-1.5 text-xs text-[#FAF6F2] hover:bg-[#2D3C3C]"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             Nueva meta
           </Link>
           <Link
             href="/broker/crm/planning-week"
-            className="inline-flex items-center rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-2 text-sm text-[#D5C3B6] hover:bg-[#223333]"
+            className="inline-flex items-center rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs text-[#D5C3B6] hover:bg-[#223333]"
           >
             Planificación semanal
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {metrics.map((metric) => {
-          const item = itemsByMetric[metric] ?? { metric, currentValue: 0, target: 0, progress: 0 }
-          return (
-            <Link
-              key={metric}
-              href={`/broker/crm/goals/${metric}`}
-              className="group block rounded-3xl border border-[#2D3C3C] bg-[#1E2E2E] p-4 transition hover:border-[#5E8B8C]"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f1b1b] text-xl text-[#FAF6F2]">
-                    {METRIC_ICONS[metric] ?? <BarChart3 />}
-                  </span>
-                  <div>
-                    <p className="text-sm text-[#9C8578]">{metricLabel(metric)}</p>
-                    <p className="mt-2 text-2xl font-semibold text-[#FAF6F2]">{item.currentValue}/{item.target}</p>
-                  </div>
-                </div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">
-                  {item.progress}%
-                </div>
-              </div>
-              <div className="mt-4">
-                <Progress value={Math.min(100, item.progress)} className="h-2 rounded-full bg-[#152022]" />
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-2.5">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-[74px] rounded-xl bg-[#1E2E2E] animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5">
+          {metrics.map((metric, index) => {
+            const isEdge = index === 0 || index === metrics.length - 1
+            return (
+              <KpiCard
+                key={metric}
+                metric={metric}
+                item={itemsByMetric[metric]}
+                span={isEdge ? 'full' : 'half'}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

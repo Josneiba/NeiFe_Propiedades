@@ -10,7 +10,6 @@ import { ActionItemsGrid } from '@/components/broker/crm/action-items-grid'
 import { ResourcesSection } from '@/components/broker/crm/resources-section'
 import { SavedViewsWidget } from '@/components/broker/crm/saved-views-widget'
 import { GroupsSection } from '@/components/broker/crm/groups-section'
-import { UrgentActionsSection } from '@/components/broker/crm/urgent-actions-section'
 import { KpiWeeklyPanel } from '@/components/broker/goals/kpi-weekly-panel'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertTriangle, Calendar, Users, ClipboardList, Building2, Handshake, NotebookPen } from 'lucide-react'
@@ -105,12 +104,9 @@ export default function MiDiaPage() {
           </div>
         </div>
 
-        <UrgentActionsSection />
-
         <section id="indicadores-clave">
           <KpiWeeklyPanel />
         </section>
-
 
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
           <div className="space-y-5">
