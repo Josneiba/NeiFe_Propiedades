@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Phone, Home, Handshake, DollarSign, FileText, Megaphone, BarChart3 } from 'lucide-react'
+import { Phone, Home, Handshake, DollarSign, FileText, Megaphone, BarChart3 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 
 const METRIC_ICONS: Record<string, JSX.Element> = {
@@ -129,27 +129,21 @@ export function KpiWeeklyPanel() {
   const metrics = CORE_METRICS
 
   return (
-    <div className="rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
-      <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+    // Sin tarjeta contenedora: el bloque va directo sobre el fondo de la página
+    // (el mismo patrón "edge-to-edge" de PME). El único ancho límite es el padding
+    // horizontal que ya define la página en mi-dia/page.tsx.
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#FAF6F2]">Indicadores Clave</p>
-          <p className="text-xs text-[#9C8578]">Seguimiento semanal de las metas del equipo</p>
+          <p className="text-xs text-[#9C8578]">Seguimiento semanal de tus metas</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/broker/crm/goals/new"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#2D3C3C] bg-[#223333] px-3 py-1.5 text-xs text-[#FAF6F2] hover:bg-[#2D3C3C]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nueva meta
-          </Link>
-          <Link
-            href="/broker/crm/planning-week"
-            className="inline-flex items-center rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs text-[#D5C3B6] hover:bg-[#223333]"
-          >
-            Planificación semanal
-          </Link>
-        </div>
+        <Link
+          href="/broker/crm/goals"
+          className="shrink-0 text-xs font-medium text-[#C27F79] hover:underline"
+        >
+          Ver todos
+        </Link>
       </div>
 
       {loading ? (
@@ -173,6 +167,15 @@ export function KpiWeeklyPanel() {
           })}
         </div>
       )}
+
+      <div className="mt-4 flex justify-center">
+        <Link
+          href="/broker/crm/planning-week"
+          className="inline-flex items-center rounded-full border border-[#2D3C3C] bg-[#152022] px-5 py-2 text-xs font-medium text-[#D5C3B6] hover:bg-[#223333]"
+        >
+          Planificación semanal
+        </Link>
+      </div>
     </div>
   )
 }

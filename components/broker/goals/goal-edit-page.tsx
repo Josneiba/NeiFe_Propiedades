@@ -54,9 +54,9 @@ function getMetricPath(metric: GoalMetric) {
   return `/broker/crm/goals/${metric}`
 }
 
-export function GoalEditPage({ metric }: { metric: GoalMetric }) {
+export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; initialPeriod?: GoalPeriod }) {
   const router = useRouter()
-  const [period, setPeriod] = useState<GoalPeriod>('WEEKLY')
+  const [period, setPeriod] = useState<GoalPeriod>(initialPeriod ?? 'WEEKLY')
   const [week, setWeek] = useState(() => getCurrentWeekNumber())
   const [month, setMonth] = useState(() => getCurrentMonth())
   const [year, setYear] = useState(() => getCurrentYear())
