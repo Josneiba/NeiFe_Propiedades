@@ -15,7 +15,6 @@ import {
   User,
   Phone,
   FileBarChart,
-  Menu,
   X,
   MapPin,
   Calendar,
@@ -30,7 +29,6 @@ import {
   PieChart,
 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { useCrmAlerts } from "@/hooks/useCrmAlerts";
 import { SidebarSearch } from '@/components/layout/sidebar-search'
@@ -286,15 +284,27 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden text-[#FAF6F2] hover:bg-[#D5C3B6]/15 bg-[#2D3C3C]/80 backdrop-blur-sm rounded-xl shadow-lg"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </Button>
+      {/* Barra superior móvil: ocupa su propio espacio en el flujo del documento
+          (sticky, no fixed) para que no quede un hueco en blanco arriba del
+          contenido. El logo "NF" reemplaza las líneas del burger menu y, al
+          tocarlo, abre el sidebar — igual al patrón "logo abre el menú" que
+          se ve en otras apps. */}
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C2828] px-4 py-2.5 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={isOpen}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2D3C3C] font-serif text-sm font-semibold text-[#D5C3B6] transition hover:bg-[#3a4a4a]"
+        >
+          {isOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <img src="/logo.svg" alt="NeiFe" className="h-5 w-5 object-contain" />
+          )}
+        </button>
+        <NotificationBell userRole={role} />
+      </div>
 
       {/* Overlay */}
       {isOpen && (
@@ -326,11 +336,12 @@ export function Sidebar({
           >
             <span
               className={cn(
-                "font-serif font-semibold tracking-tight text-[#D5C3B6]",
+                "flex items-center font-serif font-semibold tracking-tight text-[#D5C3B6]",
                 isCollapsed ? "text-sm" : "text-xl"
               )}
             >
-              {isCollapsed ? "NF" : "NeiFe"}
+              <img src="/logo.svg" alt="NeiFe" className={cn(isCollapsed ? 'h-5 w-5' : 'h-7 w-7 mr-2')} />
+              {!isCollapsed && <span className="align-middle">NeiFe</span>}
             </span>
             <NotificationBell userRole={role} />
           </div>

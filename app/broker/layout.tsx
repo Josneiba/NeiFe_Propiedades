@@ -14,13 +14,13 @@ export default async function BrokerLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
       <Sidebar
         role="broker"
         userName={session.user.name ?? 'Corredor'}
         userId={session.user.id}
       />
-      <main className="flex-1 p-4 lg:p-8 pt-16 lg:pt-8 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-4 lg:p-8">
         {children}
       </main>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -25,6 +25,19 @@ interface ContactFiltersProps {
   onReset: () => void
 }
 
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos los estados' },
+  { value: 'ACTIVE', label: 'Activos' },
+  { value: 'CONVERTED', label: 'Convertidos' },
+  { value: 'LOST', label: 'Perdidos' },
+  { value: 'INACTIVE', label: 'Inactivos' },
+]
+
+// Barra de filtros estilo PME: solo iconos (buscar / filtrar / limpiar) en vez
+// de los 5 selects grandes siempre visibles. La lógica de filtrado no cambia,
+// solo cómo se revela: el chip de estado replica el "Status ▾" de PME debajo
+// del título, y el resto de filtros (tipo, fuente) quedan detrás del ícono de
+// filtro para no ocupar espacio permanente.
 export function ContactFilters({
   search,
   onSearchChange,
@@ -34,97 +47,119 @@ export function ContactFilters({
   onStatusChange,
   source,
   onSourceChange,
-  priority,
-  onPriorityChange,
+  priority: _priority,
+  onPriorityChange: _onPriorityChange,
   onReset,
 }: ContactFiltersProps) {
-  const hasActiveFilters =
-    search !== '' || type !== 'all' || status !== 'all' || source !== 'all' || priority !== 'all'
+  const [showSearch, setShowSearch] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
+  const hasActiveFilters = search !== '' || type !== 'all' || status !== 'all' || source !== 'all'
+  const statusLabel = STATUS_OPTIONS.find((option) => option.value === status)?.label ?? 'Todos los estados'
 
   return (
-    <div className="space-y-4 p-4 bg-[#1C2828] border border-[#D5C3B6]/10 rounded-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Search */}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setShowFilters((value) => !value)}
+          className="flex items-center gap-1.5 text-sm text-[#D5C3B6] hover:text-[#FAF6F2]"
+        >
+          {statusLabel}
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+        </button>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowSearch((value) => !value)}
+            aria-label="Buscar"
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+              showSearch ? 'bg-[#2D3C3C] text-[#FAF6F2]' : 'text-[#9C8578] hover:bg-[#152022]'
+            }`}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowFilters((value) => !value)}
+            aria-label="Filtros"
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+              showFilters ? 'bg-[#2D3C3C] text-[#FAF6F2]' : 'text-[#9C8578] hover:bg-[#152022]'
+            }`}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onReset}
+              aria-label="Limpiar filtros"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[#9C8578] hover:bg-[#152022]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showSearch && (
         <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-[#9C8578]" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9C8578]" />
           <Input
+            autoFocus
             placeholder="Buscar por nombre..."
             value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]"
+            onChange={(event) => onSearchChange(event.target.value)}
+            className="border-[#2D3C3C] bg-[#152022] pl-9 text-[#FAF6F2]"
           />
         </div>
+      )}
 
-        {/* Type Filter */}
-        <Select value={type} onValueChange={onTypeChange}>
-          <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
-            <SelectValue placeholder="Tipo de contacto" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            <SelectItem value="PROPIETARIO">Propietario</SelectItem>
-            <SelectItem value="ARRENDATARIO">Arrendatario</SelectItem>
-            <SelectItem value="INVERSIONISTA">Inversionista</SelectItem>
-            <SelectItem value="LEAD">Lead</SelectItem>
-          </SelectContent>
-        </Select>
+      {showFilters && (
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#2D3C3C] bg-[#152022] p-3 sm:grid-cols-3">
+          <Select value={status} onValueChange={onStatusChange}>
+            <SelectTrigger className="border-[#2D3C3C] bg-[#1C2828] text-[#FAF6F2]">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
+              {STATUS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Status Filter */}
-        <Select value={status} onValueChange={onStatusChange}>
-          <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="ACTIVE">Activo</SelectItem>
-            <SelectItem value="CONVERTED">Convertido</SelectItem>
-            <SelectItem value="LOST">Perdido</SelectItem>
-            <SelectItem value="INACTIVE">Inactivo</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={type} onValueChange={onTypeChange}>
+            <SelectTrigger className="border-[#2D3C3C] bg-[#1C2828] text-[#FAF6F2]">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
+              <SelectItem value="all">Todos los tipos</SelectItem>
+              <SelectItem value="PROPIETARIO">Propietario</SelectItem>
+              <SelectItem value="ARRENDATARIO">Arrendatario</SelectItem>
+              <SelectItem value="INVERSIONISTA">Inversionista</SelectItem>
+              <SelectItem value="LEAD">Lead</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Source Filter */}
-        <Select value={source} onValueChange={onSourceChange}>
-          <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
-            <SelectValue placeholder="Fuente" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
-            <SelectItem value="all">Todas las fuentes</SelectItem>
-            <SelectItem value="PORTAL">Portal</SelectItem>
-            <SelectItem value="REFERIDO">Referido</SelectItem>
-            <SelectItem value="RRSS">RRSS</SelectItem>
-            <SelectItem value="LLAMADA_DIRECTA">Llamada directa</SelectItem>
-            <SelectItem value="LETRERO">Letrero</SelectItem>
-            <SelectItem value="OTRO">Otro</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Priority Filter */}
-        <Select value={priority} onValueChange={onPriorityChange}>
-          <SelectTrigger className="bg-[#2D3C3C] border-[#D5C3B6]/20 text-[#FAF6F2]">
-            <SelectValue placeholder="Prioridad" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#1C2828] border-[#D5C3B6]/10">
-            <SelectItem value="all">Todas las prioridades</SelectItem>
-            <SelectItem value="HIGH">Alta</SelectItem>
-            <SelectItem value="MEDIUM">Media</SelectItem>
-            <SelectItem value="LOW">Baja</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Reset Button */}
-        {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onReset}
-            className="w-full border-[#D5C3B6]/20 text-[#9C8578] hover:text-[#D5C3B6]"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Limpiar
-          </Button>
-        )}
-      </div>
+          <Select value={source} onValueChange={onSourceChange}>
+            <SelectTrigger className="border-[#2D3C3C] bg-[#1C2828] text-[#FAF6F2]">
+              <SelectValue placeholder="Fuente" />
+            </SelectTrigger>
+            <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
+              <SelectItem value="all">Todas las fuentes</SelectItem>
+              <SelectItem value="PORTAL">Portal</SelectItem>
+              <SelectItem value="REFERIDO">Referido</SelectItem>
+              <SelectItem value="RRSS">RRSS</SelectItem>
+              <SelectItem value="LLAMADA_DIRECTA">Llamada directa</SelectItem>
+              <SelectItem value="LETRERO">Letrero</SelectItem>
+              <SelectItem value="OTRO">Otro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   )
 }

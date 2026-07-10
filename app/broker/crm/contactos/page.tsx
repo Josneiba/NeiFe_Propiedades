@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Star } from 'lucide-react'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
 import { NewContactModal } from '@/components/broker/crm/new-contact-modal'
 import { toast } from 'sonner'
@@ -55,6 +56,25 @@ const sourceLabels: Record<string, string> = {
   OTRO: 'Otro',
 }
 
+// Punto de estado a la izquierda del nombre — el mismo lenguaje visual que
+// PME usa para marcar de un vistazo la situación de la persona (verde =
+// activo normal, ámbar = necesita atención, estrella = alta prioridad).
+function ContactStatusMarker({ contact }: { contact: Contact }) {
+  if (contact.priority === 'HIGH') {
+    return <Star className="h-4 w-4 shrink-0 fill-[#C27F79] text-[#C27F79]" />
+  }
+  if (contact.stallReason) {
+    return <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#B8965A]" />
+  }
+  if (contact.status === 'CONVERTED') {
+    return <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#5E8B8C]" />
+  }
+  if (contact.status === 'INACTIVE' || contact.status === 'LOST') {
+    return <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#9C8578]/50" />
+  }
+  return <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#7FB8B9]" />
+}
+
 export default function ContactosPage() {
   const searchParams = useSearchParams()
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -105,7 +125,6 @@ export default function ContactosPage() {
   useEffect(() => {
     let filtered = contacts
 
-    // Search filter (client-side fallback)
     if (search) {
       filtered = filtered.filter(
         (c) =>
@@ -116,17 +135,14 @@ export default function ContactosPage() {
       )
     }
 
-    // Type filter
     if (type !== 'all') {
       filtered = filtered.filter((c) => c.type === type.toUpperCase())
     }
 
-    // Status filter
     if (status !== 'all') {
       filtered = filtered.filter((c) => c.status === status.toUpperCase())
     }
 
-    // Source filter
     if (source !== 'all') {
       filtered = filtered.filter((c) => c.source === source.toUpperCase())
     }
@@ -180,56 +196,42 @@ export default function ContactosPage() {
         key: 'prospects',
         title: 'Prospectos',
         description: 'Contactos con intención temprana',
-        icon: '🟡',
-        accent: 'text-[#B8965A]',
         predicate: (contact: Contact) => contact.type === 'LEAD' && contact.status === 'ACTIVE' && contact.priority !== 'HIGH',
       },
       {
         key: 'scheduled-visits',
         title: 'Visitas Programadas',
         description: 'Clientes con visita agendada',
-        icon: '🟠',
-        accent: 'text-[#C27F79]',
         predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.stage === 'VISITA_AGENDADA'),
       },
       {
         key: 'documentation-pending',
         title: 'Documentación Pendiente',
         description: 'Faltan documentos para avanzar',
-        icon: '🔵',
-        accent: 'text-[#5E8B8C]',
         predicate: (contact: Contact) => contact.deals.some((deal) => ['DOCS_REVISION', 'CONTACTO_INICIADO'].includes(deal.deal.stage)),
       },
       {
         key: 'contracts-pending',
         title: 'Contratos por Firmar',
         description: 'Interés con contrato listo para firmar',
-        icon: '🟣',
-        accent: 'text-[#8B5CF6]',
         predicate: (contact: Contact) => contact.deals.some((deal) => ['FIRMA_CONTRATO', 'NEGOCIANDO'].includes(deal.deal.stage)),
       },
       {
         key: 'active-tenants',
         title: 'Arrendatarios Activos',
         description: 'Clientes con contrato vigente',
-        icon: '🟢',
-        accent: 'text-[#22c55e]',
         predicate: (contact: Contact) => contact.type === 'ARRENDATARIO' && contact.status === 'ACTIVE',
       },
       {
         key: 'owners',
         title: 'Propietarios',
         description: 'Propietarios o dueños de cartera',
-        icon: '⭐',
-        accent: 'text-[#F2C94C]',
         predicate: (contact: Contact) => contact.type === 'PROPIETARIO',
       },
       {
         key: 'inactive',
         title: 'Clientes Inactivos',
-        description: 'Requieren reactivación',
-        icon: '⚪',
-        accent: 'text-[#9C8578]',
+        description: 'Requieren reactivación (sin contacto, no contactable o no interesado)',
         predicate: (contact: Contact) => Boolean(contact.stallReason) || contact.status === 'INACTIVE',
       },
     ]
@@ -239,30 +241,23 @@ export default function ContactosPage() {
       .filter((group) => group.contacts.length > 0)
   }, [filteredContacts])
 
-  const stalledCount = filteredContacts.filter((contact) => Boolean(contact.stallReason) || contact.status === 'INACTIVE').length
+  const activeCount = filteredContacts.filter((contact) => contact.status === 'ACTIVE').length
+  const highPriorityCount = filteredContacts.filter((contact) => contact.priority === 'HIGH').length
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#D5C3B6]/10 bg-[#1C2828] p-5 shadow-sm lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B8965A]">CRM · Personas</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
-          <p className="mt-1 text-sm text-[#9C8578]">
-            {filteredContacts.length === 0
+    <div className="space-y-5">
+      {/* Encabezado plano, sin recuadro contenedor — de borde a borde, igual que
+          el resto de la app tras el rediseño de Indicadores Clave. */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B8965A]">CRM · Personas</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
+        <p className="mt-1 text-xs text-[#9C8578]">
+          {isLoading
+            ? 'Cargando contactos...'
+            : filteredContacts.length === 0
               ? 'Ajusta los filtros para ver más personas.'
-              : `${filteredContacts.length} contactos listos para seguir, con ${stalledCount} que necesitan reactivación.`}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#2D3C3C] px-3 py-2 text-sm text-[#FAF6F2]">
-            <span className="block text-[10px] uppercase tracking-[0.2em] text-[#9C8578]">Activos</span>
-            <span className="mt-1 block font-semibold">{filteredContacts.filter((contact) => contact.status === 'ACTIVE').length}</span>
-          </div>
-          <div className="rounded-xl border border-[#D5C3B6]/10 bg-[#2D3C3C] px-3 py-2 text-sm text-[#FAF6F2]">
-            <span className="block text-[10px] uppercase tracking-[0.2em] text-[#9C8578]">Alta prioridad</span>
-            <span className="mt-1 block font-semibold">{filteredContacts.filter((contact) => contact.priority === 'HIGH').length}</span>
-          </div>
-        </div>
+              : `${activeCount} activos · ${highPriorityCount} de alta prioridad`}
+        </p>
       </div>
 
       <ContactFilters
@@ -279,50 +274,65 @@ export default function ContactosPage() {
         onReset={handleReset}
       />
 
-      <div className="space-y-4">
+      <div className="space-y-7">
         {groupedContacts.map((group) => (
-          <section key={group.key} className="rounded-2xl border border-[#D5C3B6]/10 bg-[#1C2828] p-4">
-            <div className="flex items-center justify-between gap-3">
+          <section key={group.key}>
+            <div className="flex items-center justify-between gap-3 border-b border-[#2D3C3C] pb-2">
               <div>
-                <h2 className={`text-lg font-semibold ${group.accent}`}>{group.icon} {group.title}</h2>
-                <p className="text-sm text-[#9C8578]">{group.description}</p>
+                <h2 className="text-sm font-semibold text-[#FAF6F2]">{group.title}</h2>
+                <p className="text-xs text-[#9C8578]">{group.description}</p>
               </div>
-              <span className="rounded-full border border-[#D5C3B6]/10 bg-[#2D3C3C] px-3 py-1 text-sm text-[#FAF6F2]">{group.contacts.length}</span>
+              <span className="shrink-0 text-xs font-medium text-[#9C8578]">{group.contacts.length}</span>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div>
               {group.contacts.map((contact) => (
-                <div key={contact.id} className="rounded-xl border border-[#D5C3B6]/10 bg-[#2D3C3C]/70 p-3">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div
+                  key={contact.id}
+                  className="-mx-2 flex items-start justify-between gap-3 rounded-lg border-b border-[#2D3C3C]/60 px-2 py-3.5 transition hover:bg-[#152022]/60"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <ContactStatusMarker contact={contact} />
                     <div className="min-w-0">
-                      <Link href={`/broker/crm/contactos/${contact.id}`} className="text-sm font-semibold text-[#FAF6F2] transition-colors hover:text-[#5E8B8C]">
+                      <Link
+                        href={`/broker/crm/contactos/${contact.id}`}
+                        className="text-[15px] font-medium text-[#FAF6F2] hover:text-[#7FB8B9]"
+                      >
                         {contact.name}
                       </Link>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#D5C3B6]">
-                        <span className="rounded-full bg-[#5E8B8C]/15 px-2.5 py-1 text-[#5E8B8C]">{typeLabels[contact.type] ?? contact.type}</span>
-                        <span className="rounded-full bg-[#B8965A]/15 px-2.5 py-1 text-[#B8965A]">{sourceLabels[contact.source] ?? contact.source}</span>
-                        {contact.priority === 'HIGH' && <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-red-400">Alta prioridad</span>}
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="rounded-full bg-[#5E8B8C]/15 px-2 py-0.5 text-[#5E8B8C]">
+                          {typeLabels[contact.type] ?? contact.type}
+                        </span>
+                        <span className="rounded-full bg-[#B8965A]/15 px-2 py-0.5 text-[#B8965A]">
+                          {sourceLabels[contact.source] ?? contact.source}
+                        </span>
                         {contact.stallReason && (
-                          <span className={`rounded-full px-2.5 py-1 ${stallReasonMeta[contact.stallReason]?.className ?? 'bg-[#9C8578]/15 text-[#9C8578]'}`}>
+                          <span className={`rounded-full px-2 py-0.5 ${stallReasonMeta[contact.stallReason]?.className ?? 'bg-[#9C8578]/15 text-[#9C8578]'}`}>
                             {stallReasonMeta[contact.stallReason]?.label ?? contact.stallReason}
                           </span>
                         )}
                       </div>
-                      <p className="mt-2 text-sm text-[#9C8578]">
+                      <p className="mt-1 text-xs text-[#9C8578]">
                         {contact.email || contact.phone || `${contact.deals.length} negociación${contact.deals.length === 1 ? '' : 'es'}`}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Link href={`/broker/crm/contactos/${contact.id}`} className="rounded-full border border-[#D5C3B6]/10 bg-[#1C2828] px-3 py-1.5 text-sm text-[#FAF6F2] transition-colors hover:border-[#5E8B8C]/40 hover:text-[#5E8B8C]">
-                        Ver
-                      </Link>
-                    </div>
                   </div>
+                  <Link
+                    href={`/broker/crm/contactos/${contact.id}`}
+                    className="shrink-0 self-center text-xs font-medium text-[#9C8578] hover:text-[#7FB8B9]"
+                  >
+                    Ver
+                  </Link>
                 </div>
               ))}
             </div>
           </section>
         ))}
+
+        {!isLoading && groupedContacts.length === 0 && (
+          <p className="py-8 text-center text-sm text-[#9C8578]">No hay contactos que coincidan con estos filtros.</p>
+        )}
       </div>
 
       <NewContactModal onCreated={loadContacts} variant="fab" />
