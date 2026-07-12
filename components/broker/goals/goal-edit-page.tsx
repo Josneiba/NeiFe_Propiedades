@@ -3,66 +3,89 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ChevronLeft, Minus, Plus, Phone, Home, Handshake, DollarSign, FileText, Megaphone } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Minus,
+  Plus,
+  Info,
+  Phone,
+  Home,
+  Handshake,
+  DollarSign,
+  FileText,
+  Megaphone,
+} from 'lucide-react'
 import { VerlaufChart } from '@/components/broker/goals/verlauf-chart'
 import { getCurrentMonth, getCurrentWeekNumber, getCurrentYear, getISOWeekRange } from '@/lib/goal-engine'
 import type { GoalMetric, GoalPeriod } from '@prisma/client'
 
 const METRIC_LABELS: Record<GoalMetric, string> = {
-  CONTACTS: 'Contactos',
-  VISITS: 'Visitas',
+  CONTACTS: 'Nuevos leads',
+  VISITS: 'Visitas realizadas',
   DEALS_CLOSED: 'Cierres',
-  COMMISSION_CLP: 'Comisión CLP',
-  MANDATES: 'Mandatos',
-  PROPERTIES_PUBLISHED: 'Propiedades publicadas',
+  COMMISSION_CLP: 'Negociaciones activas',
+  MANDATES: 'Contratos firmados',
+  PROPERTIES_PUBLISHED: 'Propiedades captadas',
 }
 
 const METRIC_ICONS: Record<GoalMetric, JSX.Element> = {
-  CONTACTS: <Phone />,
-  VISITS: <Home />,
-  DEALS_CLOSED: <Handshake />,
-  COMMISSION_CLP: <DollarSign />,
-  MANDATES: <FileText />,
-  PROPERTIES_PUBLISHED: <Megaphone />,
+  CONTACTS: <Phone className="h-5 w-5" />,
+  VISITS: <Home className="h-5 w-5" />,
+  DEALS_CLOSED: <Handshake className="h-5 w-5" />,
+  COMMISSION_CLP: <DollarSign className="h-5 w-5" />,
+  MANDATES: <FileText className="h-5 w-5" />,
+  PROPERTIES_PUBLISHED: <Megaphone className="h-5 w-5" />,
+}
+
+// Tip breve por indicador — mismo lugar visual que la tarjeta destacada de
+// PME ("Bei Freunden... Wahrscheinlichkeit etwa zehnmal höher"), pero con
+// consejos genéricos de buenas prácticas inmobiliarias en vez de una
+// estadística inventada.
+const METRIC_TIPS: Record<GoalMetric, string> = {
+  CONTACTS: 'Responder a un lead nuevo dentro de la primera hora aumenta notablemente las probabilidades de agendar una visita.',
+  VISITS: 'Confirmar la visita el mismo día reduce las inasistencias.',
+  PROPERTIES_PUBLISHED: 'Publicar con fotos profesionales genera más contactos por publicación.',
+  COMMISSION_CLP: 'Revisa el pipeline de negociaciones activas para proyectar este monto con más precisión.',
+  MANDATES: 'Un mandato en exclusiva suele avanzar más rápido que uno compartido.',
+  DEALS_CLOSED: 'Pedir referidos justo después de un cierre exitoso es cuando más dispuesto está el cliente.',
 }
 
 const ANALYSIS_SUPPORTED: GoalMetric[] = ['CONTACTS', 'VISITS', 'DEALS_CLOSED']
 
-function getPeriodLabel(period: GoalPeriod) {
-  return period === 'WEEKLY' ? 'Weekly' : period === 'MONTHLY' ? 'Monthly' : 'Daily'
-}
+type PeriodTab = 'WEEKLY' | 'MONTHLY'
+
+const PERIOD_TABS: { key: PeriodTab; label: string }[] = [
+  { key: 'WEEKLY', label: 'Semanal' },
+  { key: 'MONTHLY', label: 'Mensual' },
+]
 
 function getWeekLabel(week: number, year: number) {
   const { start, end } = getISOWeekRange(week, year)
   const startLabel = start.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
-  const endLabel = new Date(end.getTime() - 1).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+  const endLabel = new Date(end.getTime() - 1).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
   return `${startLabel} – ${endLabel}`
 }
 
 function getMonthLabel(month: number, year: number) {
-  return `Mes ${month} / ${year}`
+  const date = new Date(year, month - 1, 1)
+  const label = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 function clamp(value: number) {
   return Math.max(0, Math.round(value))
 }
 
-function getMetricPath(metric: GoalMetric) {
-  return `/broker/crm/goals/${metric}`
-}
-
 export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; initialPeriod?: GoalPeriod }) {
   const router = useRouter()
-  const [period, setPeriod] = useState<GoalPeriod>(initialPeriod ?? 'WEEKLY')
+  const [period, setPeriod] = useState<PeriodTab>(initialPeriod === 'MONTHLY' ? 'MONTHLY' : 'WEEKLY')
   const [week, setWeek] = useState(() => getCurrentWeekNumber())
   const [month, setMonth] = useState(() => getCurrentMonth())
   const [year, setYear] = useState(() => getCurrentYear())
   const [target, setTarget] = useState(0)
   const [current, setCurrent] = useState(0)
-  const [goalId, setGoalId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -74,9 +97,7 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
   const metricLabel = METRIC_LABELS[metric] ?? metric
 
   const rangeLabel = useMemo(() => {
-    if (period === 'WEEKLY') return getWeekLabel(week, year)
-    if (period === 'MONTHLY') return getMonthLabel(month, year)
-    return 'Periodo'
+    return period === 'WEEKLY' ? getWeekLabel(week, year) : getMonthLabel(month, year)
   }, [period, week, month, year])
 
   const selectedGoal = useMemo(() => {
@@ -87,7 +108,6 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     if (!loading && selectedGoal) {
       setTarget(selectedGoal.target ?? 0)
       setCurrent(selectedGoal.current ?? 0)
-      setGoalId(selectedGoal.id ?? null)
       setIsDirty(false)
     }
   }, [selectedGoal, loading])
@@ -123,7 +143,6 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     if (!loading && !selectedGoal) {
       setTarget(0)
       setCurrent(0)
-      setGoalId(null)
     }
   }, [selectedGoal, loading])
 
@@ -143,6 +162,7 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     return () => {
       window.clearTimeout(timer)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, period, week, month, year, loading, isDirty])
 
   async function saveTarget(value: number) {
@@ -150,19 +170,9 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     setMessage(null)
 
     try {
-      const body: Record<string, unknown> = {
-        metric,
-        period,
-        target: value,
-        year,
-      }
-
-      if (period === 'WEEKLY') {
-        body.week = week
-      }
-      if (period === 'MONTHLY') {
-        body.month = month
-      }
+      const body: Record<string, unknown> = { metric, period, target: value, year }
+      if (period === 'WEEKLY') body.week = week
+      if (period === 'MONTHLY') body.month = month
 
       const res = await fetch('/api/broker/goals/target', {
         method: 'POST',
@@ -172,8 +182,7 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
 
       if (!res.ok) {
         const responseBody = await res.json().catch(() => ({}))
-        const messageText = responseBody?.error ?? 'No se pudo guardar la meta'
-        setMessage(messageText)
+        setMessage(responseBody?.error ?? 'No se pudo guardar la meta')
         return
       }
 
@@ -217,181 +226,134 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     })
   }
 
+  const breakdownEntries = insight?.[metric]?.breakdown
+    ? Object.entries(insight[metric].breakdown as Record<string, { count: number }>)
+    : []
+
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
-      <div className="mx-auto max-w-5xl p-4 space-y-6 lg:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <Link href="/broker/crm/mi-dia" className="text-sm text-[#9C8578] hover:text-[#FAF6F2] flex items-center gap-2">
-              <ChevronLeft className="w-4 h-4" /> Volver a Mi Día
-            </Link>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">{METRIC_ICONS[metric]}</span>
-              <div>
-                <p className="text-3xl font-semibold text-[#FAF6F2]">{metricLabel}</p>
-                <p className="text-sm text-[#9C8578]">Editar meta</p>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2 text-right">
-            <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Rango</p>
-            <p className="text-sm text-[#FAF6F2]">{rangeLabel}</p>
-          </div>
+      <div className="mx-auto w-full max-w-xl space-y-6 p-4 pb-16">
+        <Link href="/broker/crm/mi-dia" className="flex items-center gap-1.5 text-sm text-[#9C8578] hover:text-[#FAF6F2]">
+          <ChevronLeft className="h-4 w-4" /> Editar meta
+        </Link>
+
+        <div className="flex items-center border-b border-[#2D3C3C]">
+          {PERIOD_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setPeriod(tab.key)}
+              className={`flex-1 border-b-2 pb-3 text-center text-sm font-medium transition ${
+                period === tab.key
+                  ? 'border-[#C27F79] text-[#FAF6F2]'
+                  : 'border-transparent text-[#9C8578] hover:text-[#D5C3B6]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <div className="space-y-6">
-            <Card className="bg-[#152022] border border-[#2D3C3C]">
-              <div className="flex items-center justify-between gap-4 border-b border-[#2D3C3C] p-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Periodo</p>
-                  <p className="text-lg font-semibold text-[#FAF6F2]">{getPeriodLabel(period)}</p>
-                </div>
-                <Tabs value={period} onValueChange={(value) => setPeriod(value as GoalPeriod)}>
-                  <TabsList className="rounded-full bg-[#1C2828] p-1">
-                    <TabsTrigger value="WEEKLY" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] rounded-full px-4 py-2 text-sm text-[#9C8578]">Weekly</TabsTrigger>
-                    <TabsTrigger value="MONTHLY" className="data-[state=active]:bg-[#5E8B8C] data-[state=active]:text-[#FAF6F2] rounded-full px-4 py-2 text-sm text-[#9C8578]">Monthly</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="p-4 space-y-4">
-                {period === 'WEEKLY' ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <Button variant="outline" size="sm" onClick={() => changeWeek(-1)}>
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <div className="text-center">
-                      <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Semana</p>
-                      <p className="text-lg font-semibold text-[#FAF6F2]">{week} / {year}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => changeWeek(1)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <Button variant="outline" size="sm" onClick={() => changeMonth(-1)}>
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <div className="text-center">
-                      <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Mes</p>
-                      <p className="text-lg font-semibold text-[#FAF6F2]">{month} / {year}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => changeMonth(1)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-                <div className="rounded-3xl border border-[#2D3C3C] bg-[#1A2929] p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Meta</p>
-                      <p className="text-4xl font-semibold text-[#FAF6F2]">{target}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setTarget((value) => clamp(value - 1))
-                          setIsDirty(true)
-                        }}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setTarget((value) => clamp(value + 1))
-                          setIsDirty(true)
-                        }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-sm text-[#9C8578]">
-                    <span>Actual</span>
-                    <span>{current}</span>
-                  </div>
-                  <div className="mt-4 text-xs text-[#9C8578]">El cambio se guarda automáticamente después de unos instantes.</div>
-                </div>
-                <div className="flex items-center justify-between gap-4 text-sm text-[#9C8578]">
-                  <span>{saving ? 'Guardando...' : 'Autosave habilitado'}</span>
-                  {message && <span className="text-[#5E8B8C]">{message}</span>}
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-[#152022] border border-[#2D3C3C]">
-              <div className="border-b border-[#2D3C3C] px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Potential</p>
-                <p className="text-lg font-semibold text-[#FAF6F2]">Oportunidades</p>
-              </div>
-              <div className="p-4 space-y-4">
-                {ANALYSIS_SUPPORTED.includes(metric) ? (
-                  !insight ? (
-                    <div className="text-sm text-[#9C8578]">Cargando potencial...</div>
-                  ) : insight[metric] ? (
-                    <div className="space-y-4">
-                      <div className="rounded-3xl border border-[#2D3C3C] bg-[#1A2929] p-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Meta</p>
-                            <p className="text-2xl font-semibold text-[#FAF6F2]">{insight[metric].target}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Actual</p>
-                            <p className="text-2xl font-semibold text-[#5E8B8C]">{insight[metric].current}</p>
-                          </div>
-                        </div>
-                        <p className="mt-3 text-sm text-[#9C8578]">{insight[metric].insight}</p>
-                      </div>
-                      <div className="space-y-3">
-                        {Object.entries(
-                          (insight[metric].breakdown ?? {}) as Record<string, { count: number }>,
-                        ).map(([key, value], index) => (
-                          <button
-                            key={`${key}-${index}`}
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-3xl border border-[#2D3C3C] bg-[#162121] p-3 text-left text-sm text-[#FAF6F2] hover:bg-[#223333]"
-                          >
-                            <span>{key}</span>
-                            <span className="text-[#9C8578]">{value.count}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-[#9C8578]">No hay datos de desglose disponibles para este indicador.</div>
-                  )
-                ) : (
-                  <div className="rounded-3xl border border-[#2D3C3C] bg-[#1A2929] p-4 text-sm text-[#9C8578]">
-                    Desglose no disponible para este indicador aún.
-                  </div>
-                )}
-              </div>
-            </Card>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => (period === 'WEEKLY' ? changeWeek(-1) : changeMonth(-1))}
+            className="text-[#9C8578] hover:text-[#FAF6F2]"
+            aria-label="Periodo anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-2 text-sm text-[#FAF6F2]">
+            <Calendar className="h-4 w-4 text-[#C27F79]" />
+            {rangeLabel}
           </div>
+          <button
+            type="button"
+            onClick={() => (period === 'WEEKLY' ? changeWeek(1) : changeMonth(1))}
+            className="text-[#9C8578] hover:text-[#FAF6F2]"
+            aria-label="Periodo siguiente"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
 
-          <div className="space-y-6">
-            <Card className="bg-[#152022] border border-[#2D3C3C]">
-              <div className="border-b border-[#2D3C3C] px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-[#9C8578]">Historial</p>
-                <p className="text-lg font-semibold text-[#FAF6F2]">{metricLabel}</p>
-              </div>
-              <div className="p-4">
-                <VerlaufChart metric={metric} metricLabel={metricLabel} />
-              </div>
-            </Card>
+        <h1 className="text-[28px] font-bold leading-tight text-[#FAF6F2]">{metricLabel}</h1>
 
-            <div className="rounded-3xl border border-[#2D3C3C] bg-[#1A2929] p-4 text-sm text-[#9C8578]">
-              <p className="font-semibold text-[#FAF6F2]">Notas</p>
-              <p className="mt-2">Esta pantalla permite editar la meta directamente y usar el pipeline real cuando esté disponible. Si no existe una meta para el período actual, se creará automáticamente.</p>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 rounded-2xl border border-[#2D3C3C] bg-[#152022] px-4 py-3">
+            <p className="text-xs text-[#9C8578]">Meta</p>
+            <div className="mt-1 flex items-center gap-2 text-[#FAF6F2]">
+              {METRIC_ICONS[metric]}
+              <span className="text-3xl font-semibold">{target}</span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setTarget((value) => clamp(value - 1))
+              setIsDirty(true)
+            }}
+            aria-label="Bajar meta"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#2D3C3C] text-[#FAF6F2] hover:bg-[#152022]"
+          >
+            <Minus className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTarget((value) => clamp(value + 1))
+              setIsDirty(true)
+            }}
+            aria-label="Subir meta"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#C27F79] text-[#1C2828] hover:bg-[#C27F79]/85"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-sm text-[#D5C3B6]">
+          <Info className="h-4 w-4 text-[#C27F79]" />
+          Actual: {current}
+        </div>
+
+        <div className="rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
+          <p className="text-sm leading-relaxed text-[#D5C3B6]">{METRIC_TIPS[metric]}</p>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-[#9C8578]">
+          <span>{saving ? 'Guardando...' : 'Los cambios se guardan solos'}</span>
+          {message && <span className="text-[#5E8B8C]">{message}</span>}
+        </div>
+
+        <div className="border-t border-[#2D3C3C] pt-5">
+          <h2 className="mb-1 text-sm font-semibold text-[#FAF6F2]">Fuentes de este indicador</h2>
+          {!ANALYSIS_SUPPORTED.includes(metric) ? (
+            <p className="text-sm text-[#9C8578]">Desglose no disponible todavía para este indicador.</p>
+          ) : !insight ? (
+            <p className="text-sm text-[#9C8578]">Cargando desglose...</p>
+          ) : breakdownEntries.length === 0 ? (
+            <p className="text-sm text-[#9C8578]">Sin datos de desglose por ahora.</p>
+          ) : (
+            <div>
+              {insight[metric]?.insight && (
+                <p className="mb-2 text-xs text-[#9C8578]">{insight[metric].insight}</p>
+              )}
+              {breakdownEntries.map(([key, value], index) => (
+                <div
+                  key={`${key}-${index}`}
+                  className="-mx-2 flex items-center justify-between gap-3 rounded-lg border-b border-[#2D3C3C] px-2 py-3.5"
+                >
+                  <p className="text-[15px] text-[#FAF6F2]">{key}</p>
+                  <span className="text-sm text-[#9C8578]">{value.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#2D3C3C] pt-5">
+          <h2 className="mb-3 text-sm font-semibold text-[#FAF6F2]">Historial</h2>
+          <VerlaufChart metric={metric} metricLabel={metricLabel} />
         </div>
       </div>
     </div>
