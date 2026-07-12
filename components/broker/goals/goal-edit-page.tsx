@@ -233,8 +233,8 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
       <div className="mx-auto w-full max-w-xl space-y-6 p-4 pb-16">
-        <Link href="/broker/crm/mi-dia" className="flex items-center gap-1.5 text-sm text-[#9C8578] hover:text-[#FAF6F2]">
-          <ChevronLeft className="h-4 w-4" /> Editar meta
+        <Link href="/broker/crm/planning-week?tab=indicadores" className="flex items-center gap-1.5 text-sm text-[#9C8578] hover:text-[#FAF6F2]">
+          <ChevronLeft className="h-4 w-4" /> Volver a Indicadores
         </Link>
 
         <div className="flex items-center border-b border-[#2D3C3C]">

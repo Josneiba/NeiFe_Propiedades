@@ -52,7 +52,7 @@ function IndicatorRow({
   item: ProgressItem | undefined
   period: Period
 }) {
-  const href = `/broker/crm/goals/${metric}?period=${period}`
+  const href = `/broker/crm/goals/${metric.toLowerCase()}?period=${period.toLowerCase()}`
 
   return (
     <Link
