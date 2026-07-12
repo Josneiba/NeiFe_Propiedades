@@ -6,10 +6,12 @@ import Link from 'next/link'
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Calendar,
   Minus,
   Plus,
   Info,
+  LayoutList,
   Phone,
   Home,
   Handshake,
@@ -39,10 +41,6 @@ const METRIC_ICONS: Record<GoalMetric, JSX.Element> = {
   PROPERTIES_PUBLISHED: <Megaphone className="h-5 w-5" />,
 }
 
-// Tip breve por indicador — mismo lugar visual que la tarjeta destacada de
-// PME ("Bei Freunden... Wahrscheinlichkeit etwa zehnmal höher"), pero con
-// consejos genéricos de buenas prácticas inmobiliarias en vez de una
-// estadística inventada.
 const METRIC_TIPS: Record<GoalMetric, string> = {
   CONTACTS: 'Responder a un lead nuevo dentro de la primera hora aumenta notablemente las probabilidades de agendar una visita.',
   VISITS: 'Confirmar la visita el mismo día reduce las inasistencias.',
@@ -93,6 +91,7 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
   const [saveTimer, setSaveTimer] = useState<number | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const [progressItems, setProgressItems] = useState<any[]>([])
+  const [expandedBreakdown, setExpandedBreakdown] = useState<Set<string>>(new Set())
 
   const metricLabel = METRIC_LABELS[metric] ?? metric
 
@@ -233,8 +232,8 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
       <div className="mx-auto w-full max-w-xl space-y-6 p-4 pb-16">
-        <Link href="/broker/crm/planning-week?tab=indicadores" className="flex items-center gap-1.5 text-sm text-[#9C8578] hover:text-[#FAF6F2]">
-          <ChevronLeft className="h-4 w-4" /> Volver a Indicadores
+        <Link href="/broker/crm/mi-dia" className="flex items-center gap-1.5 text-sm text-[#9C8578] hover:text-[#FAF6F2]">
+          <ChevronLeft className="h-4 w-4" /> Editar meta
         </Link>
 
         <div className="flex items-center border-b border-[#2D3C3C]">
@@ -326,7 +325,10 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
         </div>
 
         <div className="border-t border-[#2D3C3C] pt-5">
-          <h2 className="mb-1 text-sm font-semibold text-[#FAF6F2]">Fuentes de este indicador</h2>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[#FAF6F2]">Potencial</h2>
+            <LayoutList className="h-4 w-4 text-[#9C8578]" aria-hidden="true" />
+          </div>
           {!ANALYSIS_SUPPORTED.includes(metric) ? (
             <p className="text-sm text-[#9C8578]">Desglose no disponible todavía para este indicador.</p>
           ) : !insight ? (
@@ -334,19 +336,45 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
           ) : breakdownEntries.length === 0 ? (
             <p className="text-sm text-[#9C8578]">Sin datos de desglose por ahora.</p>
           ) : (
-            <div>
+            <div className="space-y-2">
               {insight[metric]?.insight && (
-                <p className="mb-2 text-xs text-[#9C8578]">{insight[metric].insight}</p>
+                <p className="mb-1 text-xs text-[#9C8578]">{insight[metric].insight}</p>
               )}
-              {breakdownEntries.map(([key, value], index) => (
-                <div
-                  key={`${key}-${index}`}
-                  className="-mx-2 flex items-center justify-between gap-3 rounded-lg border-b border-[#2D3C3C] px-2 py-3.5"
-                >
-                  <p className="text-[15px] text-[#FAF6F2]">{key}</p>
-                  <span className="text-sm text-[#9C8578]">{value.count}</span>
-                </div>
-              ))}
+              {breakdownEntries.map(([key, value], index) => {
+                const rowKey = `${key}-${index}`
+                const isOpen = expandedBreakdown.has(rowKey)
+                return (
+                  <div key={rowKey} className="rounded-xl bg-[#2D3C3C] px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedBreakdown((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(rowKey)) {
+                            next.delete(rowKey)
+                          } else {
+                            next.add(rowKey)
+                          }
+                          return next
+                        })
+                      }
+                      className="flex w-full items-center justify-between gap-3 text-left"
+                    >
+                      <span className="text-sm font-medium text-[#FAF6F2]">
+                        {key} {value.count > 0 ? `(${value.count})` : ''}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 shrink-0 text-[#D5C3B6] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <p className="mt-2 text-sm text-[#9C8578]">
+                        {value.count > 0
+                          ? `${value.count} contacto${value.count === 1 ? '' : 's'} en esta categoría.`
+                          : 'No se encontraron contactos en esta categoría por ahora.'}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -359,3 +387,4 @@ export function GoalEditPage({ metric, initialPeriod }: { metric: GoalMetric; in
     </div>
   )
 }
+

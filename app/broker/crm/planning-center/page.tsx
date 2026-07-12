@@ -1,23 +1,16 @@
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-session'
 import { redirect } from 'next/navigation'
-import { PlanningCenter } from '@/components/broker/crm/planning-center'
 
-export const metadata = {
-  title: 'Centro de Planificación Comercial | NeiFe',
-  description: 'Gestiona tu pipeline, estrategias y KPIs comerciales',
-}
-
-export default async function PlanningCenterPage() {
+// Segunda pantalla-hub vieja ("Centro de Planificación Comercial"), huérfana
+// — ningún link del código apunta acá, pero se deja la ruta viva por si
+// quedó algún marcador guardado, redirigiendo también a Mi Día en vez de
+// mostrar contenido desactualizado.
+export default async function PlanningCenterIndexPage() {
   const session = await auth()
   if (!session?.user) {
     redirect('/login')
   }
 
-  return (
-    <div className="min-h-screen bg-[#0F1818] p-4 md:p-6">
-      <div className="mx-auto max-w-[1400px]">
-        <PlanningCenter />
-      </div>
-    </div>
-  )
+  redirect('/broker/crm/mi-dia')
 }
+
