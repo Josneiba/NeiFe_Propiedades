@@ -49,7 +49,19 @@ export async function GET(request: NextRequest) {
     where,
     include: {
       deals: {
-        include: { deal: { select: { id: true, code: true, title: true, stage: true } } },
+        include: {
+          deal: {
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              stage: true,
+              status: true,
+              operationType: true,
+              wonAt: true,
+            },
+          },
+        },
         take: 3,
       },
       score: true,

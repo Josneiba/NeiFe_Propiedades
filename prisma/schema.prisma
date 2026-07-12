@@ -87,6 +87,7 @@ model User {
   brokerWorkflows    CrmWorkflow[]        @relation("BrokerWorkflows")
   messageTemplates   CrmMessageTemplate[] @relation("BrokerMessageTemplates")
   crmSavedViews      CrmSavedView[]
+  crmSavedFilters    CrmSavedFilter[]     @relation("CrmBrokerSavedFilters")
   brokerStrategies   CrmStrategy[]        @relation("BrokerStrategies")
   strategyActivities CrmStrategyActivity[] @relation("StrategyActivityOwner")
 
@@ -983,6 +984,17 @@ model CrmSavedView {
   @@index([brokerId, entity])
 }
 
+model CrmSavedFilter {
+  id        String   @id @default(cuid())
+  brokerId  String
+  broker    User     @relation("CrmBrokerSavedFilters", fields: [brokerId], references: [id])
+  name      String
+  criteria  Json
+  createdAt DateTime @default(now())
+
+  @@index([brokerId])
+}
+
 model CrmContact {
   id        String           @id @default(cuid())
   code      String           @unique // Ej: "PROP-0041" — generado en servidor
@@ -995,6 +1007,10 @@ model CrmContact {
   source    CrmLeadSource
   priority  CrmPriority      @default(MEDIUM)
   status    CrmContactStatus @default(ACTIVE)
+  interestedCommune String?
+  interestedPropertyType CrmPropertyType?
+  budgetMin Float?
+  budgetMax Float?
   brokerId  String
   broker    User             @relation("CrmBrokerContacts", fields: [brokerId], references: [id])
   preferredChannel CrmChannel?

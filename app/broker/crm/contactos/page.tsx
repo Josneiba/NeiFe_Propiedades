@@ -3,10 +3,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Star } from 'lucide-react'
+import { Star, Plus } from 'lucide-react'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
+import { ContactFilterSheet, EMPTY_FILTER_CRITERIA, type ContactFilterCriteria, type SavedFilter } from '@/components/broker/crm/contact-filter-sheet'
 import { NewContactModal } from '@/components/broker/crm/new-contact-modal'
 import { toast } from 'sonner'
+
+interface DealSummary {
+  deal: {
+    id: string
+    code: string
+    title: string
+    stage: string
+    status: 'ACTIVE' | 'WON' | 'LOST'
+    operationType: 'ARRIENDO' | 'VENTA' | 'AMBOS'
+    wonAt: string | null
+  }
+}
 
 interface Contact {
   id: string
@@ -19,18 +32,10 @@ interface Contact {
   source: 'PORTAL' | 'REFERIDO' | 'RRSS' | 'LLAMADA_DIRECTA' | 'LETRERO' | 'OTRO'
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
   stallReason: string | null
-  deals: Array<{ deal: { id: string; code: string; title: string; stage: string } }>
+  interestedCommune: string | null
+  interestedPropertyType: string | null
+  deals: DealSummary[]
   score: { score: number; recommendation: string } | null
-}
-
-interface NewContactFormData {
-  name: string
-  email?: string
-  phone?: string
-  type: 'OWNER' | 'TENANT' | 'BUYER' | 'INVESTOR'
-  status: string
-  priority: 'HIGH' | 'NORMAL' | 'LOW'
-  notes?: string
 }
 
 const typeLabels: Record<string, string> = {
@@ -56,9 +61,6 @@ const sourceLabels: Record<string, string> = {
   OTRO: 'Otro',
 }
 
-// Punto de estado a la izquierda del nombre — el mismo lenguaje visual que
-// PME usa para marcar de un vistazo la situación de la persona (verde =
-// activo normal, ámbar = necesita atención, estrella = alta prioridad).
 function ContactStatusMarker({ contact }: { contact: Contact }) {
   if (contact.priority === 'HIGH') {
     return <Star className="h-4 w-4 shrink-0 fill-[#C27F79] text-[#C27F79]" />
@@ -75,40 +77,46 @@ function ContactStatusMarker({ contact }: { contact: Contact }) {
   return <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#7FB8B9]" />
 }
 
+function countActiveFilters(criteria: ContactFilterCriteria) {
+  let count = 0
+  if (criteria.type !== 'all') count++
+  if (criteria.status !== 'all') count++
+  if (criteria.source !== 'all') count++
+  if (criteria.priority !== 'all') count++
+  if (criteria.operationType !== 'all') count++
+  if (criteria.dealStatus !== 'all') count++
+  if (criteria.wonBeforeDays !== 'all') count++
+  if (criteria.interestedCommune.trim()) count++
+  if (criteria.interestedPropertyType !== 'all') count++
+  return count
+}
+
 export default function ContactosPage() {
   const searchParams = useSearchParams()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Filters state
   const [search, setSearch] = useState('')
-  const [type, setType] = useState('all')
-  const [status, setStatus] = useState('all')
-  const [source, setSource] = useState('all')
+  const [criteria, setCriteria] = useState<ContactFilterCriteria>(EMPTY_FILTER_CRITERIA)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [quickFilters, setQuickFilters] = useState<SavedFilter[]>([])
 
   useEffect(() => {
-    const nextType = searchParams.get('type')?.toLowerCase() ?? 'all'
-    const nextStatus = searchParams.get('status')?.toLowerCase() ?? 'all'
-    const nextSource = searchParams.get('source')?.toLowerCase() ?? 'all'
     const nextSearch = searchParams.get('q')?.toLowerCase() ?? ''
-
-    setType(nextType)
-    setStatus(nextStatus)
-    setSource(nextSource)
     setSearch(nextSearch)
+    setCriteria((prev) => ({
+      ...prev,
+      type: searchParams.get('type')?.toUpperCase() ?? prev.type,
+      status: searchParams.get('status')?.toUpperCase() ?? prev.status,
+      source: searchParams.get('source')?.toUpperCase() ?? prev.source,
+    }))
   }, [searchParams])
 
   const loadContacts = useCallback(async () => {
     try {
       setIsLoading(true)
-      const params = new URLSearchParams()
-      if (search) params.set('q', search)
-      if (type !== 'all') params.set('type', type.toUpperCase())
-      if (status !== 'all') params.set('status', status.toUpperCase())
-      if (source !== 'all') params.set('source', source.toUpperCase())
-
-      const res = await fetch(`/api/crm/contacts?${params}`)
+      const res = await fetch('/api/crm/contacts')
       if (!res.ok) throw new Error()
       const data = await res.json()
       setContacts(data)
@@ -117,77 +125,75 @@ export default function ContactosPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, type, status, source])
+  }, [])
 
-  useEffect(() => { loadContacts() }, [loadContacts])
+  useEffect(() => {
+    void loadContacts()
+  }, [loadContacts])
 
-  // Apply filters
+  useEffect(() => {
+    async function loadQuickFilters() {
+      try {
+        const res = await fetch('/api/broker/crm/saved-filters')
+        if (res.ok) {
+          const data = await res.json()
+          setQuickFilters(Array.isArray(data) ? data.slice(0, 6) : [])
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    void loadQuickFilters()
+  }, [])
+
   useEffect(() => {
     let filtered = contacts
 
     if (search) {
+      const q = search.toLowerCase()
       filtered = filtered.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.code.toLowerCase().includes(search.toLowerCase()) ||
-          c.email?.toLowerCase().includes(search.toLowerCase()) ||
-          c.phone?.includes(search)
+        (contact) =>
+          contact.name.toLowerCase().includes(q) ||
+          contact.code.toLowerCase().includes(q) ||
+          contact.email?.toLowerCase().includes(q) ||
+          contact.phone?.includes(search)
       )
     }
 
-    if (type !== 'all') {
-      filtered = filtered.filter((c) => c.type === type.toUpperCase())
-    }
+    if (criteria.type !== 'all') filtered = filtered.filter((contact) => contact.type === criteria.type)
+    if (criteria.status !== 'all') filtered = filtered.filter((contact) => contact.status === criteria.status)
+    if (criteria.source !== 'all') filtered = filtered.filter((contact) => contact.source === criteria.source)
+    if (criteria.priority !== 'all') filtered = filtered.filter((contact) => contact.priority === criteria.priority)
 
-    if (status !== 'all') {
-      filtered = filtered.filter((c) => c.status === status.toUpperCase())
+    if (criteria.operationType !== 'all') {
+      filtered = filtered.filter((contact) => contact.deals.some((deal) => deal.deal.operationType === criteria.operationType))
     }
-
-    if (source !== 'all') {
-      filtered = filtered.filter((c) => c.source === source.toUpperCase())
+    if (criteria.dealStatus !== 'all') {
+      filtered = filtered.filter((contact) => contact.deals.some((deal) => deal.deal.status === criteria.dealStatus))
+    }
+    if (criteria.wonBeforeDays !== 'all') {
+      const thresholdMs = Number(criteria.wonBeforeDays) * 86_400_000
+      filtered = filtered.filter((contact) =>
+        contact.deals.some(
+          (deal) => deal.deal.status === 'WON' && deal.deal.wonAt && Date.now() - new Date(deal.deal.wonAt).getTime() >= thresholdMs
+        )
+      )
+    }
+    if (criteria.interestedCommune.trim()) {
+      const commune = criteria.interestedCommune.trim().toLowerCase()
+      filtered = filtered.filter((contact) => contact.interestedCommune?.toLowerCase().includes(commune))
+    }
+    if (criteria.interestedPropertyType !== 'all') {
+      filtered = filtered.filter((contact) => contact.interestedPropertyType === criteria.interestedPropertyType)
     }
 
     setFilteredContacts(filtered)
-  }, [contacts, search, type, status, source])
+  }, [contacts, search, criteria])
 
-  const handleCreateContact = async (data: NewContactFormData) => {
-    try {
-      const res = await fetch('/api/crm/contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-
-      if (!res.ok) throw new Error()
-
-      const newContact = await res.json()
-      setContacts((prev) => [newContact, ...prev])
-
-      toast.success('Contacto creado correctamente')
-    } catch {
-      toast.error('No se pudo crear el contacto')
-    }
-  }
-
-  const handleDeleteContact = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este contacto?')) return
-
-    try {
-      const res = await fetch(`/api/crm/contacts/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error()
-
-      setContacts(contacts.filter((c) => c.id !== id))
-      toast.success('Contacto eliminado correctamente')
-    } catch {
-      toast.error('No se pudo eliminar el contacto')
-    }
-  }
-
-  const handleReset = () => {
+  function handleReset() {
     setSearch('')
-    setType('all')
-    setStatus('all')
-    setSource('all')
+    setCriteria(EMPTY_FILTER_CRITERIA)
   }
 
   const groupedContacts = useMemo(() => {
@@ -229,6 +235,15 @@ export default function ContactosPage() {
         predicate: (contact: Contact) => contact.type === 'PROPIETARIO',
       },
       {
+        key: 'win-back',
+        title: 'Para Recontactar',
+        description: 'Negocios cerrados con éxito hace más de 6 meses',
+        predicate: (contact: Contact) =>
+          contact.deals.some(
+            (deal) => deal.deal.status === 'WON' && deal.deal.wonAt && Date.now() - new Date(deal.deal.wonAt).getTime() >= 180 * 86_400_000
+          ),
+      },
+      {
         key: 'inactive',
         title: 'Clientes Inactivos',
         description: 'Requieren reactivación (sin contacto, no contactable o no interesado)',
@@ -243,11 +258,10 @@ export default function ContactosPage() {
 
   const activeCount = filteredContacts.filter((contact) => contact.status === 'ACTIVE').length
   const highPriorityCount = filteredContacts.filter((contact) => contact.priority === 'HIGH').length
+  const activeFilterCount = countActiveFilters(criteria)
 
   return (
     <div className="space-y-5">
-      {/* Encabezado plano, sin recuadro contenedor — de borde a borde, igual que
-          el resto de la app tras el rediseño de Indicadores Clave. */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B8965A]">CRM · Personas</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
@@ -260,18 +274,37 @@ export default function ContactosPage() {
         </p>
       </div>
 
+      {quickFilters.length > 0 && (
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {quickFilters.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => setCriteria(filter.criteria)}
+              className="shrink-0 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
+            >
+              {filter.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <ContactFilters
         search={search}
         onSearchChange={setSearch}
-        type={type}
-        onTypeChange={setType}
-        status={status}
-        onStatusChange={setStatus}
-        source={source}
-        onSourceChange={setSource}
-        priority="all"
-        onPriorityChange={() => {}}
+        activeFilterCount={activeFilterCount}
+        onOpenFilters={() => setSheetOpen(true)}
         onReset={handleReset}
+      />
+
+      <ContactFilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        criteria={criteria}
+        onApply={(next) => {
+          setCriteria(next)
+          setSheetOpen(false)
+        }}
       />
 
       <div className="space-y-7">
@@ -335,7 +368,13 @@ export default function ContactosPage() {
         )}
       </div>
 
-      <NewContactModal onCreated={loadContacts} variant="fab" />
+      <Link
+        href="/broker/crm/contactos/nuevo"
+        aria-label="Nuevo contacto"
+        className="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-[#5E8B8C] text-white shadow-lg shadow-[#1C2828]/40 transition hover:scale-105"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </div>
   )
 }
