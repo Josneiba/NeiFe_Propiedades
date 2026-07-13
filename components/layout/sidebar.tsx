@@ -23,6 +23,7 @@ import {
   Kanban,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Target,
   MessageSquare,
   TrendingUp,
@@ -286,21 +287,27 @@ export function Sidebar({
     <>
       {/* Barra superior móvil: ocupa su propio espacio en el flujo del documento
           (sticky, no fixed) para que no quede un hueco en blanco arriba del
-          contenido. El logo "NF" reemplaza las líneas del burger menu y, al
-          tocarlo, abre el sidebar — igual al patrón "logo abre el menú" que
-          se ve en otras apps. */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C2828] px-4 py-2.5 lg:hidden">
+          contenido. El logo reemplaza las líneas del burger menu y, al
+          tocarlo, abre el sidebar. El texto "Menú" + la flecha son el hint de
+          que este botón abre la navegación. */}
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C2828] px-4 py-3 lg:hidden">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={isOpen}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2D3C3C] font-serif text-sm font-semibold text-[#D5C3B6] transition hover:bg-[#3a4a4a]"
+          className="flex items-center gap-2 rounded-xl bg-[#2D3C3C] py-2 pl-3 pr-3.5 text-[#D5C3B6] transition hover:bg-[#3a4a4a]"
         >
           {isOpen ? (
             <X className="h-5 w-5" />
           ) : (
-            <img src="/logo.svg" alt="NeiFe" className="h-5 w-5 object-contain" />
+            <>
+              <img src="/logo.svg" alt="NeiFe" className="h-6 w-6 object-contain" />
+              <span className="flex items-center gap-1 border-l border-[#D5C3B6]/20 pl-2 text-[11px] font-medium uppercase tracking-wide text-[#9C8578]">
+                Menú
+                <ChevronDown className="h-3.5 w-3.5" />
+              </span>
+            </>
           )}
         </button>
         <NotificationBell userRole={role} />

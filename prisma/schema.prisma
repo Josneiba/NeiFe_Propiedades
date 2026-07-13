@@ -1007,6 +1007,7 @@ model CrmContact {
   source    CrmLeadSource
   priority  CrmPriority      @default(MEDIUM)
   status    CrmContactStatus @default(ACTIVE)
+  referredBy String?
   interestedCommune String?
   interestedPropertyType CrmPropertyType?
   budgetMin Float?

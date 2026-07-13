@@ -139,7 +139,7 @@ export function KpiWeeklyPanel() {
           <p className="text-xs text-[#9C8578]">Seguimiento semanal de tus metas</p>
         </div>
         <Link
-          href="/broker/crm/goals"
+          href="/broker/crm/planning-week?tab=indicadores"
           className="shrink-0 text-xs font-medium text-[#C27F79] hover:underline"
         >
           Ver todos

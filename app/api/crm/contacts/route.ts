@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth-session'
 import { prisma } from '@/lib/prisma'
 import { generateCrmCode } from '@/lib/crm-codes'
 import { NextRequest, NextResponse } from 'next/server'
-import { CrmContactType, CrmLeadSource, CrmPriority } from '@prisma/client'
+import { CrmContactType, CrmLeadSource, CrmPriority, CrmChannel, CrmPropertyType } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -111,7 +111,22 @@ export async function POST(request: NextRequest) {
   const brokerId = session.user.id
   const body = await request.json()
 
-  const { type, name, email, phone, rut, source, priority = 'MEDIUM', notes } = body
+  const {
+    type,
+    name,
+    email,
+    phone,
+    rut,
+    source,
+    priority = 'MEDIUM',
+    notes,
+    preferredChannel,
+    referredBy,
+    interestedCommune,
+    interestedPropertyType,
+    budgetMin,
+    budgetMax,
+  } = body
 
   if (!type || !name || !source) {
     return NextResponse.json(
@@ -146,6 +161,12 @@ export async function POST(request: NextRequest) {
           status: 'ACTIVE',
           brokerId,
           notes: notes || null,
+          preferredChannel: (preferredChannel as CrmChannel) || null,
+          referredBy: referredBy || null,
+          interestedCommune: interestedCommune || null,
+          interestedPropertyType: (interestedPropertyType as CrmPropertyType) || null,
+          budgetMin: typeof budgetMin === 'number' ? budgetMin : budgetMin ? Number(budgetMin) : null,
+          budgetMax: typeof budgetMax === 'number' ? budgetMax : budgetMax ? Number(budgetMax) : null,
         },
       })
     })

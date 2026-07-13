@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { Star, Plus } from 'lucide-react'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
 import { ContactFilterSheet, EMPTY_FILTER_CRITERIA, type ContactFilterCriteria, type SavedFilter } from '@/components/broker/crm/contact-filter-sheet'
-import { NewContactModal } from '@/components/broker/crm/new-contact-modal'
 import { toast } from 'sonner'
 
 interface DealSummary {
