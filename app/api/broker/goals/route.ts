@@ -15,19 +15,25 @@ export async function GET(request: Request) {
   const monthYear = Number(searchParams.get('monthYear'))
 
   const brokerId = session.user.id
-  const [goals, progress, weekPlan, history] = await Promise.all([
-    getBrokerGoals(brokerId),
-    getBrokerGoalProgress(brokerId, {
-      week: Number.isNaN(week) ? undefined : week,
-      year: Number.isNaN(year) ? undefined : year,
-      month: Number.isNaN(month) ? undefined : month,
-      monthYear: Number.isNaN(monthYear) ? undefined : monthYear,
-    }),
-    getBrokerWeekPlan(brokerId),
-    getBrokerGoalHistory(brokerId),
-  ])
 
-  return NextResponse.json({ goals, progress, weekPlan, history })
+  try {
+    const [goals, progress, weekPlan, history] = await Promise.all([
+      getBrokerGoals(brokerId),
+      getBrokerGoalProgress(brokerId, {
+        week: Number.isNaN(week) ? undefined : week,
+        year: Number.isNaN(year) ? undefined : year,
+        month: Number.isNaN(month) ? undefined : month,
+        monthYear: Number.isNaN(monthYear) ? undefined : monthYear,
+      }),
+      getBrokerWeekPlan(brokerId),
+      getBrokerGoalHistory(brokerId),
+    ])
+
+    return NextResponse.json({ goals, progress, weekPlan, history })
+  } catch (error) {
+    console.error('Goals API error:', error)
+    return NextResponse.json({ goals: [], progress: [], weekPlan: null, history: null })
+  }
 }
 
 export async function POST(request: Request) {

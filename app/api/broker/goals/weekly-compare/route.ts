@@ -55,43 +55,48 @@ export async function GET(request: Request) {
   const currentRange = getISOWeekRange(week, year)
   const previousRange = getPreviousWeekRange(week, year)
 
-  const [currentGoals, previousGoals] = await Promise.all([
-    prisma.brokerGoal.findMany({
-      where: { brokerId, period: 'WEEKLY', week, year },
-    }),
-    prisma.brokerGoal.findMany({
-      where: {
-        brokerId,
-        period: 'WEEKLY',
-        week: previousRange.start.getUTCFullYear() === year
-          ? getCurrentWeekNumber(previousRange.start)
-          : getCurrentWeekNumber(previousRange.start),
-        year: previousRange.start.getUTCFullYear(),
-      },
-    }),
-  ])
+  try {
+    const [currentGoals, previousGoals] = await Promise.all([
+      prisma.brokerGoal.findMany({
+        where: { brokerId, period: 'WEEKLY', week, year },
+      }),
+      prisma.brokerGoal.findMany({
+        where: {
+          brokerId,
+          period: 'WEEKLY',
+          week: previousRange.start.getUTCFullYear() === year
+            ? getCurrentWeekNumber(previousRange.start)
+            : getCurrentWeekNumber(previousRange.start),
+          year: previousRange.start.getUTCFullYear(),
+        },
+      }),
+    ])
 
-  const currentGoalsMap = new Map(currentGoals.map((goal) => [goal.metric, goal]))
-  const previousGoalsMap = new Map(previousGoals.map((goal) => [goal.metric, goal]))
+    const currentGoalsMap = new Map(currentGoals.map((goal) => [goal.metric, goal]))
+    const previousGoalsMap = new Map(previousGoals.map((goal) => [goal.metric, goal]))
 
-  const weeklyCompare = await Promise.all(
-    WEEKLY_METRICS.map(async (metric) => {
-      const currentValue = await getRealProgressForRange(brokerId, metric, currentRange.start, currentRange.end)
-      const previousValue = await getRealProgressForRange(brokerId, metric, previousRange.start, previousRange.end)
-      const currentGoal = currentGoalsMap.get(metric)
-      const previousGoal = previousGoalsMap.get(metric)
+    const weeklyCompare = await Promise.all(
+      WEEKLY_METRICS.map(async (metric) => {
+        const currentValue = await getRealProgressForRange(brokerId, metric, currentRange.start, currentRange.end)
+        const previousValue = await getRealProgressForRange(brokerId, metric, previousRange.start, previousRange.end)
+        const currentGoal = currentGoalsMap.get(metric)
+        const previousGoal = previousGoalsMap.get(metric)
 
-      return {
-        metric,
-        label: metricLabel(metric),
-        currentValue,
-        previousValue,
-        target: currentGoal?.target ?? 0,
-        previousTarget: previousGoal?.target ?? 0,
-        progress: currentGoal?.target ? Math.min(100, Math.round((currentValue / currentGoal.target) * 100)) : 0,
-      }
-    }),
-  )
+        return {
+          metric,
+          label: metricLabel(metric),
+          currentValue,
+          previousValue,
+          target: currentGoal?.target ?? 0,
+          previousTarget: previousGoal?.target ?? 0,
+          progress: currentGoal?.target ? Math.min(100, Math.round((currentValue / currentGoal.target) * 100)) : 0,
+        }
+      }),
+    )
 
-  return NextResponse.json({ week, year, weeklyCompare })
+    return NextResponse.json({ week, year, weeklyCompare })
+  } catch (error) {
+    console.error('Weekly compare API error:', error)
+    return NextResponse.json({ week, year, weeklyCompare: [] })
+  }
 }

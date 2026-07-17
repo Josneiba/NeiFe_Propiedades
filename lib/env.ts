@@ -46,15 +46,14 @@ export function validateEnv() {
   }
 
   if (missing.length > 0) {
-    const errorMsg =
-      `Variables de entorno faltantes: ${missing.join(', ')}\n` +
-      `Copia .env.example a .env.local y completa los valores.\n` +
-      `Las variables requeridas son:\n` +
-      `- DATABASE_URL: Tu conexión PostgreSQL\n` +
-      `- NEXT_PUBLIC_APP_URL: URL de tu aplicación\n` +
-      `- NEXTAUTH_SECRET: Clave secreta para sesiones\n`
+    console.warn(`Variables de entorno faltantes: ${missing.join(', ')}`)
+  }
 
-    throw new Error(errorMsg)
+  return {
+    missing,
+    databaseUrl,
+    appUrl,
+    authSecret: getRuntimeEnv().authSecret,
   }
 }
 

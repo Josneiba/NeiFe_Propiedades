@@ -25,7 +25,12 @@ export default async function PlanningWeekPage({
   const requestedTab = resolvedSearchParams?.tab
   const initialTab: TabKey = isTabKey(requestedTab) ? requestedTab : 'clientes'
 
-  const plan = await getBrokerWeekPlan(session.user.id)
+  let plan = null
+  try {
+    plan = await getBrokerWeekPlan(session.user.id)
+  } catch (error) {
+    console.error('Planning week plan load failed:', error)
+  }
 
   return (
     <PlanningWeekView
