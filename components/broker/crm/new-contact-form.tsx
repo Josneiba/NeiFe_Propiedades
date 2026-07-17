@@ -22,6 +22,7 @@ interface FormState {
   source: string
   wasReferred: boolean
   referredBy: string
+  invitedToScheduleVisit: boolean
   interestedCommune: string
   interestedPropertyType: string
   budgetMin: string
@@ -29,6 +30,11 @@ interface FormState {
   preferredChannel: string
   notes: string
 }
+
+// Mismo estilo que en la pantalla de Filtros: el select se ve como texto +
+// flecha integrados en la fila, no como una caja de formulario aparte.
+const FLAT_SELECT_TRIGGER =
+  'h-auto w-auto gap-1 border-none bg-transparent p-0 text-sm font-medium text-[#FAF6F2] shadow-none hover:text-[#7FB8B9] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 data-[placeholder]:text-[#9C8578]'
 
 const INITIAL_STATE: FormState = {
   name: '',
@@ -40,6 +46,7 @@ const INITIAL_STATE: FormState = {
   source: 'OTRO',
   wasReferred: false,
   referredBy: '',
+  invitedToScheduleVisit: false,
   interestedCommune: '',
   interestedPropertyType: '',
   budgetMin: '',
@@ -48,6 +55,12 @@ const INITIAL_STATE: FormState = {
   notes: '',
 }
 
+// Formulario completo de "Nuevo contacto" — página propia (no modal), con el
+// mismo patrón de PME: header con cerrar/guardar arriba, secciones con
+// campos que se revelan con un "+", una tarjeta destacada con explicación, y
+// un bloque de "más opciones" plegado por defecto. Los campos de intereses
+// (comuna, tipo de propiedad, presupuesto) son el equivalente inmobiliario de
+// los campos de PME.
 export function NewContactForm() {
   const router = useRouter()
   const [form, setForm] = useState<FormState>(INITIAL_STATE)
@@ -92,6 +105,24 @@ export function NewContactForm() {
 
       if (!res.ok) throw new Error()
       const created = await res.json()
+
+      if (form.invitedToScheduleVisit) {
+        const activityRes = await fetch('/api/crm/activities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'VISITA',
+            title: 'Invitado a agendar visita',
+            description: 'Se invitó al contacto a agendar una visita después de crear su perfil.',
+            contactId: created.id,
+            isDone: true,
+            completedAt: new Date().toISOString(),
+          }),
+        })
+
+        if (!activityRes.ok) throw new Error()
+      }
+
       toast.success(`Contacto ${created.code} creado correctamente`)
       router.push('/broker/crm/contactos')
       router.refresh()
@@ -104,7 +135,7 @@ export function NewContactForm() {
 
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
-      {/* Header sticky */}
+      {/* Header sticky: cerrar a la izquierda, guardar (check) a la derecha — igual patrón que "Person hinzufügen" en PME */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-[#2D3C3C] bg-[#1C2828] px-4 py-3">
         <Link
           href="/broker/crm/contactos"
@@ -129,9 +160,7 @@ export function NewContactForm() {
         {/* Datos básicos */}
         <section className="space-y-3">
           <div>
-            <Label htmlFor="name" className="mb-1 block text-xs font-semibold text-[#9C8578]">
-              Nombre completo *
-            </Label>
+            <Label htmlFor="name" className="mb-1 block text-xs font-semibold text-[#9C8578]">Nombre completo *</Label>
             <Input
               id="name"
               value={form.name}
@@ -140,11 +169,11 @@ export function NewContactForm() {
               className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="mb-1 block text-xs font-semibold text-[#9C8578]">Tipo *</Label>
+          <div>
+            <div className="flex items-center justify-between gap-3 border-b border-[#2D3C3C]/70 py-3">
+              <span className="text-sm text-[#D5C3B6]">Tipo *</span>
               <Select value={form.type} onValueChange={(value) => set('type', value)}>
-                <SelectTrigger className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]">
+                <SelectTrigger className={FLAT_SELECT_TRIGGER}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
@@ -155,10 +184,10 @@ export function NewContactForm() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="mb-1 block text-xs font-semibold text-[#9C8578]">Fuente *</Label>
+            <div className="flex items-center justify-between gap-3 py-3">
+              <span className="text-sm text-[#D5C3B6]">Fuente *</span>
               <Select value={form.source} onValueChange={(value) => set('source', value)}>
-                <SelectTrigger className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]">
+                <SelectTrigger className={FLAT_SELECT_TRIGGER}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
@@ -174,7 +203,9 @@ export function NewContactForm() {
           </div>
         </section>
 
-        {/* Tarjeta destacada */}
+        {/* Tarjeta destacada — mismo patrón visual que la tarjeta persuasiva de
+            PME ("Zur Kirche eingeladen"), aplicado a algo que sí existe en el
+            modelo de datos: marcar el contacto como prioridad alta. */}
         <section className="space-y-3 rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm font-medium text-[#FAF6F2]">
@@ -186,12 +217,24 @@ export function NewContactForm() {
             />
           </div>
           <p className="text-xs leading-relaxed text-[#9C8578]">
-            Los contactos de prioridad alta aparecen destacados con una estrella en la lista y suben primero en tus tareas
-            pendientes — úsalo para quien necesita seguimiento inmediato.
+            Los contactos de prioridad alta aparecen destacados con una estrella en la lista y suben primero en tus tareas pendientes — úsalo para quien necesita seguimiento inmediato.
           </p>
+
+          <div className="flex items-center justify-between gap-4 border-t border-[#2D3C3C] pt-3">
+            <div>
+              <div className="text-sm font-medium text-[#FAF6F2]">Invitado a agendar visita</div>
+              <p className="text-xs leading-relaxed text-[#9C8578]">
+                Se registrará una actividad de CRM para recordar que el contacto debe visitar una propiedad.
+              </p>
+            </div>
+            <Switch
+              checked={form.invitedToScheduleVisit}
+              onCheckedChange={(checked) => set('invitedToScheduleVisit', Boolean(checked))}
+            />
+          </div>
         </section>
 
-        {/* Datos de contacto */}
+        {/* Datos de contacto — cada campo se revela con un "+", igual que en PME */}
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Datos de contacto</h2>
 
@@ -251,7 +294,7 @@ export function NewContactForm() {
           )}
         </section>
 
-        {/* Cómo se enteró */}
+        {/* Cómo se enteró / referido */}
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Cómo llegó</h2>
           <label className="flex items-center gap-2.5 text-sm text-[#FAF6F2]">
@@ -269,7 +312,7 @@ export function NewContactForm() {
           )}
         </section>
 
-        {/* Más opciones */}
+        {/* Más opciones — plegado por defecto, igual a "Optionen einblenden" de PME */}
         {!showMoreOptions ? (
           <button
             type="button"
@@ -292,10 +335,10 @@ export function NewContactForm() {
                   className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"
                 />
               </div>
-              <div>
-                <Label className="mb-1 block text-xs font-semibold text-[#9C8578]">Tipo de propiedad de interés</Label>
+              <div className="flex items-center justify-between gap-3 py-1">
+                <span className="text-sm text-[#D5C3B6]">Tipo de propiedad de interés</span>
                 <Select value={form.interestedPropertyType} onValueChange={(value) => set('interestedPropertyType', value)}>
-                  <SelectTrigger className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]">
+                  <SelectTrigger className={FLAT_SELECT_TRIGGER}>
                     <SelectValue placeholder="Sin especificar" />
                   </SelectTrigger>
                   <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
@@ -332,10 +375,10 @@ export function NewContactForm() {
               </div>
             </section>
 
-            <section className="space-y-3">
+            <section className="flex items-center justify-between gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Método de contacto preferido</h2>
               <Select value={form.preferredChannel} onValueChange={(value) => set('preferredChannel', value)}>
-                <SelectTrigger className="h-11 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]">
+                <SelectTrigger className={FLAT_SELECT_TRIGGER}>
                   <SelectValue placeholder="Sin especificar" />
                 </SelectTrigger>
                 <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">

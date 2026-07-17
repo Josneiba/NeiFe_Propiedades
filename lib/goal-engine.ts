@@ -157,19 +157,26 @@ export async function getRealProgressForRange(
   return fetchGoalMetricValue(brokerId, metric, start, end)
 }
 
-export async function getBrokerGoalProgress(brokerId: string) {
+export async function getBrokerGoalProgress(
+  brokerId: string,
+  options?: { week?: number; year?: number; month?: number; monthYear?: number },
+) {
   const now = new Date()
   const currentYear = getCurrentYear(now)
   const currentWeek = getCurrentWeekNumber(now)
   const currentMonth = getCurrentMonth(now)
+  const requestedYear = options?.year ?? currentYear
+  const requestedWeek = options?.week ?? currentWeek
+  const requestedMonth = options?.month ?? currentMonth
+  const requestedMonthYear = options?.monthYear ?? requestedYear
 
   const goals = await prisma.brokerGoal.findMany({
     where: {
       brokerId,
       OR: [
-        { period: 'DAILY', year: currentYear },
-        { period: 'WEEKLY', year: currentYear, week: currentWeek },
-        { period: 'MONTHLY', year: currentYear, month: currentMonth },
+        { period: 'DAILY', year: requestedYear },
+        { period: 'WEEKLY', year: requestedYear, week: requestedWeek },
+        { period: 'MONTHLY', year: requestedMonthYear, month: requestedMonth },
       ],
     },
     orderBy: [{ period: 'asc' }, { metric: 'asc' }],

@@ -40,15 +40,18 @@ function getPreviousWeekRange(week: number, year: number) {
   return getISOWeekRange(previousWeekNumber, previousYear)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth()
   if (!session?.user?.id || session.user.role !== 'BROKER') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const requestedWeek = Number(searchParams.get('week'))
+  const requestedYear = Number(searchParams.get('year'))
   const brokerId = session.user.id
-  const week = getCurrentWeekNumber()
-  const year = getCurrentYear()
+  const week = Number.isNaN(requestedWeek) ? getCurrentWeekNumber() : requestedWeek
+  const year = Number.isNaN(requestedYear) ? getCurrentYear() : requestedYear
   const currentRange = getISOWeekRange(week, year)
   const previousRange = getPreviousWeekRange(week, year)
 

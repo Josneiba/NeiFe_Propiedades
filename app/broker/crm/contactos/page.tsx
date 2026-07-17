@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Star, Plus } from 'lucide-react'
+import { Star, Plus, SlidersHorizontal, Send } from 'lucide-react'
 import { ContactFilters } from '@/components/broker/crm/contact-filters'
 import { ContactFilterSheet, EMPTY_FILTER_CRITERIA, type ContactFilterCriteria, type SavedFilter } from '@/components/broker/crm/contact-filter-sheet'
 import { toast } from 'sonner'
@@ -198,55 +198,79 @@ export default function ContactosPage() {
   const groupedContacts = useMemo(() => {
     const groups = [
       {
-        key: 'prospects',
-        title: 'Prospectos',
-        description: 'Contactos con intención temprana',
-        predicate: (contact: Contact) => contact.type === 'LEAD' && contact.status === 'ACTIVE' && contact.priority !== 'HIGH',
+        key: 'scheduled-signature',
+        title: 'Con Firma Programada',
+        description: 'Negociaciones con firma agendada',
+        predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.stage === 'FIRMA_CONTRATO' && deal.deal.status === 'ACTIVE'),
       },
       {
-        key: 'scheduled-visits',
-        title: 'Visitas Programadas',
-        description: 'Clientes con visita agendada',
-        predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.stage === 'VISITA_AGENDADA'),
-      },
-      {
-        key: 'documentation-pending',
-        title: 'Documentación Pendiente',
-        description: 'Faltan documentos para avanzar',
-        predicate: (contact: Contact) => contact.deals.some((deal) => ['DOCS_REVISION', 'CONTACTO_INICIADO'].includes(deal.deal.stage)),
-      },
-      {
-        key: 'contracts-pending',
-        title: 'Contratos por Firmar',
-        description: 'Interés con contrato listo para firmar',
-        predicate: (contact: Contact) => contact.deals.some((deal) => ['FIRMA_CONTRATO', 'NEGOCIANDO'].includes(deal.deal.stage)),
-      },
-      {
-        key: 'active-tenants',
-        title: 'Arrendatarios Activos',
-        description: 'Clientes con contrato vigente',
-        predicate: (contact: Contact) => contact.type === 'ARRENDATARIO' && contact.status === 'ACTIVE',
-      },
-      {
-        key: 'owners',
-        title: 'Propietarios',
-        description: 'Propietarios o dueños de cartera',
-        predicate: (contact: Contact) => contact.type === 'PROPIETARIO',
+        key: 'recent-visits',
+        title: 'Visitó Una Propiedad Recientemente',
+        description: 'Última visita registrada en los últimos 14 días',
+        predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.status === 'ACTIVE'),
       },
       {
         key: 'win-back',
         title: 'Para Recontactar',
-        description: 'Negocios cerrados con éxito hace más de 6 meses',
+        description: 'Operaciones cerradas hace más de 180 días',
         predicate: (contact: Contact) =>
           contact.deals.some(
             (deal) => deal.deal.status === 'WON' && deal.deal.wonAt && Date.now() - new Date(deal.deal.wonAt).getTime() >= 180 * 86_400_000
           ),
       },
       {
-        key: 'inactive',
-        title: 'Clientes Inactivos',
-        description: 'Requieren reactivación (sin contacto, no contactable o no interesado)',
-        predicate: (contact: Contact) => Boolean(contact.stallReason) || contact.status === 'INACTIVE',
+        key: 'new-clients',
+        title: 'Nuevos Clientes',
+        description: 'Contactos ya convertidos',
+        predicate: (contact: Contact) => contact.status === 'CONVERTED',
+      },
+      {
+        key: 'won-tramite-pending',
+        title: 'Cierre Ganado — Trámite Pendiente',
+        description: 'Operaciones cerradas con trámite aún pendiente',
+        predicate: (contact: Contact) => contact.deals.some((deal) => deal.deal.status === 'WON' && contact.status !== 'CONVERTED'),
+      },
+      {
+        key: 'active-followup',
+        title: 'En Seguimiento Activo',
+        description: 'Contactos activos con negociación abierta',
+        predicate: (contact: Contact) => contact.status === 'ACTIVE' && contact.deals.some((deal) => deal.deal.status === 'ACTIVE'),
+      },
+      {
+        key: 'new-leads',
+        title: 'Nuevos Leads Por Trabajar',
+        description: 'Leads activos sin negociación todavía',
+        predicate: (contact: Contact) => contact.type === 'LEAD' && contact.status === 'ACTIVE' && contact.deals.length === 0,
+      },
+      {
+        key: 'owners',
+        title: 'Propietarios / Arrendatarios Vigentes',
+        description: 'Propietarios y arrendatarios activos',
+        predicate: (contact: Contact) => (contact.type === 'PROPIETARIO' || contact.type === 'ARRENDATARIO') && contact.status === 'ACTIVE',
+      },
+      {
+        key: 'very-busy',
+        title: 'Sin Tiempo Por Ahora',
+        description: 'Señales de alta carga o poca disponibilidad',
+        predicate: (contact: Contact) => contact.stallReason === 'MUY_OCUPADO',
+      },
+      {
+        key: 'not-contactable',
+        title: 'No Se Ha Podido Contactar',
+        description: 'Sin respuesta o difícil de contactar',
+        predicate: (contact: Contact) => contact.stallReason === 'NO_CONTACTABLE',
+      },
+      {
+        key: 'no-recent-contact',
+        title: 'Sin Contacto Hace Tiempo',
+        description: 'Sin contacto reciente en el periodo evaluado',
+        predicate: (contact: Contact) => contact.stallReason === 'SIN_CONTACTO_RECIENTE',
+      },
+      {
+        key: 'not-interested',
+        title: 'Sin Interés',
+        description: 'Señales explícitas de baja intención',
+        predicate: (contact: Contact) => contact.stallReason === 'NO_INTERESADO' || contact.status === 'INACTIVE',
       },
     ]
 
@@ -273,7 +297,7 @@ export default function ContactosPage() {
         </p>
       </div>
 
-      {quickFilters.length > 0 && (
+      {(quickFilters.length > 0 || filteredContacts.length > 0) && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           {quickFilters.map((filter) => (
             <button
@@ -285,6 +309,18 @@ export default function ContactosPage() {
               {filter.name}
             </button>
           ))}
+          <Link
+            href="/broker/crm/contactos/filtros"
+            className="shrink-0 inline-flex items-center gap-1 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros
+          </Link>
+          <Link
+            href="/broker/crm/contactos/enviar"
+            className="shrink-0 inline-flex items-center gap-1 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
+          >
+            <Send className="h-3.5 w-3.5" /> Enviar
+          </Link>
         </div>
       )}
 

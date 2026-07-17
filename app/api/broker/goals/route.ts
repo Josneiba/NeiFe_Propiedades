@@ -2,16 +2,27 @@ import { auth } from '@/lib/auth-session'
 import { NextResponse } from 'next/server'
 import { getBrokerGoals, getBrokerGoalProgress, getBrokerGoalHistory, getBrokerWeekPlan, upsertBrokerWeekPlan } from '@/lib/goal-engine'
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth()
   if (!session?.user?.id || session.user.role !== 'BROKER') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const week = Number(searchParams.get('week'))
+  const year = Number(searchParams.get('year'))
+  const month = Number(searchParams.get('month'))
+  const monthYear = Number(searchParams.get('monthYear'))
+
   const brokerId = session.user.id
   const [goals, progress, weekPlan, history] = await Promise.all([
     getBrokerGoals(brokerId),
-    getBrokerGoalProgress(brokerId),
+    getBrokerGoalProgress(brokerId, {
+      week: Number.isNaN(week) ? undefined : week,
+      year: Number.isNaN(year) ? undefined : year,
+      month: Number.isNaN(month) ? undefined : month,
+      monthYear: Number.isNaN(monthYear) ? undefined : monthYear,
+    }),
     getBrokerWeekPlan(brokerId),
     getBrokerGoalHistory(brokerId),
   ])

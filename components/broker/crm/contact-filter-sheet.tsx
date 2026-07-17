@@ -43,6 +43,11 @@ interface ContactFilterSheetProps {
   onApply: (criteria: ContactFilterCriteria) => void
 }
 
+// Clase compartida para que cada <Select> se vea como texto + flecha,
+// integrado en la fila — no como una caja de formulario aparte.
+const FLAT_SELECT_TRIGGER =
+  'h-auto w-auto gap-1 border-none bg-transparent p-0 text-sm font-medium text-[#FAF6F2] shadow-none hover:text-[#7FB8B9] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 data-[placeholder]:text-[#9C8578]'
+
 export function ContactFilterSheet({ open, onClose, criteria, onApply }: ContactFilterSheetProps) {
   const [draft, setDraft] = useState<ContactFilterCriteria>(criteria)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([])
@@ -134,7 +139,7 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
         </button>
       </div>
 
-      <div className="mx-auto w-full max-w-xl space-y-6 p-4 pb-16">
+      <div className="mx-auto w-full max-w-xl space-y-7 p-4 pb-16">
         {savedFilters.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Filtros guardados</h2>
@@ -142,7 +147,7 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
               {savedFilters.map((filter) => (
                 <div
                   key={filter.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-[#2D3C3C] bg-[#152022] px-3 py-2.5"
+                  className="flex items-center justify-between gap-3 rounded-xl bg-[#152022] px-3 py-2.5"
                 >
                   <button
                     type="button"
@@ -165,12 +170,12 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
           </section>
         )}
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Datos del contacto</h2>
+        <section>
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Datos del contacto</h2>
 
           <FilterRow label="Tipo de contacto">
             <Select value={draft.type} onValueChange={(value) => set('type', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="LEAD">Lead</SelectItem>
@@ -183,7 +188,7 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
 
           <FilterRow label="Estado">
             <Select value={draft.status} onValueChange={(value) => set('status', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="ACTIVE">Activo</SelectItem>
@@ -196,7 +201,7 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
 
           <FilterRow label="Fuente">
             <Select value={draft.source} onValueChange={(value) => set('source', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="PORTAL">Portal</SelectItem>
@@ -209,9 +214,9 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
             </Select>
           </FilterRow>
 
-          <FilterRow label="Prioridad">
+          <FilterRow label="Prioridad" last>
             <Select value={draft.priority} onValueChange={(value) => set('priority', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="HIGH">Alta</SelectItem>
@@ -222,12 +227,12 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
           </FilterRow>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Negociación</h2>
+        <section>
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Negociación</h2>
 
           <FilterRow label="Interés de operación">
             <Select value={draft.operationType} onValueChange={(value) => set('operationType', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Cualquiera</SelectItem>
                 <SelectItem value="ARRIENDO">Arrendar</SelectItem>
@@ -239,7 +244,7 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
 
           <FilterRow label="Resultado de negociación">
             <Select value={draft.dealStatus} onValueChange={(value) => set('dealStatus', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Cualquiera</SelectItem>
                 <SelectItem value="ACTIVE">En curso</SelectItem>
@@ -249,9 +254,9 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
             </Select>
           </FilterRow>
 
-          <FilterRow label="Cerrado hace más de">
+          <FilterRow label="Cerrado hace más de" last>
             <Select value={draft.wonBeforeDays} onValueChange={(value) => set('wonBeforeDays', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Cualquier fecha</SelectItem>
                 <SelectItem value="90">3 meses</SelectItem>
@@ -261,26 +266,26 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
               </SelectContent>
             </Select>
           </FilterRow>
-          <p className="text-xs text-[#9C8578]">
-            Ej: “Resultado: Cerrado con éxito” + “Cerrado hace más de 1 año” = clientes a los que ya les vendiste o arrendaste y podrías recontactar por otro negocio.
+          <p className="mt-2 text-xs leading-relaxed text-[#9C8578]">
+            Ej: "Resultado: Cerrado con éxito" + "Cerrado hace más de 1 año" = clientes a los que ya les vendiste o arrendaste y podrías recontactar por otro negocio.
           </p>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Intereses</h2>
+        <section>
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9C8578]">Intereses</h2>
 
-          <FilterRow label="Comuna / sector de interés">
-            <Input
+          <FilterRow label="Comuna / sector">
+            <input
               value={draft.interestedCommune}
               onChange={(event) => set('interestedCommune', event.target.value)}
-              placeholder="Providencia, Ñuñoa..."
-              className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"
+              placeholder="Sin especificar"
+              className="w-32 bg-transparent text-right text-sm font-medium text-[#FAF6F2] placeholder:text-[#9C8578] placeholder:font-normal focus:outline-none"
             />
           </FilterRow>
 
-          <FilterRow label="Tipo de propiedad de interés">
+          <FilterRow label="Tipo de propiedad" last>
             <Select value={draft.interestedPropertyType} onValueChange={(value) => set('interestedPropertyType', value)}>
-              <SelectTrigger className="h-10 border-[#2D3C3C] bg-[#152022] text-[#FAF6F2]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={FLAT_SELECT_TRIGGER}><SelectValue placeholder="Cualquiera" /></SelectTrigger>
               <SelectContent className="border-[#2D3C3C] bg-[#1C2828]">
                 <SelectItem value="all">Cualquiera</SelectItem>
                 <SelectItem value="DEPARTAMENTO">Departamento</SelectItem>
@@ -294,11 +299,11 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
           </FilterRow>
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-[#2D3C3C] bg-[#152022] p-4">
+        <section className="space-y-2 rounded-2xl bg-[#152022] p-4">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-[#FAF6F2]">
             <Save className="h-4 w-4" /> Guardar como filtro
           </h2>
-          <p className="text-xs text-[#9C8578]">Para volver a aplicar esta combinación con un toque, ej. “Ganados hace +1 año”.</p>
+          <p className="text-xs leading-relaxed text-[#9C8578]">Para volver a aplicar esta combinación con un toque, ej. "Ganados hace +1 año".</p>
           <div className="flex gap-2">
             <Input
               value={filterName}
@@ -321,10 +326,12 @@ export function ContactFilterSheet({ open, onClose, criteria, onApply }: Contact
   )
 }
 
-function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+// Fila plana: label a la izquierda, valor + flecha a la derecha, con una
+// línea divisoria fina abajo (menos la última fila de cada sección).
+function FilterRow({ label, children, last = false }: { label: string; children: ReactNode; last?: boolean }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-[#D5C3B6]">{label}</p>
+    <div className={`flex items-center justify-between gap-3 py-3 ${last ? '' : 'border-b border-[#2D3C3C]/70'}`}>
+      <span className="text-sm text-[#D5C3B6]">{label}</span>
       {children}
     </div>
   )

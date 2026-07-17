@@ -1,11 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   ChevronLeft,
-  ChevronRight,
-  Calendar,
   Users,
   Building2,
   MessageSquareText,
@@ -13,7 +11,6 @@ import {
   Sparkles,
   BarChart3,
 } from 'lucide-react'
-import { getCurrentWeekNumber, getCurrentYear, getISOWeekRange } from '@/lib/goal-engine'
 import { IndicatorsList } from '@/components/broker/goals/indicators-list'
 import { WeeklyPlanCard } from '@/components/broker/crm/weekly-plan-card'
 
@@ -56,33 +53,8 @@ export function PlanningWeekView({
   initialDailyCommitments,
 }: PlanningWeekViewProps) {
   const [tab, setTab] = useState<TabKey>(initialTab)
-  const [week, setWeek] = useState(() => getCurrentWeekNumber())
-  const [year, setYear] = useState(() => getCurrentYear())
   const [segments, setSegments] = useState<Segment[]>([])
   const [loadingSegments, setLoadingSegments] = useState(true)
-
-  const rangeLabel = useMemo(() => {
-    const { start, end } = getISOWeekRange(week, year)
-    const endDate = new Date(end.getTime() - 1)
-    const startLabel = start.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
-    const endLabel = endDate.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
-    return `${startLabel} – ${endLabel}`
-  }, [week, year])
-
-  function changeWeek(direction: -1 | 1) {
-    setWeek((currentWeek) => {
-      const nextWeek = currentWeek + direction
-      if (nextWeek < 1) {
-        setYear((y) => y - 1)
-        return 52
-      }
-      if (nextWeek > 52) {
-        setYear((y) => y + 1)
-        return 1
-      }
-      return nextWeek
-    })
-  }
 
   useEffect(() => {
     async function loadSegments() {
@@ -146,19 +118,6 @@ export function PlanningWeekView({
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#2D3C3C] bg-[#152022] px-4 py-2.5">
-          <button type="button" onClick={() => changeWeek(-1)} className="text-[#9C8578] hover:text-[#FAF6F2]">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="flex items-center gap-2 text-sm text-[#FAF6F2]">
-            <Calendar className="h-4 w-4 text-[#C27F79]" />
-            {rangeLabel}
-          </div>
-          <button type="button" onClick={() => changeWeek(1)} className="text-[#9C8578] hover:text-[#FAF6F2]">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
         {tab === 'clientes' &&
           (loadingSegments ? (
             <div className="space-y-3">
@@ -182,7 +141,7 @@ export function PlanningWeekView({
                         : `${segment.withOpenTask} de ${segment.total} con seguimiento activo`}
                     </p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[#9C8578]" />
+                  <ChevronLeft className="h-4 w-4 shrink-0 text-[#9C8578]" />
                 </Link>
               ))}
             </div>

@@ -93,13 +93,13 @@ export default function MiDiaPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Mi Día</h1>
-            <p className="text-xs text-[#9C8578] mt-0.5 capitalize">
+            <p className="mt-0.5 text-xs capitalize text-[#9C8578]">
               {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
@@ -111,32 +111,15 @@ export default function MiDiaPage() {
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
           <div className="space-y-5">
             <section id="seguimiento-clientes">
-              <div className="flex items-center justify-between border-b border-[#2D3C3C] pb-2 mb-2.5">
+              <div className="mb-2.5 flex items-center justify-between border-b border-[#2D3C3C] pb-2">
                 <h2 className="text-base font-semibold text-[#FAF6F2]">Seguimiento de Clientes</h2>
                 <Link href="/broker/crm/contactos" className="text-xs text-[#C27F79] hover:underline">Ver todos</Link>
               </div>
               <ContactsWithProgress />
             </section>
 
-            <section id="captacion" className="rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-[#FAF6F2]">Captación</p>
-                <Link href="/broker/crm/workspace" className="text-xs text-[#C27F79] hover:underline">Abrir workspace</Link>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-[#2D3C3C] bg-[#152022] p-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">Oportunidades</p>
-                  <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">Prioriza los próximos avances</p>
-                </div>
-                <div className="rounded-xl border border-[#2D3C3C] bg-[#152022] p-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-[#9C8578]">Seguimiento</p>
-                  <p className="mt-2 text-lg font-semibold text-[#FAF6F2]">Mantén el foco semanal limpio</p>
-                </div>
-              </div>
-            </section>
-
             <section>
-              <div className="border-b border-[#2D3C3C] pb-2 mb-2.5">
+              <div className="mb-2.5 border-b border-[#2D3C3C] pb-2">
                 <h2 className="text-base font-semibold text-[#FAF6F2]">Tareas y Pagos Vencidos</h2>
               </div>
               <OpenTasksBadges />
@@ -154,8 +137,8 @@ export default function MiDiaPage() {
 
         {urgent.length > 0 && (
           <section>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
+            <div className="mb-2 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-400" />
               <p className="text-xs font-semibold uppercase tracking-wide text-red-400">Urgente ({urgent.length})</p>
             </div>
             <TaskQueue suggestions={urgent} onComplete={handleComplete} onOpenDeal={handleOpenDeal} />
@@ -164,8 +147,8 @@ export default function MiDiaPage() {
 
         {normal.length > 0 && (
           <section>
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-[#5E8B8C]" />
+            <div className="mb-2 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-[#5E8B8C]" />
               <p className="text-xs font-semibold uppercase tracking-wide text-[#9C8578]">Pendientes ({normal.length})</p>
             </div>
             <TaskQueue suggestions={normal} onComplete={handleComplete} onOpenDeal={handleOpenDeal} />
