@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Phone, Home, Handshake, DollarSign, FileText, Megaphone, BarChart3 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
-import { getCurrentMonth, getCurrentWeekNumber, getCurrentYear } from '@/lib/goal-engine'
+import { getCurrentMonth, getCurrentWeekNumber, getCurrentYear } from '@/lib/goal-date'
 
 const METRIC_ICONS: Record<string, JSX.Element> = {
   CONTACTS: <Phone className="h-4 w-4" />,
