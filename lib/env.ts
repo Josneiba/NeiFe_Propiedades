@@ -1,19 +1,44 @@
 const required = ['DATABASE_URL', 'NEXT_PUBLIC_APP_URL'] as const
 
-function hasAuthSecret() {
-  return Boolean(
-    process.env.NEXTAUTH_SECRET?.trim() || process.env.AUTH_SECRET?.trim()
+function readEnvValue(key: string) {
+  return process.env[key]?.trim() || ''
+}
+
+function getDatabaseUrl() {
+  return (
+    readEnvValue('DATABASE_URL') ||
+    readEnvValue('POSTGRES_URL') ||
+    readEnvValue('POSTGRES_PRISMA_URL') ||
+    readEnvValue('POSTGRES_URL_NON_POOLING') ||
+    ''
   )
+}
+
+function getAppUrl() {
+  return (
+    readEnvValue('NEXT_PUBLIC_APP_URL') ||
+    readEnvValue('NEXTAUTH_URL') ||
+    readEnvValue('AUTH_URL') ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+    ''
+  )
+}
+
+function hasAuthSecret() {
+  return Boolean(readEnvValue('NEXTAUTH_SECRET') || readEnvValue('AUTH_SECRET'))
 }
 
 export function validateEnv() {
   const missing: string[] = []
 
-  for (const key of required) {
-    const value = process.env[key]
-    if (!value || value.trim() === '') {
-      missing.push(key)
-    }
+  const databaseUrl = getDatabaseUrl()
+  if (!databaseUrl) {
+    missing.push('DATABASE_URL')
+  }
+
+  const appUrl = getAppUrl()
+  if (!appUrl) {
+    missing.push('NEXT_PUBLIC_APP_URL')
   }
 
   if (!hasAuthSecret()) {
@@ -30,6 +55,14 @@ export function validateEnv() {
       `- NEXTAUTH_SECRET: Clave secreta para sesiones\n`
 
     throw new Error(errorMsg)
+  }
+}
+
+export function getRuntimeEnv() {
+  return {
+    databaseUrl: getDatabaseUrl(),
+    appUrl: getAppUrl(),
+    authSecret: readEnvValue('NEXTAUTH_SECRET') || readEnvValue('AUTH_SECRET'),
   }
 }
 

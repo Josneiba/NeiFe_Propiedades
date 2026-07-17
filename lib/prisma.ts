@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { validateEnv } from './env'
+import { getRuntimeEnv, validateEnv } from './env'
 
 // Validate environment variables in both development and production
 try {
@@ -14,7 +14,8 @@ try {
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
-const databaseUrl = process.env.DATABASE_URL
+const runtimeEnv = getRuntimeEnv()
+const databaseUrl = runtimeEnv.databaseUrl
 
 export const prisma =
   globalForPrisma.prisma ||
