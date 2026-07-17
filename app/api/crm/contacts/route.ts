@@ -45,37 +45,42 @@ export async function GET(request: NextRequest) {
     ]
   }
 
-  const contacts = await prisma.crmContact.findMany({
-    where,
-    include: {
-      deals: {
-        include: {
-          deal: {
-            select: {
-              id: true,
-              code: true,
-              title: true,
-              stage: true,
-              status: true,
-              operationType: true,
-              wonAt: true,
-            },
-          },
-        },
-        take: 3,
+  let contacts: Array<any>
+
+  try {
+    contacts = await prisma.crmContact.findMany({
+      where,
+      select: {
+        id: true,
+        code: true,
+        type: true,
+        name: true,
+        email: true,
+        phone: true,
+        rut: true,
+        notes: true,
+        source: true,
+        priority: true,
+        status: true,
+        referredBy: true,
+        interestedCommune: true,
+        interestedPropertyType: true,
+        budgetMin: true,
+        budgetMax: true,
+        brokerId: true,
+        preferredChannel: true,
+        createdAt: true,
+        updatedAt: true,
       },
-      score: true,
-      activities: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        select: { createdAt: true },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch (error) {
+    console.error('Error fetching CRM contacts:', error)
+    return NextResponse.json([])
+  }
 
   const enriched = contacts.map((contact) => {
-    const lastActivityAt = contact.activities[0]?.createdAt ?? contact.updatedAt
+    const lastActivityAt = contact.updatedAt
     const daysSinceActivity = Math.max(0, Math.floor((Date.now() - new Date(lastActivityAt).getTime()) / 86_400_000))
 
     let stallReason: string | null = null
@@ -91,6 +96,9 @@ export async function GET(request: NextRequest) {
 
     return {
       ...contact,
+      deals: [],
+      activities: [],
+      score: null,
       stallReason,
     }
   })

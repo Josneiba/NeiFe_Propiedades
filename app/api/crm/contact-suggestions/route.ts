@@ -10,43 +10,37 @@ export async function GET(request: NextRequest) {
 
   const brokerId = session.user.id
 
-  const scores = await prisma.crmContactScore.findMany({
-    where: {
-      contact: {
-        brokerId,
-        status: 'ACTIVE',
+  let scores: Array<any> = []
+
+  try {
+    scores = await prisma.crmContactScore.findMany({
+      where: {
+        contact: {
+          brokerId,
+          status: 'ACTIVE',
+        },
       },
-    },
-    include: {
-      contact: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          deals: {
-            where: { deal: { status: 'ACTIVE' } },
-            include: {
-              deal: {
-                select: {
-                  code: true,
-                  stage: true,
-                },
-              },
-            },
-            take: 1,
+      include: {
+        contact: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
           },
         },
       },
-    },
-    orderBy: { score: 'asc' },
-    take: 10,
-  })
+      orderBy: { score: 'asc' },
+      take: 10,
+    })
+  } catch (error) {
+    console.error('Error fetching CRM contact suggestions:', error)
+    return NextResponse.json([])
+  }
 
   const suggestions = scores.map((item) => {
     const contact = item.contact
-    const activeDeal = contact.deals[0]?.deal
-    const dealCode = activeDeal?.code ?? null
-    const dealStage = activeDeal?.stage ?? null
+    const dealCode = null
+    const dealStage = null
     const urgency = item.urgencyLevel as 'HIGH' | 'MEDIUM' | 'LOW'
     const successProbability = Math.round(item.score)
     const reason = item.recommendation ?? 'Revisa este contacto para mantener la relación.'
