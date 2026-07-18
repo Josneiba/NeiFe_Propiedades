@@ -45,7 +45,7 @@ export default async function CalendarioPage() {
   return (
     <div className="min-h-screen bg-[#1C2828] p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 hidden lg:block">
           <h1 className="text-3xl font-bold text-[#FAF6F2] mb-2">Calendario CRM</h1>
           <p className="text-sm text-[#9C8578]">
             {transformedDeals.length} operación{transformedDeals.length !== 1 ? 'es' : ''} con fecha objetivo

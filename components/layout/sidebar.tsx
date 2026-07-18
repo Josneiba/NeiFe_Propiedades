@@ -27,8 +27,9 @@ import {
   MessageSquare,
   TrendingUp,
   PieChart,
+  type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { useCrmAlerts } from "@/hooks/useCrmAlerts";
 import { SidebarSearch } from '@/components/layout/sidebar-search'
@@ -44,7 +45,14 @@ interface SidebarProps {
   userId?: string;
 }
 
-const landlordNavGroups = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  id: string | undefined;
+}
+
+const landlordNavGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Vista General",
     items: [
@@ -127,9 +135,9 @@ const landlordNavGroups = [
       },
     ],
   },
-] as const;
+];
 
-const tenantNavItems = [
+const tenantNavItems: NavItem[] = [
   { href: "/mi-arriendo", label: "Resumen", icon: Home, id: undefined },
   {
     href: "/mi-arriendo/pagos",
@@ -161,9 +169,17 @@ const tenantNavItems = [
     icon: Phone,
     id: undefined,
   },
-];
+ ];
 
-const brokerNavGroups = [
+const SUBROUTE_TITLE_OVERRIDES: Record<string, string> = {
+  '/broker/crm/contactos/filtros': 'Estados y filtros',
+  '/broker/crm/contactos/enviar': 'Enviar',
+  '/broker/crm/contactos/nuevo': 'Nuevo contacto',
+  '/broker/crm/mi-dia': 'Mi Día',
+  '/broker/crm/calendario': 'Calendario CRM',
+}
+
+const brokerNavGroups: Array<{ label: string; items: NavItem[] }> = [
       {
         label: "CRM",
         items: [
@@ -270,7 +286,7 @@ const brokerNavGroups = [
       },
     ],
   },
-] as const;
+];
 
 export function Sidebar({
   role,
@@ -281,6 +297,16 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true); // Mobile: collapsed by default
   const { totalAlerts } = useCrmAlerts();
+
+  const currentPageTitle = useMemo(() => {
+    const route = pathname || '/'
+    const override = SUBROUTE_TITLE_OVERRIDES[route]
+    if (override) return override
+
+    const allItems: NavItem[] = [...landlordNavGroups.flatMap((group) => group.items), ...tenantNavItems, ...brokerNavGroups.flatMap((group) => group.items)]
+    const match = allItems.find((item) => route === item.href || (item.href !== '/' && route.startsWith(item.href)))
+    return match?.label ?? 'NeiFe'
+  }, [pathname])
 
   return (
     <>
@@ -305,7 +331,12 @@ export function Sidebar({
             </>
           )}
         </button>
-        <NotificationBell userRole={role} />
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:block rounded-full bg-[#2D3C3C] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#9C8578]">
+            {currentPageTitle}
+          </div>
+          <NotificationBell userRole={role} />
+        </div>
       </div>
 
       {/* Overlay */}

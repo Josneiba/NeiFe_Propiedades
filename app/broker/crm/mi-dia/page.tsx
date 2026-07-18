@@ -90,8 +90,14 @@ export default function MiDiaPage() {
   return (
     <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
       <div className="mx-auto w-full max-w-7xl p-4 space-y-5 lg:px-6">
+        <div className="hidden lg:block">
+          <h1 className="text-2xl font-bold">Mi Día</h1>
+          <p className="mt-0.5 text-xs capitalize text-[#9C8578]">
+            {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+        </div>
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="lg:hidden">
             <h1 className="text-2xl font-bold">Mi Día</h1>
             <p className="mt-0.5 text-xs capitalize text-[#9C8578]">
               {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}

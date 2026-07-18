@@ -285,7 +285,7 @@ export default function ContactosPage() {
 
   return (
     <div className="space-y-5">
-      <div>
+      <div className="hidden lg:block">
         <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B8965A]">CRM · Personas</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
         <p className="mt-1 text-xs text-[#9C8578]">

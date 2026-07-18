@@ -63,6 +63,7 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
     Tareas: true,
   })
   const [fabOpen, setFabOpen] = useState(false)
+  const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [now, setNow] = useState(new Date())
   const [modalOpen, setModalOpen] = useState(false)
   const [modalAction, setModalAction] = useState<'task' | 'payment' | 'visit' | 'contact' | 'event' | null>(null)
@@ -365,52 +366,64 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
 
   const quickActions = [
     { key: 'task', label: 'Tarea', icon: ListChecks },
-    { key: 'payment', label: 'Cobro Programado', icon: CalendarDays },
+    { key: 'payment', label: 'Cobro Programado', icon: Clock3 },
     { key: 'visit', label: 'Visita', icon: CalendarDays },
-    { key: 'contact', label: 'Contacto', icon: CalendarDays },
+    { key: 'contact', label: 'Contacto', icon: Plus },
     { key: 'event', label: 'Evento', icon: Plus },
   ] as const
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-[#5E8B8C]" />
-          <h2 className="text-lg font-semibold text-[#FAF6F2]">Agenda</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => moveDay('prev')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button onClick={() => setSelectedDate(new Date())} className="rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
-            Hoy
-          </button>
-          <button onClick={() => moveDay('next')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
-        <div className="flex items-center gap-2 text-[#FAF6F2]">
-          <Filter className="h-4 w-4 text-[#5E8B8C]" />
-          <span className="text-sm font-semibold">Filtrar</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORY_OPTIONS.map((option) => (
-            <button
-              key={option.key}
-              onClick={() => toggleFilter(option.key as TimelineEvent['category'])}
-              className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${activeFilters[option.key as TimelineEvent['category']] ? 'bg-[#5E8B8C] text-[#FAF6F2]' : 'bg-[#2D3C3C] text-[#9C8578]'}`}
-            >
-              {option.label}
+      <div className="rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-[#5E8B8C]" />
+            <button onClick={() => moveDay('prev')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
+              <ChevronLeft className="h-4 w-4" />
             </button>
-          ))}
+            <button onClick={() => setSelectedDate(new Date())} className="rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
+              Hoy
+            </button>
+            <button onClick={() => moveDay('next')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="text-center text-sm font-semibold text-[#FAF6F2]">
+              {selectedDate.toLocaleDateString('es-CL', { weekday: 'long', day: '2-digit', month: 'long' })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowFilterMenu((value) => !value)}
+              className="relative rounded-full border border-[#2D3C3C] p-2 text-[#D5C3B6]"
+              aria-label="Filtrar agenda"
+            >
+              <Filter className="h-4 w-4" />
+              {!Object.values(activeFilters).every(Boolean) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#C27F79]" />}
+            </button>
+            <Link href="/broker/crm/mi-dia" className="flex items-center gap-2 rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
+              <ListChecks className="h-3.5 w-3.5" />
+              Tareas
+            </Link>
+          </div>
         </div>
-        <Link href="/broker/crm/mi-dia" className="flex items-center gap-2 rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
-          <ListChecks className="h-3.5 w-3.5" />
-          Tareas
-        </Link>
+
+        {showFilterMenu && (
+          <div className="mt-3 flex flex-wrap gap-2 rounded-2xl border border-[#2D3C3C] bg-[#162121] p-2">
+            {CATEGORY_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                onClick={() => toggleFilter(option.key as TimelineEvent['category'])}
+                className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${activeFilters[option.key as TimelineEvent['category']] ? 'bg-[#5E8B8C] text-[#FAF6F2]' : 'bg-[#2D3C3C] text-[#9C8578]'}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
