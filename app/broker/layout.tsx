@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth-session'
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/layout/sidebar'
+import BrokerShell from '@/components/layout/broker-shell'
 
 export default async function BrokerLayout({
   children,
@@ -14,15 +14,12 @@ export default async function BrokerLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
-      <Sidebar
-        role="broker"
-        userName={session.user.name ?? 'Corredor'}
-        userId={session.user.id}
-      />
-      <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-        {children}
-      </main>
-    </div>
+    <BrokerShell
+      role="broker"
+      userName={session.user.name ?? 'Corredor'}
+      userId={session.user.id}
+    >
+      {children}
+    </BrokerShell>
   )
 }

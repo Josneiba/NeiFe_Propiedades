@@ -314,7 +314,7 @@ export function Sidebar({
           (sticky, no fixed) para que no quede un hueco en blanco arriba del
           contenido. El logo grande es el elemento dominante y "Menú" queda como
           una etiqueta diminuta debajo para indicar la acción del botón. */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C2828] px-4 py-2.5 lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-2.5 lg:hidden">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -350,7 +350,7 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out border-r border-[#D5C3B6]/10 bg-gradient-to-b from-[#2D3C3C] to-[#1C2828]",
+          "fixed lg:sticky inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out border-r border-[#D5C3B6]/10 bg-gradient-to-b from-[#2D3C3C] to-[#1C1917]",
           isCollapsed ? "w-20 lg:w-20" : "w-52 lg:w-52",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}

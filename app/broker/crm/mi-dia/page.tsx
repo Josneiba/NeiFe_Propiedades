@@ -1,6 +1,7 @@
-'use client'
+ 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { usePageHeaderControls } from '@/components/layout/header-controls-context'
 import Link from 'next/link'
 import { TaskQueue } from '@/components/broker/crm/task-queue'
 import { DealDrawer } from '@/components/broker/crm/deal-drawer'
@@ -31,6 +32,7 @@ export default function MiDiaPage() {
   const [selectedDeal, setSelectedDeal] = useState<DealCardData | null>(null)
   const router = useRouter()
 
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -49,6 +51,15 @@ export default function MiDiaPage() {
   useEffect(() => {
     loadAll()
   }, [loadAll])
+
+  usePageHeaderControls(
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
+        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+      </Button>
+    </div>,
+    [loading]
+  )
 
   async function handleOpenDeal(dealId: string) {
     try {
@@ -88,7 +99,7 @@ export default function MiDiaPage() {
   const normal = dayData?.suggestions.filter((s) => s.urgencyScore < 70) ?? []
 
   return (
-    <div className="min-h-screen bg-[#1C2828] text-[#FAF6F2]">
+    <div className="min-h-screen bg-[#1C1917] text-[#FAF6F2]">
       <div className="mx-auto w-full max-w-7xl p-4 space-y-5 lg:px-6">
         <div className="hidden lg:block">
           <h1 className="text-2xl font-bold">Mi Día</h1>
