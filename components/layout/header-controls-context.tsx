@@ -1,22 +1,44 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-type HeaderControlsContextValue = {
+type HeaderState = {
+  title: ReactNode | null
+  subtitle: string | null
   controls: ReactNode | null
-  setControls: (controls: ReactNode | null) => void
+}
+
+type HeaderControlsContextValue = HeaderState & {
+  setHeader: (next: Partial<HeaderState>) => void
+  resetHeader: () => void
 }
 
 const HeaderControlsContext = createContext<HeaderControlsContextValue>({
+  title: null,
+  subtitle: null,
   controls: null,
-  setControls: () => undefined,
+  setHeader: () => undefined,
+  resetHeader: () => undefined,
 })
 
 export function HeaderControlsProvider({ children }: { children: ReactNode }) {
-  const [controls, setControls] = useState<ReactNode | null>(null)
+  const [state, setState] = useState<HeaderState>({ title: null, subtitle: null, controls: null })
+
+  const setHeader = useCallback((next: Partial<HeaderState>) => {
+    setState((s) => ({ ...s, ...next }))
+  }, [])
+
+  const resetHeader = useCallback(() => {
+    setState({ title: null, subtitle: null, controls: null })
+  }, [])
+
+  const value = useMemo(
+    () => ({ ...state, setHeader, resetHeader }),
+    [resetHeader, setHeader, state],
+  )
 
   return (
-    <HeaderControlsContext.Provider value={{ controls, setControls }}>
+    <HeaderControlsContext.Provider value={value}>
       {children}
     </HeaderControlsContext.Provider>
   )
@@ -26,14 +48,12 @@ export function useHeaderControls() {
   return useContext(HeaderControlsContext)
 }
 
-export function usePageHeaderControls(controls: ReactNode | null, deps: unknown[] = []) {
-  const { setControls } = useHeaderControls()
+export function usePageHeader(next: { title?: ReactNode | null; subtitle?: string | null; controls?: ReactNode | null }, deps: unknown[] = []) {
+  const { setHeader, resetHeader } = useHeaderControls()
 
   useEffect(() => {
-    setControls(controls)
-
-    return () => {
-      setControls(null)
-    }
-  }, [controls, setControls, ...deps])
+    setHeader(next)
+    return () => resetHeader()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setHeader, resetHeader, ...deps])
 }

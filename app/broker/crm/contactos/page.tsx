@@ -1,10 +1,12 @@
-'use client'
+ 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { usePageHeader } from '@/components/layout/header-controls-context'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Star, Plus, SlidersHorizontal, Send } from 'lucide-react'
-import { ContactFilters } from '@/components/broker/crm/contact-filters'
+import { Star, FunnelPlus, MoreVertical, Search, Send, UserPlus, ChevronDown } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { ContactFilterSheet, EMPTY_FILTER_CRITERIA, type ContactFilterCriteria, type SavedFilter } from '@/components/broker/crm/contact-filter-sheet'
 import { toast } from 'sonner'
 
@@ -100,6 +102,7 @@ export default function ContactosPage() {
   const [criteria, setCriteria] = useState<ContactFilterCriteria>(EMPTY_FILTER_CRITERIA)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [quickFilters, setQuickFilters] = useState<SavedFilter[]>([])
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false)
 
   useEffect(() => {
     const nextSearch = searchParams.get('q')?.toLowerCase() ?? ''
@@ -129,6 +132,8 @@ export default function ContactosPage() {
   useEffect(() => {
     void loadContacts()
   }, [loadContacts])
+
+  
 
   useEffect(() => {
     async function loadQuickFilters() {
@@ -280,57 +285,152 @@ export default function ContactosPage() {
   }, [filteredContacts])
 
   const activeCount = filteredContacts.filter((contact) => contact.status === 'ACTIVE').length
-  const highPriorityCount = filteredContacts.filter((contact) => contact.priority === 'HIGH').length
   const activeFilterCount = countActiveFilters(criteria)
+
+  const selectedFilterName = useMemo(() => {
+    const match = quickFilters.find((filter) => JSON.stringify(filter.criteria) === JSON.stringify(criteria))
+    return match?.name ?? 'Contactos'
+  }, [quickFilters, criteria])
+
+  const headerSubtitle = isLoading ? 'Cargando contactos...' : (activeFilterCount > 0 ? selectedFilterName : 'Todos los contactos')
+
+  usePageHeader({
+    title: 'Contactos',
+    subtitle: headerSubtitle,
+    controls: (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          aria-label="Abrir filtros"
+          className={`relative flex h-10 w-10 items-center justify-center rounded-full transition ${
+            activeFilterCount > 0 ? 'bg-[#2D3C3C] text-[#FAF6F2]' : 'text-[#9C8578] hover:bg-[#152022]'
+          }`}
+        >
+          <FunnelPlus className="h-4 w-4" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#C27F79] text-[9px] font-bold text-[#1C2828]">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setHeaderSearchOpen((v) => !v)}
+            aria-label="Buscar"
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition ${headerSearchOpen ? 'bg-[#2D3C3C] text-[#FAF6F2]' : 'text-[#9C8578] hover:bg-[#152022]'}`}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+
+          {headerSearchOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[260px] z-50">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9C8578]" />
+                <Input
+                  autoFocus
+                  placeholder="Buscar por nombre..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  onBlur={() => setHeaderSearchOpen(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setHeaderSearchOpen(false)
+                  }}
+                  className="h-10 w-full rounded-full border-[#2D3C3C] bg-[#152022] pl-10 pr-3 text-sm text-[#FAF6F2]"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Más acciones"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#9C8578] hover:bg-[#152022]"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-[#1C2828] border border-[#2D3C3C]">
+            <DropdownMenuItem asChild>
+              <Link href="/broker/crm/contactos/enviar" className="flex items-center gap-2 px-2 py-2 text-[#FAF6F2]">
+                <Send className="h-4 w-4 text-[#9C8578]" />
+                Enviar mensaje
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
+  }, [isLoading, filteredContacts.length, activeCount, selectedFilterName, activeFilterCount, search, criteria, quickFilters])
 
   return (
     <div className="space-y-5">
-      <div className="hidden lg:block">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B8965A]">CRM · Personas</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#FAF6F2]">Contactos</h1>
-        <p className="mt-1 text-xs text-[#9C8578]">
-          {isLoading
-            ? 'Cargando contactos...'
-            : filteredContacts.length === 0
-              ? 'Ajusta los filtros para ver más personas.'
-              : `${activeCount} activos · ${highPriorityCount} de alta prioridad`}
-        </p>
-      </div>
 
       {(quickFilters.length > 0 || filteredContacts.length > 0) && (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-          {quickFilters.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => setCriteria(filter.criteria)}
-              className="shrink-0 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
-            >
-              {filter.name}
-            </button>
-          ))}
-          <Link
-            href="/broker/crm/contactos/filtros"
-            className="shrink-0 inline-flex items-center gap-1 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros
-          </Link>
-          <Link
-            href="/broker/crm/contactos/enviar"
-            className="shrink-0 inline-flex items-center gap-1 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
-          >
-            <Send className="h-3.5 w-3.5" /> Enviar
-          </Link>
+        <div className="-mx-4 flex items-center gap-3 overflow-x-auto px-4 pb-1">
+          <div className="shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-3 rounded-lg bg-transparent px-3 py-1.5 text-left">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-[#FAF6F2]">Contactos</span>
+                            <span className="mt-0.5 flex items-center gap-2 text-xs text-[#9C8578]">
+                              {activeFilterCount > 0 && <span className="h-2 w-2 rounded-full bg-[#C27F79]" />}
+                              <span>{activeFilterCount > 0 ? selectedFilterName : 'Todos los contactos'}</span>
+                            </span>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-[#9C8578] ml-auto" />
+                        </button>
+              </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-[#152022] border border-[#2D3C3C]">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setCriteria(EMPTY_FILTER_CRITERIA)
+                      setHeaderSearchOpen(false)
+                    }}
+                    className="px-3 py-2"
+                  >
+                    Todos los contactos
+                  </DropdownMenuItem>
+                  <div className="border-t border-[#2D3C3C]" />
+                  {quickFilters.map((filter) => (
+                    <DropdownMenuItem
+                      key={filter.id}
+                      onSelect={() => {
+                        setCriteria(filter.criteria)
+                        setHeaderSearchOpen(false)
+                      }}
+                      className="px-3 py-2"
+                    >
+                      {filter.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="flex gap-2">
+            {quickFilters.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => {
+                  setCriteria(filter.criteria)
+                  setHeaderSearchOpen(false)
+                }}
+                className="shrink-0 rounded-full border border-[#2D3C3C] bg-[#152022] px-3 py-1.5 text-xs font-medium text-[#D5C3B6] hover:border-[#5E8B8C]"
+              >
+                {filter.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
-
-      <ContactFilters
-        search={search}
-        onSearchChange={setSearch}
-        activeFilterCount={activeFilterCount}
-        onOpenFilters={() => setSheetOpen(true)}
-        onReset={handleReset}
-      />
 
       <ContactFilterSheet
         open={sheetOpen}
@@ -408,7 +508,7 @@ export default function ContactosPage() {
         aria-label="Nuevo contacto"
         className="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-[#5E8B8C] text-white shadow-lg shadow-[#1C2828]/40 transition hover:scale-105"
       >
-        <Plus className="h-6 w-6" />
+        <UserPlus className="h-6 w-6" />
       </Link>
     </div>
   )

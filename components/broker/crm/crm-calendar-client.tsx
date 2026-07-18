@@ -1,14 +1,25 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Filter, ListChecks, Plus, Repeat2, ArrowLeft, ArrowRight } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePageHeader } from '@/components/layout/header-controls-context'
+import { Calendar as CalendarIcon, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Filter, ListChecks, MoreHorizontal, MoreVertical, Plus, Repeat2, Search, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Calendar } from '@/components/ui/calendar'
 
 interface ScheduledDeal {
   id: string
@@ -74,6 +85,20 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
   const [formPropertyId, setFormPropertyId] = useState('')
   const [formType, setFormType] = useState('OTHER')
   const [formContact, setFormContact] = useState('')
+  const [calendarPopoverOpen, setCalendarPopoverOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'schedule' | 'tasks'>('day')
+  const timelineContainerRef = useRef<HTMLDivElement | null>(null)
+  const dayStripRef = useRef<HTMLDivElement | null>(null)
+  const [dayStripAnchor, setDayStripAnchor] = useState<Date>(() => {
+    const anchor = new Date()
+    anchor.setDate(anchor.getDate() - 14)
+    anchor.setHours(0, 0, 0, 0)
+    return anchor
+  })
 
   useEffect(() => { setDeals(initialDeals) }, [initialDeals])
   useEffect(() => {
@@ -120,6 +145,24 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
       return value
     })
   }, [selectedDate])
+
+  const dayStripDays = useMemo(() => {
+    const start = new Date(dayStripAnchor)
+    return Array.from({ length: 21 }, (_, index) => {
+      const value = new Date(start)
+      value.setDate(start.getDate() + index)
+      return value
+    })
+  }, [dayStripAnchor])
+
+  useEffect(() => {
+    if (!dayStripRef.current) return
+    const selectedKey = selectedDate.toISOString()
+    const selectedButton = dayStripRef.current.querySelector<HTMLButtonElement>(`[data-day="${selectedKey}"]`)
+    if (selectedButton) {
+      selectedButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    }
+  }, [selectedDate, dayStripDays])
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
     const mapped: TimelineEvent[] = []
@@ -202,8 +245,25 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
 
   const visibleEvents = useMemo(() => {
     const sameDate = (value: Date) => value.toDateString() === selectedDate.toDateString()
-    return timelineEvents.filter((item) => sameDate(item.start) && activeFilters[item.category])
-  }, [activeFilters, selectedDate, timelineEvents])
+    const sameWeek = (value: Date) => weekDays.some((day) => day.toDateString() === value.toDateString())
+    const searchTerm = searchQuery.trim().toLowerCase()
+
+    return timelineEvents
+      .filter((item) => {
+        const matchesFilter = activeFilters[item.category]
+        const matchesSearch =
+          searchTerm.length === 0 ||
+          item.title.toLowerCase().includes(searchTerm) ||
+          item.subtitle.toLowerCase().includes(searchTerm) ||
+          item.category.toLowerCase().includes(searchTerm)
+
+        if (!matchesFilter || !matchesSearch) return false
+        if (viewMode === 'week') return sameWeek(item.start)
+        if (viewMode === 'tasks') return item.category === 'Tareas'
+        return sameDate(item.start)
+      })
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
+  }, [activeFilters, searchQuery, selectedDate, timelineEvents, viewMode, weekDays])
 
   const hours = Array.from({ length: 17 }, (_, index) => 6 + index)
   const currentLineTop = ((now.getHours() - 6) * 60 + now.getMinutes()) / 60 * 60
@@ -218,6 +278,176 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
   const toggleFilter = (category: TimelineEvent['category']) => {
     setActiveFilters((value) => ({ ...value, [category]: !value[category] }))
   }
+
+  const goToNow = () => {
+    const today = new Date()
+    setSelectedDate(today)
+    setTimeout(() => {
+      if (!timelineContainerRef.current) return
+      const nowTop = ((now.getHours() - 6) * 60 + now.getMinutes())
+      timelineContainerRef.current.scrollTo({ top: Math.max(0, nowTop - 120), behavior: 'smooth' })
+    }, 100)
+  }
+
+  const toggleEventSelection = (eventId: string) => {
+    setSelectedEventIds((value) =>
+      value.includes(eventId) ? value.filter((id) => id !== eventId) : [...value, eventId],
+    )
+  }
+
+  const selectAllVisibleEvents = () => {
+    setSelectedEventIds(visibleEvents.map((event) => event.id))
+  }
+
+  const deleteSelectedEvents = async () => {
+    const calendarEventIds = selectedEventIds
+      .filter((eventId) => eventId.startsWith('calendar-'))
+      .map((eventId) => eventId.replace(/^calendar-/, ''))
+
+    if (calendarEventIds.length === 0) {
+      toast.error('Solo se pueden eliminar los eventos del calendario directamente.')
+      return
+    }
+
+    try {
+      await Promise.all(
+        calendarEventIds.map((eventId) =>
+          fetch(`/api/calendar/events/${eventId}`, {
+            method: 'DELETE',
+          }),
+        ),
+      )
+      toast.success('Eventos eliminados')
+      setSelectedEventIds([])
+      await loadAgendaData()
+    } catch (error) {
+      console.error(error)
+      toast.error('No se pudo eliminar los eventos seleccionados')
+    }
+  }
+
+  const dateSelector = (
+    <Popover open={calendarPopoverOpen} onOpenChange={setCalendarPopoverOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="flex items-center gap-2 rounded-full border border-[#2D3C3C] px-3 py-2 text-sm font-semibold text-[#FAF6F2]"
+          aria-label="Abrir selector de fecha"
+        >
+          {selectedDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}
+          <ChevronDown className="h-4 w-4 text-[#9C8578]" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="bg-[#1a2a2a] border border-[#2D3C3C] p-3">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => {
+            if (!date) return
+            setSelectedDate(date)
+            setCalendarPopoverOpen(false)
+          }}
+          className="bg-[#1a2a2a] text-[#FAF6F2]"
+        />
+      </PopoverContent>
+    </Popover>
+  )
+
+  const headerControls = (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        onClick={goToNow}
+        className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]"
+        aria-label="Ir a la hora actual"
+      >
+        <CalendarIcon className="h-4 w-4" />
+      </button>
+
+      <Popover open={showFilterMenu} onOpenChange={setShowFilterMenu}>
+        <PopoverTrigger asChild>
+          <button
+            className="relative rounded-full border border-[#2D3C3C] p-2 text-[#D5C3B6]"
+            aria-label="Abrir filtros"
+          >
+            <Filter className="h-4 w-4" />
+            {!Object.values(activeFilters).every(Boolean) && (
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#C27F79]" />
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="bg-[#1a2a2a] border border-[#2D3C3C] p-3">
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                onClick={() => toggleFilter(option.key as TimelineEvent['category'])}
+                className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${
+                  activeFilters[option.key as TimelineEvent['category']]
+                    ? 'bg-[#5E8B8C] text-[#FAF6F2]'
+                    : 'bg-[#2D3C3C] text-[#9C8578]'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <button
+        onClick={() => setSelectionMode((value) => !value)}
+        className={`rounded-full border border-[#2D3C3C] bg-[#121b1b] p-2 text-[#FAF6F2] ${selectionMode ? 'border-[#C27F79]' : ''}`}
+        aria-label="Seleccionar múltiples eventos"
+      >
+        <Square className={selectionMode ? 'h-4 w-4 text-[#C27F79]' : 'h-4 w-4 text-[#D5C3B6]'} />
+      </button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="rounded-full border border-[#2D3C3C] p-2 text-[#D5C3B6]"
+            aria-label="Opciones de vista"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="bg-[#1a2a2a] border border-[#2D3C3C]">
+          <DropdownMenuLabel>Opciones</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setSearchOpen((value) => !value)}>
+            <Search className="h-4 w-4" />
+            Buscar
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setViewMode('schedule')}>
+            <CalendarDays className="h-4 w-4" />
+            Schedule
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setViewMode('day')}>
+            <ChevronRight className="h-4 w-4" />
+            Day view
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setViewMode('week')}>
+            <ChevronLeft className="h-4 w-4" />
+            Week view
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setViewMode('tasks')}>
+            <ListChecks className="h-4 w-4" />
+            Tareas
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {searchOpen && (
+        <Input
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Buscar eventos, tareas o visitas"
+          className="min-w-[220px] border-[#2D3C3C] bg-[#121b1b] text-[#FAF6F2]"
+        />
+      )}
+    </div>
+  )
+
+  usePageHeader({ title: dateSelector, subtitle: null, controls: headerControls }, [selectedDate, showFilterMenu, calendarPopoverOpen, searchOpen, selectionMode, viewMode, activeFilters])
 
   const openQuickActionForm = (action: 'task' | 'payment' | 'visit' | 'contact' | 'event') => {
     setFabOpen(false)
@@ -374,84 +604,27 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-[#5E8B8C]" />
-            <button onClick={() => moveDay('prev')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button onClick={() => setSelectedDate(new Date())} className="rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
-              Hoy
-            </button>
-            <button onClick={() => moveDay('next')} className="rounded-full border border-[#2D3C3C] p-2 text-[#9C8578]">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="text-center text-sm font-semibold text-[#FAF6F2]">
-              {selectedDate.toLocaleDateString('es-CL', { weekday: 'long', day: '2-digit', month: 'long' })}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFilterMenu((value) => !value)}
-              className="relative rounded-full border border-[#2D3C3C] p-2 text-[#D5C3B6]"
-              aria-label="Filtrar agenda"
-            >
-              <Filter className="h-4 w-4" />
-              {!Object.values(activeFilters).every(Boolean) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#C27F79]" />}
-            </button>
-            <Link href="/broker/crm/mi-dia" className="flex items-center gap-2 rounded-full border border-[#2D3C3C] px-3 py-1.5 text-xs font-semibold text-[#D5C3B6]">
-              <ListChecks className="h-3.5 w-3.5" />
-              Tareas
-            </Link>
-          </div>
-        </div>
-
-        {showFilterMenu && (
-          <div className="mt-3 flex flex-wrap gap-2 rounded-2xl border border-[#2D3C3C] bg-[#162121] p-2">
-            {CATEGORY_OPTIONS.map((option) => (
+      <div ref={dayStripRef} className="overflow-x-auto pb-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
+        <div className="inline-grid grid-flow-col auto-cols-[88px] gap-0 px-2 snap-x snap-mandatory touch-pan-x">
+          {dayStripDays.map((day, index) => {
+            const isSelected = day.toDateString() === selectedDate.toDateString()
+            const isToday = day.toDateString() === new Date().toDateString()
+            return (
               <button
-                key={option.key}
-                onClick={() => toggleFilter(option.key as TimelineEvent['category'])}
-                className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${activeFilters[option.key as TimelineEvent['category']] ? 'bg-[#5E8B8C] text-[#FAF6F2]' : 'bg-[#2D3C3C] text-[#9C8578]'}`}
-              >
-                {option.label}
+                key={day.toISOString()}
+                data-day={day.toISOString()}
+                onClick={() => setSelectedDate(day)}
+                className={`w-[88px] h-[88px] box-border snap-start flex flex-col items-center justify-center gap-1 border-t border-b border-r ${index === 0 ? 'border-l' : ''} px-2 py-2 ${isToday ? 'bg-[#1E4E4D] border-[#5E8B8C] text-[#FAF6F2]' : ''} ${isSelected ? 'border-[#C27F79] bg-[#243535] text-[#FAF6F2]' : 'border-[#2D3C3C] bg-[#121b1b] text-[#9C8578]'}`}>
+                <p className="text-[10px] uppercase tracking-[0.2em]">{day.toLocaleDateString('es-CL', { weekday: 'short' })}</p>
+                <p className="text-[18px] font-semibold">{day.getDate()}</p>
               </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {weekDays.map((day) => {
-          const isSelected = day.toDateString() === selectedDate.toDateString()
-          return (
-            <button
-              key={day.toISOString()}
-              onClick={() => setSelectedDate(day)}
-              className={`min-w-[58px] rounded-2xl border px-2 py-2 text-center ${isSelected ? 'border-[#C27F79] bg-[#243535] text-[#FAF6F2]' : 'border-[#2D3C3C] bg-[#1a2a2a] text-[#9C8578]'}`}
-            >
-              <p className="text-[10px] uppercase tracking-[0.2em]">{day.toLocaleDateString('es-CL', { weekday: 'short' })}</p>
-              <p className="mt-1 text-lg font-semibold">{day.getDate()}</p>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="rounded-3xl border border-[#2D3C3C] bg-[#1a2a2a] p-3">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#9C8578]">Timeline</p>
-            <p className="text-sm font-semibold text-[#FAF6F2]">{selectedDate.toLocaleDateString('es-CL', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
-          </div>
-          <div className="rounded-full border border-[#2D3C3C] px-3 py-1 text-[11px] text-[#D5C3B6]">{visibleEvents.length} bloques</div>
+            )
+          })}
         </div>
+      </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#2D3C3C] bg-[#121b1b]">
+      <div className="px-0">
+        <div className="relative overflow-hidden bg-[#121b1b]">
           <div className="grid grid-cols-[58px_1fr]">
             <div className="border-r border-[#2D3C3C] bg-[#162121]">
               {hours.map((hour) => (
@@ -485,8 +658,8 @@ export function CrmCalendarClient({ initialDeals }: { initialDeals: ScheduledDea
                           <div className="mt-2 flex flex-wrap gap-1">
                             <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, -30, 0) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]">-30m</button>
                             <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 30, 0) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]">+30m</button>
-                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, -1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ArrowLeft className="h-3 w-3" /></button>
-                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, 1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ArrowRight className="h-3 w-3" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, -1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ChevronLeft className="h-3 w-3" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); void moveEvent(event, 0, 1) }} className="rounded-full border border-[#2D3C3C] bg-[#162121] px-2 py-1 text-[10px] text-[#D5C3B6]"><ChevronRight className="h-3 w-3" /></button>
                           </div>
                         </div>
                       )

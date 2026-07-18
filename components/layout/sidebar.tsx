@@ -23,6 +23,7 @@ import {
   Kanban,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Target,
   MessageSquare,
   TrendingUp,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { useHeaderControls } from "@/components/layout/header-controls-context";
 import { useCrmAlerts } from "@/hooks/useCrmAlerts";
 import { SidebarSearch } from '@/components/layout/sidebar-search'
 import {
@@ -297,6 +299,7 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true); // Mobile: collapsed by default
   const { totalAlerts } = useCrmAlerts();
+  const { title: headerTitle, subtitle: headerSubtitle, controls: headerControls } = useHeaderControls();
 
   const currentPageTitle = useMemo(() => {
     const route = pathname || '/'
@@ -308,34 +311,45 @@ export function Sidebar({
     return match?.label ?? 'NeiFe'
   }, [pathname])
 
+  const isCalendarPage = (pathname || '').startsWith('/broker/crm/calendario') || (pathname || '').startsWith('/broker/calendario')
+
   return (
     <>
       {/* Barra superior móvil: ocupa su propio espacio en el flujo del documento
           (sticky, no fixed) para que no quede un hueco en blanco arriba del
           contenido. El logo grande es el elemento dominante y "Menú" queda como
           una etiqueta diminuta debajo para indicar la acción del botón. */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-2.5 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={isOpen}
-          className="flex flex-col items-center gap-0.5 rounded-xl bg-[#2D3C3C] px-3.5 py-1.5 text-[#D5C3B6] transition hover:bg-[#3a4a4a]"
-        >
-          {isOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <>
-              <img src="/logo.svg" alt="NeiFe" className="h-7 w-7 object-contain" />
-              <span className="text-[8px] font-medium uppercase tracking-wider text-[#9C8578]">Menú</span>
-            </>
-          )}
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:block rounded-full bg-[#2D3C3C] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#9C8578]">
-            {currentPageTitle}
+      <div className="sticky top-0 z-40 flex h-16 min-h-[64px] items-center justify-between border-b border-[#D5C3B6]/10 bg-[#1C1917] px-4 lg:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={isOpen}
+              className="text-sm font-semibold text-[#FAF6F2] transition"
+            >
+              NeiFe
+            </button>
+
+            <div className="flex min-w-0 items-center gap-1">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-[#FAF6F2]">
+                  {headerTitle ?? (isCalendarPage ? new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit' }) : currentPageTitle)}
+                </div>
+                {headerSubtitle && pathname && pathname.startsWith('/broker/crm/contactos') && (
+                  <Link href="/broker/crm/contactos/filtros" className="text-xs text-[#9C8578] flex items-center gap-1">
+                    {headerSubtitle !== 'Todos los contactos' && <span className="h-2 w-2 rounded-full bg-[#C27F79]" />}
+                    <span>{headerSubtitle}</span>
+                    <ChevronDown className="h-3 w-3 text-[#9C8578]" />
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
-          <NotificationBell userRole={role} />
+
+        <div className="flex items-center gap-1">
+          {headerControls}
+          {!isCalendarPage && !headerControls && <NotificationBell userRole={role} />}
         </div>
       </div>
 
@@ -373,10 +387,10 @@ export function Sidebar({
                 isCollapsed ? "text-sm" : "text-xl"
               )}
             >
-              <img src="/logo.svg" alt="NeiFe" className={cn(isCollapsed ? 'h-5 w-5' : 'h-7 w-7 mr-2')} />
-              {!isCollapsed && <span className="align-middle">NeiFe</span>}
+              <span>NeiFe</span>
+              {!isCollapsed && <span className="ml-1 text-[#F2C94C]">.</span>}
             </span>
-            <NotificationBell userRole={role} />
+            {!isCalendarPage && <NotificationBell userRole={role} />}
           </div>
 
           {/* Fila 2: Botón colapsar — solo desktop, sin burbuja */}

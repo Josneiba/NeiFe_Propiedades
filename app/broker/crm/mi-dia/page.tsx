@@ -1,7 +1,7 @@
  'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { usePageHeaderControls } from '@/components/layout/header-controls-context'
+import { usePageHeader } from '@/components/layout/header-controls-context'
 import Link from 'next/link'
 import { TaskQueue } from '@/components/broker/crm/task-queue'
 import { DealDrawer } from '@/components/broker/crm/deal-drawer'
@@ -52,14 +52,17 @@ export default function MiDiaPage() {
     loadAll()
   }, [loadAll])
 
-  usePageHeaderControls(
-    <div className="flex items-center gap-2">
-      <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
-        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      </Button>
-    </div>,
-    [loading]
-  )
+  usePageHeader({
+    title: 'Mi Día',
+    subtitle: new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }),
+    controls: (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
+    ),
+  }, [loading])
 
   async function handleOpenDeal(dealId: string) {
     try {
@@ -101,25 +104,6 @@ export default function MiDiaPage() {
   return (
     <div className="min-h-screen bg-[#1C1917] text-[#FAF6F2]">
       <div className="mx-auto w-full max-w-7xl p-4 space-y-5 lg:px-6">
-        <div className="hidden lg:block">
-          <h1 className="text-2xl font-bold">Mi Día</h1>
-          <p className="mt-0.5 text-xs capitalize text-[#9C8578]">
-            {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="lg:hidden">
-            <h1 className="text-2xl font-bold">Mi Día</h1>
-            <p className="mt-0.5 text-xs capitalize text-[#9C8578]">
-              {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={loadAll} disabled={loading} className="text-[#9C8578] hover:text-[#FAF6F2]">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
 
         <section id="indicadores-clave">
           <KpiWeeklyPanel />

@@ -3,14 +3,23 @@
 import React from 'react'
 import { HeaderControlsProvider, useHeaderControls } from '@/components/layout/header-controls-context'
 import { Sidebar } from '@/components/layout/sidebar'
+import { Menu } from 'lucide-react'
 
 function MainHeader() {
-  const { controls } = useHeaderControls()
+  const { title, subtitle, controls } = useHeaderControls()
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#D5C3B6]/10 bg-[#1C1917] px-4 py-3 lg:px-8">
-      <div className="flex items-center justify-between">
-        <div />
+    <header className="hidden lg:flex sticky top-0 z-30 h-16 min-h-[64px] border-b border-[#D5C3B6]/10 bg-[#1C1917] px-4 lg:px-8">
+      <div className="flex h-full items-center justify-between gap-4">
+        <div className="flex h-full items-center gap-3">
+          <button className="lg:hidden p-2 rounded-md text-[#D5C3B6] hover:bg-[#2D3C3C]">
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex flex-col justify-center">
+            <div className="text-lg font-semibold text-[#FAF6F2]">{title ?? 'NeiFe'}</div>
+            {subtitle && <div className="text-xs text-[#9C8578] mt-0.5">{subtitle}</div>}
+          </div>
+        </div>
         <div className="flex items-center gap-2">{controls}</div>
       </div>
     </header>
